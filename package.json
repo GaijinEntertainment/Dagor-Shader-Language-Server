@@ -1,0 +1,19 @@
+{
+	"name": "dagor-shader-language-server",
+	"version": "0.0.1",
+	"engines": {
+		"node": "*"
+	},
+	"scripts": {
+		"compile": "tsc -b",
+		"watch": "tsc -b -w"
+	},
+	"dependencies": {
+		"vscode-languageserver": "^8.1.0",
+		"vscode-languageserver-textdocument": "^1.0.8"
+	},
+	"devDependencies": {
+		"@types/node": "^20.8.6",
+		"typescript": "^5.2.2"
+	}
+}

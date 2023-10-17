@@ -1,1 +1,1 @@
-# Dagor-Shader-Language-Support
+# Dagor Shader Language Server
