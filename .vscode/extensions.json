@@ -1,7 +1,8 @@
 {
-	"recommendations": [
-		"editorconfig.editorconfig",
-		"esbenp.prettier-vscode",
-		"dbaeumer.vscode-eslint"
-	]
+    "recommendations": [
+        "editorconfig.editorconfig",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "github.vscode-github-actions"
+    ]
 }

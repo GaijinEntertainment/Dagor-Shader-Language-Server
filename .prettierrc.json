@@ -1,8 +1,8 @@
 {
-	"endOfLine": "lf",
-	"useTabs": true,
-	"tabWidth": 4,
-	"singleQuote": true,
-	"trailingComma": "es5",
-	"plugins": ["prettier-plugin-organize-imports"]
+    "endOfLine": "lf",
+    "useTabs": false,
+    "tabWidth": 4,
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "plugins": ["prettier-plugin-organize-imports"]
 }
