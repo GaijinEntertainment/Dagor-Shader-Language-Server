@@ -4,9 +4,12 @@
 	"engines": {
 		"node": "*"
 	},
+	"main": "./out/server-desktop",
+	"browser": "./out/server-web",
 	"scripts": {
-		"compile": "tsc -b",
-		"watch": "tsc -b -w",
+		"build-production": "webpack --mode production",
+		"build": "webpack",
+		"watch": "webpack --watch",
 		"prettier-lint": "prettier --check .",
 		"prettier-format": "prettier --write .",
 		"prepare": "husky install"
@@ -21,7 +24,10 @@
 		"lint-staged": "^15.0.1",
 		"prettier": "^3.0.3",
 		"prettier-plugin-organize-imports": "^3.2.3",
-		"typescript": "^5.2.2"
+		"ts-loader": "^9.5.0",
+		"typescript": "^5.2.2",
+		"webpack": "^5.89.0",
+		"webpack-cli": "^5.1.4"
 	},
 	"lint-staged": {
 		"*": "prettier --write --ignore-unknown"
