@@ -1,19 +1,17 @@
 import {
-	createConnection,
-	TextDocuments,
-	Diagnostic,
-	DiagnosticSeverity,
-	ProposedFeatures,
-	InitializeParams,
 	CompletionItem,
 	CompletionItemKind,
+	Diagnostic,
+	DiagnosticSeverity,
+	InitializeParams,
+	ProposedFeatures,
 	TextDocumentPositionParams,
-	TextDocumentSyncKind
+	TextDocumentSyncKind,
+	TextDocuments,
+	createConnection,
 } from 'vscode-languageserver/node';
 
-import {
-	TextDocument
-} from 'vscode-languageserver-textdocument';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
@@ -22,12 +20,12 @@ connection.onInitialize((ip: InitializeParams) => {
 	return {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Incremental,
-			completionProvider: {}
-		}
+			completionProvider: {},
+		},
 	};
 });
 
-documents.onDidChangeContent(change => {
+documents.onDidChangeContent((change) => {
 	validateTextDocument(change.document);
 });
 
@@ -37,12 +35,12 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	let m: RegExpExecArray | null;
 
 	const diagnostics: Diagnostic[] = [];
-	while (m = pattern.exec(text)) {
+	while ((m = pattern.exec(text))) {
 		const diagnostic: Diagnostic = {
 			severity: DiagnosticSeverity.Warning,
 			range: {
 				start: textDocument.positionAt(m.index),
-				end: textDocument.positionAt(m.index + m[0].length)
+				end: textDocument.positionAt(m.index + m[0].length),
 			},
 			message: `${m[0]} is all uppercase.`,
 		};
@@ -62,7 +60,7 @@ connection.onCompletion(
 			{
 				label: 'Test code completion item 2',
 				kind: CompletionItemKind.Class,
-			}
+			},
 		];
 	}
 );
