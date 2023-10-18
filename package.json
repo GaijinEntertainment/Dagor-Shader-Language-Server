@@ -10,6 +10,7 @@
 		"build-production": "webpack --mode production",
 		"build": "webpack",
 		"watch": "webpack --watch",
+		"eslint": "eslint ./src --ext .ts",
 		"prettier-lint": "prettier --check .",
 		"prettier-format": "prettier --write .",
 		"prepare": "husky install"
@@ -20,6 +21,9 @@
 	},
 	"devDependencies": {
 		"@types/node": "^20.8.6",
+		"@typescript-eslint/eslint-plugin": "^6.8.0",
+		"@typescript-eslint/parser": "^6.8.0",
+		"eslint": "^8.51.0",
 		"husky": "^8.0.3",
 		"lint-staged": "^15.0.1",
 		"prettier": "^3.0.3",
