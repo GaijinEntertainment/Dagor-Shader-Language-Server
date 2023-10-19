@@ -1,0 +1,608 @@
+{
+    "scopeName": "source.dagorsh",
+    "name": "DagorShader",
+    "fileTypes": ["sh"],
+    "patterns": [
+        {
+            "include": "#macro_block"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#hlsl_block"
+        },
+        {
+            "include": "#block_block"
+        },
+        {
+            "include": "#shader_variables"
+        },
+        {
+            "include": "#shader_block"
+        },
+        {
+            "include": "#shader_ops"
+        }
+    ],
+    "repository": {
+        "macro_block": {
+            "patterns": [
+                {
+                    "begin": "\\b(macro|define_macro_if_not_defined)\\s*(\\w+)\\b",
+                    "end": "\\b(endmacro)\\b",
+                    "captures": {
+                        "1": { "name": "keyword.other.source.dagorsh" },
+                        "2": { "name": "name.macro.source.dagor" }
+                    },
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#strings"
+                        },
+                        {
+                            "include": "#binding_types"
+                        },
+                        {
+                            "include": "#hlsl_block"
+                        },
+                        {
+                            "include": "#declaration_block"
+                        },
+                        {
+                            "include": "#shader_variables"
+                        },
+                        {
+                            "include": "#shader_ops"
+                        },
+                        {
+                            "include": "#material_block"
+                        }
+                    ]
+                }
+            ]
+        },
+        "material_ops": {
+            "patterns": [
+                {
+                    "match": "(\\w+)(\\s*)(=)(\\s*)(mat.)(ambient|diffuse|emissive|specular)(\\s*)(;)",
+                    "captures": {
+                        "1": { "name": "variable.source.dagorsh" },
+                        "5": { "name": "support.constant.source.dagorsh" },
+                        "6": { "name": "support.constant.source.dagorsh" }
+                    }
+                },
+                {
+                    "match": "(\\w+)(\\s*)(=)(\\s*)(mat.texture.)(\\s*)(\\w+)(;)",
+                    "captures": {
+                        "1": { "name": "variable.source.dagorsh" },
+                        "5": { "name": "support.constant.source.dagorsh" },
+                        "7": { "name": "support.constant.source.dagorsh" }
+                    }
+                }
+            ]
+        },
+        "material_block": {
+            "patterns": [
+                {
+                    "begin": "\\b(init)\\b",
+                    "end": "(?<=})",
+                    "beginCaptures": {
+                        "1": { "name": "support.class.source.dagor" }
+                    },
+                    "patterns": [
+                        {
+                            "begin": "({)",
+                            "end": "(})",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#strings"
+                                },
+                                {
+                                    "include": "#material_ops"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "match": "\\b([0-9]+\\.?[0-9]*(f?F?h?H?l?L?|e-?[0-9]+))\\b",
+                    "name": "constant.numeric.source.dagorsh"
+                }
+            ]
+        },
+        "shader_ops": {
+            "patterns": [
+                {
+                    "match": "\\b(blend_asrc|blend_adst|blend_src|blend_dst|cull_mode|alpha_to_coverage|view_instances|z_write|z_test|z_func|stencil|stencil_func|stencil_ref|stencil_pass|stencil_fail|stencil_zfail|color_write|slope_z_bias|z_bias)\\b",
+                    "name": "support.variable.source.dagorsh"
+                },
+                {
+                    "match": "\\b(color8|float1|float2|float3|float4|short2|short4|ubyte4|short2n|short4n|ushort2n|ushort4n|half2|half4|udec3|dec3n|extra|norm|pos|tc|vcol|signed_pack|unsigned_pack|mul_1k|mul_2k|mul_4k|mul_8k|mul_16k|mul_32767|bounding_pack)\\b",
+                    "name": "support.variable.source.dagorsh"
+                },
+                {
+                    "match": "\\b(two_sided|real_two_sided|true|false|globtm|projtm|viewprojtm|local_view_x|local_view_y|local_view_z|local_view_pos|world_local_x|world_local_y|world_local_z|world_local_pos|vpr_const_array)\\b",
+                    "name": "support.constant.source.dagorsh"
+                },
+                {
+                    "match": "\\b(zero|one|sc|isc|sa|isa|da|ida|dc|idc|sasat|bf|ibf)\\b",
+                    "name": "support.constant.source.dagorsh"
+                },
+                {
+                    "match": "\\b(keep|zero|replace|incrsat|decrsat|incr|dect)\\b",
+                    "name": "support.constant.source.dagorsh"
+                },
+                {
+                    "match": "\\b(never|less|equal|lessequal|greater|notequal|greaterequal|always)\\b",
+                    "name": "support.constant.source.dagorsh"
+                },
+                {
+                    "match": "\\b(cw|ccw|none)\\b",
+                    "name": "support.constant.source.dagorsh"
+                },
+                {
+                    "match": "\\b(include|include_optional|compile|channel|render_stage|supports|use)\\b",
+                    "name": "keyword.other.source.dagorsh"
+                },
+                {
+                    "match": "\\b(interval|dont_render|no_dynstcode|render_trans|no_ablend|assume)\\b",
+                    "name": "keyword.control.source.dagorsh"
+                },
+                {
+                    "match": "\\b(if|else)\\b",
+                    "name": "keyword.control.source.dagorsh"
+                },
+                {
+                    "match": "(NULL)",
+                    "name": "constant.language.source.dagorsh"
+                },
+                {
+                    "include": "#declaration_block"
+                },
+                {
+                    "include": "#numbers"
+                },
+                {
+                    "include": "#strings"
+                },
+                {
+                    "include": "#comments"
+                },
+                {
+                    "include": "#hlsl_block"
+                },
+                {
+                    "begin": "{",
+                    "end": "}",
+                    "patterns": [
+                        {
+                            "include": "#shader_ops"
+                        }
+                    ]
+                }
+            ]
+        },
+        "shader_variables": {
+            "patterns": [
+                {
+                    "match": "\\b(int|int4|float|float4|float4x4|texture|buffer|const_buffer|define|undef)\\b",
+                    "name": "support.type.source.dagorsh"
+                },
+                {
+                    "match": "\\b(local|dynamic|static|const|always_referenced|undefined_value|no_warnings|public)\\b",
+                    "name": "storage.modifier.source.dagorsh"
+                }
+            ]
+        },
+        "comments": {
+            "patterns": [
+                {
+                    "begin": "//",
+                    "end": "$",
+                    "name": "comment.line.double-slash.source.dagorsh"
+                },
+                {
+                    "begin": "/\\*",
+                    "end": "\\*/",
+                    "name": "comment.line.block.source.dagorsh"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "begin": "\"",
+                    "end": "\"",
+                    "name": "string.quoted.double.source.dagorsh"
+                }
+            ]
+        },
+        "binding_types": {
+            "patterns": [
+                {
+                    "match": "(@)(static|vsf|vsmp|psf|shd|smp(2d|3d|Array|Cube)?|tex(2d|3d|Array|Cube)?|csf|ps_buf|vs_buf|cs_buf|ps_cbuf|vs_cbuf|cs_cbuf|buf|f(1|2|3|4+)|i(1|2|3|4))",
+                    "name": "support.type.source.dagorsh"
+                }
+            ]
+        },
+        "declaration_block": {
+            "patterns": [
+                {
+                    "include": "#declaration_block_a"
+                },
+                {
+                    "include": "#declaration_block_b"
+                }
+            ]
+        },
+        "declaration_block_a": {
+            "patterns": [
+                {
+                    "begin": "^\\s*(\\(\\w+\\))\\s*{",
+                    "end": "(?<=})",
+                    "beginCaptures": {
+                        "1": { "name": "support.class.hlsl.source.dagor" }
+                    },
+                    "patterns": [
+                        {
+                            "match": "\\b(if|else)\\b",
+                            "name": "keyword.control.source.dagorsh"
+                        },
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#strings"
+                        },
+                        {
+                            "include": "#numbers"
+                        },
+                        {
+                            "include": "#binding_types"
+                        },
+                        {
+                            "include": "#hlsl_block"
+                        },
+                        {
+                            "include": "#declaration_block_body"
+                        }
+                    ]
+                }
+            ]
+        },
+        "declaration_block_b": {
+            "patterns": [
+                {
+                    "begin": "^\\s*(\\(\\w+\\))\\s*$",
+                    "end": "(?<=})",
+                    "beginCaptures": {
+                        "1": { "name": "support.class.hlsl.source.dagor" }
+                    },
+                    "patterns": [
+                        {
+                            "include": "#declaration_block_body"
+                        }
+                    ]
+                }
+            ]
+        },
+        "declaration_block_body": {
+            "patterns": [
+                {
+                    "begin": "({)",
+                    "end": "(})",
+                    "patterns": [
+                        {
+                            "match": "\\b(if|else)\\b",
+                            "name": "keyword.control.source.dagorsh"
+                        },
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#strings"
+                        },
+                        {
+                            "include": "#numbers"
+                        },
+                        {
+                            "include": "#binding_types"
+                        },
+                        {
+                            "include": "#hlsl_block"
+                        },
+                        {
+                            "include": "#declaration_block_body"
+                        }
+                    ]
+                }
+            ]
+        },
+        "shader_block": {
+            "patterns": [
+                {
+                    "begin": "\\b(shader)\\s*(\\w+)((,\\s*\\w+)*)\\b",
+                    "end": "(?<=})",
+                    "beginCaptures": {
+                        "1": { "name": "support.class.source.dagor" },
+                        "2": { "name": "name.source.dagorsh" },
+                        "3": { "name": "name.source.dagorsh" }
+                    },
+                    "patterns": [
+                        {
+                            "begin": "({)",
+                            "end": "(})",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#strings"
+                                },
+                                {
+                                    "include": "#shader_ops"
+                                },
+                                {
+                                    "include": "#declaration_block"
+                                },
+                                {
+                                    "include": "#hlsl_block"
+                                },
+                                {
+                                    "include": "#shader_variables"
+                                },
+                                {
+                                    "include": "#material_block"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "block_block": {
+            "patterns": [
+                {
+                    "begin": "(block)(\\(\\w+\\))(\\s*)(\\w+)",
+                    "end": "(?<=})",
+                    "beginCaptures": {
+                        "1": { "name": "support.class.source.dagor" },
+                        "2": { "name": "support.class.source.dagor" },
+                        "4": { "name": "name.block.source.dagor" }
+                    },
+                    "patterns": [
+                        {
+                            "begin": "({)",
+                            "end": "(})",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#strings"
+                                },
+                                {
+                                    "include": "#shader_ops"
+                                },
+                                {
+                                    "include": "#declaration_block"
+                                },
+                                {
+                                    "include": "#hlsl_block"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "hlsl_block": {
+            "patterns": [
+                {
+                    "begin": "(\\(\\w+\\)|)\\s*(hlsl)\\s*(\\(\\w+\\)|)",
+                    "end": "(?<=})",
+                    "beginCaptures": {
+                        "1": { "name": "support.class.hlsl.source.dagor" },
+                        "2": { "name": "support.class.hlsl.source.dagor" },
+                        "3": { "name": "support.class.hlsl.source.dagor" }
+                    },
+                    "patterns": [
+                        {
+                            "begin": "({)",
+                            "end": "(})",
+                            "patterns": [
+                                {
+                                    "include": "#hlsl"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "hlsl": {
+            "patterns": [
+                {
+                    "match": "\\b(bool|bool1|bool2|bool3|bool4)\\b",
+                    "name": "storage.type.hlsl.source.dagorshj"
+                },
+                {
+                    "match": "\\b(int|int1|int2|int3|int4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(uint|uint1|uint2|uint3|uint4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(dword|dword1|dword2|dword3|dword4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(half|half1|half2|half3|half4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(float|float1|float2|float3|float4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(double|double1|double2|double3|double4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(uint64_t|uint64_t1|uint64_t2|uint64_t3|uint64_t4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(matrix)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(bool1x1|bool1x2|bool1x3|bool1x4|bool2x1|bool2x2|bool2x3|bool2x4|bool3x1|bool3x2|bool3x3|bool3x4|bool4x1|bool4x2|bool4x3|bool4x4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(int1x1|int1x2|int1x3|int1x4|int2x1|int2x2|int2x3|int2x4|int3x1|int3x2|int3x3|int3x4|int4x1|int4x2|int4x3|int4x4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(uint1x1|uint1x2|uint1x3|uint1x4|uint2x1|uint2x2|uint2x3|uint2x4|uint3x1|uint3x2|uint3x3|uint3x4|uint4x1|uint4x2|uint4x3|uint4x4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(dword1x1|dword1x2|dword1x3|dword1x4|dword2x1|dword2x2|dword2x3|dword2x4|dword3x1|dword3x2|dword3x3|dword3x4|dword4x1|dword4x2|dword4x3|dword4x4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(half1x1|half1x2|half1x3|half1x4|half2x1|half2x2|half2x3|half2x4|half3x1|half3x2|half3x3|half3x4|half4x1|half4x2|half4x3|half4x4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(float1x1|float1x2|float1x3|float1x4|float2x1|float2x2|float2x3|float2x4|float3x1|float3x2|float3x3|float3x4|float4x1|float4x2|float4x3|float4x4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(double1x1|double1x2|double1x3|double1x4|double2x1|double2x2|double2x3|double2x4|double3x1|double3x2|double3x3|double3x4|double4x1|double4x2|double4x3|double4x4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(uint64_t1x1|uint64_t1x2|uint64_t1x3|uint64_t1x4|uint64_t2x1|uint64_t2x2|uint64_t2x3|uint64_t2x4|uint64_t3x1|uint64_t3x2|uint64_t3x3|uint64_t3x4|uint64_t4x1|uint64_t4x2|uint64_t4x3|uint64_t4x4)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(void|string)\\b",
+                    "name": "storage.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "(texture|Texture1D|Texture1DArray|Texture2D|Texture2DArray|Texture2DMS|Texture2DMSArray|Texture3D|TextureCube|TextureCubeArray|Buffer|StructuredBuffer|AppendStructuredBuffer|ConsumeStructuredBuffer|vector|LineStream|PointStream|TriangleStream)<(\\w+)>",
+                    "captures": {
+                        "1": {
+                            "name": "support.type.hlsl.source.dagorsh"
+                        },
+                        "2": { "name": "storage.type.hlsl.source.dagorsh" }
+                    }
+                },
+                {
+                    "match": "\\b(texture|Texture1D|Texture1DArray|Texture2D|Texture2DArray|Texture2DMS|Texture2DMSArray|Texture3D|TextureCube|TextureCubeArray|SamplerState|ByteAddressBuffer|InputPatch|OutputPatch|cbuffer|tbuffer)\\b",
+                    "name": "support.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "(RWBuffer|RWByteAddressBuffer|RWStructuredBuffer|RWTexture1D|RWTexture1DArray|RWTexture2D|RWTexture2DArray|RWTexture3D)<(\\w+)>",
+                    "captures": {
+                        "1": {
+                            "name": "support.type.hlsl.source.dagorsh"
+                        },
+                        "2": { "name": "storage.type.hlsl.source.dagorsh" }
+                    }
+                },
+                {
+                    "match": "\\b(RWBuffer|RWByteAddressBuffer|RWStructuredBuffer|RWTexture1D|RWTexture1DArray|RWTexture2D|RWTexture2DArray|RWTexture3D)\\b",
+                    "name": "support.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(if|else|while|do|for|switch|continue|case|break|default|return|discard|BRANCH|FLATTEN|LOOP|UNROLL)\\b",
+                    "name": "keyword.control.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(struct|enum|class|namespace|typedef|interface)\\b",
+                    "name": "support.class.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(static|const|unsigned|extern|groupshared|in|inout|out|nointerpolation|noperspective|volatile|column_major|row_major|export|uniform|linear|centroid|nointerpolation|noperspective|sample|inline|precise|snorm|unorm|shared|packoffset|point|line|lineadj|triangle|triangleadj|numthreads)\\b",
+                    "name": "storage.modifier.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "register(\\(\\w+\\))",
+                    "name": "storage.modifier.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "(SV_Coverage|SV_Depth|SV_DepthGreaterEqual|SV_DepthLessEqual|SV_DispatchThreadID|SV_DomainLocation|SV_GroupID|SV_GroupIndex|SV_GroupThreadID|SV_GSInstanceID|SV_InnerCoverage|SV_InsideTessFactor|SV_InstanceID|SV_IsFrontFace|SV_OutputControlPointID|SV_Position|SV_PrimitiveID|SV_RenderTargetArrayIndex|SV_SampleIndex|SV_StencilRef|SV_TessFactor|SV_VertexID|SV_ViewportArrayIndex|SV_ShadingRate|SV_ClipDistance(\\d*)|SV_CullDistance(\\d*)|SV_Target(\\d*))",
+                    "name": "support.type.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(true|false)\\b",
+                    "name": "constant.language.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\b(abort|abs|acos|all|AllMemoryBarrier|AllMemoryBarrierWithGroupSync|any|asdouble|asfloat|asin|asint|asuint|atan|atan2|ceil|CheckAccessFullyMapped|clamp|clip|cos|cosh|countbits|cross|D3DCOLORtoUBYTE4|ddx|ddx_coarse|ddx_fine|ddy|ddy_coarse|ddy_fine|degrees|determinant|DeviceMemoryBarrier|DeviceMemoryBarrierWithGroupSync|distance|dot|dst|errorf|EvaluateAttributeAtCentroid|EvaluateAttributeAtSample|EvaluateAttributeSnapped|exp|exp2|f16tof32|f32tof16|faceforward|firstbithigh|firstbitlow|floor|fma|fmod|frac|frexp|fwidth|GetRenderTargetSampleCount|GetRenderTargetSamplePosition|GroupMemoryBarrier|GroupMemoryBarrierWithGroupSync|InterlockedAdd|InterlockedAnd|InterlockedCompareExchange|InterlockedCompareStore|InterlockedExchange|InterlockedMax|InterlockedMin|InterlockedOr|InterlockedXor|isfinite|isinf|isnan|ldexp|length|lerp|lit|log|log10|log2|mad|max|min|modf|msad4|mul|noise|normalize|pow|printf|Process2DQuadTessFactorsAvg|Process2DQuadTessFactorsMax|Process2DQuadTessFactorsMin|ProcessIsolineTessFactors|ProcessQuadTessFactorsAvg|ProcessQuadTessFactorsMax|ProcessQuadTessFactorsMin|ProcessTriTessFactorsAvg|ProcessTriTessFactorsMax|ProcessTriTessFactorsMin|radians|rcp|reflect|refract|reversebits|round|rsqrt|saturate|sign|sin|sincos|sinh|smoothstep|sqrt|step|tan|tanh|tex1D|tex1Dbias|tex1Dgrad|tex1Dlod|tex1Dproj|tex2D|tex2Dbias|tex2Dgrad|tex2Dlod|tex2Dproj|tex3D|tex3Dbias|tex3Dgrad|tex3Dlod|tex3Dproj|texCUBE|texCUBEbias|texCUBEgrad|texCUBElod|texCUBEproj|transpose|trunc)\\b",
+                    "name": "support.function.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\s*##[^ ]*",
+                    "name": "keyword.control.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "\\s*(#include)\\s*((\\\"|<)\\S+(\\\"|>))",
+                    "captures": {
+                        "1": {
+                            "name": "meta.preprocessor keyword.dagormacro.hlsl.source.dagorsh"
+                        },
+                        "2": {
+                            "name": "string.quoted.double.source.dagorsh"
+                        }
+                    }
+                },
+                {
+                    "match": "\\s*#[^#][^ ]*",
+                    "name": "meta.preprocessor keyword.dagormacro.hlsl.source.dagorsh"
+                },
+                {
+                    "match": "(NULL)",
+                    "name": "constant.language.source.dagorsh"
+                },
+                {
+                    "include": "#numbers"
+                },
+                {
+                    "include": "#comments"
+                },
+                {
+                    "include": "#binding_types"
+                },
+                {
+                    "begin": "{",
+                    "end": "}",
+                    "patterns": [
+                        {
+                            "include": "#hlsl"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
