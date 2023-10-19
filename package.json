@@ -1,6 +1,17 @@
 {
     "name": "dagor-shader-language-server",
+    "displayName": "Dagor Shader Language Server",
+    "description": "Language Server for the Dagor Shader Language",
+    "publisher": "gaijin",
     "version": "0.0.1",
+    "license": "BSD-3-Clause",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Gaijin-Games-KFT/Dagor-Shader-Language-Server"
+    },
+    "bugs": {
+        "url": "https://github.com/Gaijin-Games-KFT/Dagor-Shader-Language-Server/issues"
+    },
     "engines": {
         "node": "*"
     },
