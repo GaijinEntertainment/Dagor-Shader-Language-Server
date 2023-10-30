@@ -6,6 +6,7 @@ Language Server for the Dagor Shader Language. At the moment it's work in progre
 
 ## Features
 
+-   Syntax highlight (not part of the actual language server)
 -   Diagnostics (mocked)
 -   Code completion (mocked)
 
