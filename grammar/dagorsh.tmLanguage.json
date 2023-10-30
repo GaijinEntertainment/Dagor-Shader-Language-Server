@@ -44,6 +44,61 @@
                     "comment": "BOOL AND NULL LITERAL",
                     "name": "constant.language.dagorsh",
                     "match": "\\b(true|false|NULL)\\b"
+                },
+                {
+                    "comment": "BLEND",
+                    "match": "\\b(blend_(asrc|adst|src|dst))(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(zero|one|sc|isc|sa|isa|da|ida|dc|idc|sasat|bf|ibf))?\\b",
+                    "captures": {
+                        "1": { "name": "support.variable.dagorsh" },
+                        "4": { "name": "comment.block.dagorsh" },
+                        "6": { "name": "keyword.operator.dagorsh" },
+                        "7": { "name": "comment.block.dagorsh" },
+                        "9": { "name": "constant.language.dagorsh" }
+                    }
+                },
+                {
+                    "comment": "CULL MODE",
+                    "match": "\\b(cull_mode)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(ccw|cw|none|cullmd))?\\b",
+                    "captures": {
+                        "1": { "name": "support.variable.dagorsh" },
+                        "3": { "name": "comment.block.dagorsh" },
+                        "5": { "name": "keyword.operator.dagorsh" },
+                        "6": { "name": "comment.block.dagorsh" },
+                        "8": { "name": "constant.language.dagorsh" }
+                    }
+                },
+                {
+                    "comment": "DEPTH AND STENCIL FUNC",
+                    "match": "\\b(z_func|stencil_func)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(never|less|equal|lessequal|greater|notequal|greaterequal|always))?\\b",
+                    "captures": {
+                        "1": { "name": "support.variable.dagorsh" },
+                        "3": { "name": "comment.block.dagorsh" },
+                        "5": { "name": "keyword.operator.dagorsh" },
+                        "6": { "name": "comment.block.dagorsh" },
+                        "8": { "name": "constant.language.dagorsh" }
+                    }
+                },
+                {
+                    "comment": "STENCIL",
+                    "match": "\\b(stencil_pass|stencil_fail|stencil_zfail)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(keep|zero|replace|incrsat|decrsat|incr|dect))?\\b",
+                    "captures": {
+                        "1": { "name": "support.variable.dagorsh" },
+                        "3": { "name": "comment.block.dagorsh" },
+                        "5": { "name": "keyword.operator.dagorsh" },
+                        "6": { "name": "comment.block.dagorsh" },
+                        "8": { "name": "constant.language.dagorsh" }
+                    }
+                },
+                {
+                    "comment": "COLOR WRITE",
+                    "match": "\\b(color_write)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)([rgba]{1,4}))?\\b",
+                    "captures": {
+                        "1": { "name": "support.variable.dagorsh" },
+                        "3": { "name": "comment.block.dagorsh" },
+                        "5": { "name": "keyword.operator.dagorsh" },
+                        "6": { "name": "comment.block.dagorsh" },
+                        "8": { "name": "constant.language.dagorsh" }
+                    }
                 }
             ]
         },
@@ -105,61 +160,6 @@
                     "comment": "OTHER KEYWORD",
                     "name": "keyword.other.dagorsh",
                     "match": "\\b(macro|define_macro_if_not_defined|endmacro|shader|block)\\b"
-                },
-                {
-                    "comment": "BLEND",
-                    "match": "\\b(blend_(asrc|adst|src|dst))(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(zero|one|sc|isc|sa|isa|da|ida|dc|idc|sasat|bf|ibf))?\\b",
-                    "captures": {
-                        "1": { "name": "support.variable.dagorsh" },
-                        "4": { "name": "comment.block.dagorsh" },
-                        "6": { "name": "keyword.operator.dagorsh" },
-                        "7": { "name": "comment.block.dagorsh" },
-                        "9": { "name": "constant.language.dagorsh" }
-                    }
-                },
-                {
-                    "comment": "CULL MODE",
-                    "match": "\\b(cull_mode)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(ccw|cw|none|cullmd))?\\b",
-                    "captures": {
-                        "1": { "name": "support.variable.dagorsh" },
-                        "3": { "name": "comment.block.dagorsh" },
-                        "5": { "name": "keyword.operator.dagorsh" },
-                        "6": { "name": "comment.block.dagorsh" },
-                        "8": { "name": "constant.language.dagorsh" }
-                    }
-                },
-                {
-                    "comment": "DEPTH AND STENCIL FUNC",
-                    "match": "\\b(z_func|stencil_func)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(never|less|equal|lessequal|greater|notequal|greaterequal|always))?\\b",
-                    "captures": {
-                        "1": { "name": "support.variable.dagorsh" },
-                        "3": { "name": "comment.block.dagorsh" },
-                        "5": { "name": "keyword.operator.dagorsh" },
-                        "6": { "name": "comment.block.dagorsh" },
-                        "8": { "name": "constant.language.dagorsh" }
-                    }
-                },
-                {
-                    "comment": "STENCIL",
-                    "match": "\\b(stencil_pass|stencil_fail|stencil_zfail)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(keep|zero|replace|incrsat|decrsat|incr|dect))?\\b",
-                    "captures": {
-                        "1": { "name": "support.variable.dagorsh" },
-                        "3": { "name": "comment.block.dagorsh" },
-                        "5": { "name": "keyword.operator.dagorsh" },
-                        "6": { "name": "comment.block.dagorsh" },
-                        "8": { "name": "constant.language.dagorsh" }
-                    }
-                },
-                {
-                    "comment": "COLOR WRITE",
-                    "match": "\\b(color_write)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)([rgba]{1,4}))?\\b",
-                    "captures": {
-                        "1": { "name": "support.variable.dagorsh" },
-                        "3": { "name": "comment.block.dagorsh" },
-                        "5": { "name": "keyword.operator.dagorsh" },
-                        "6": { "name": "comment.block.dagorsh" },
-                        "8": { "name": "constant.language.dagorsh" }
-                    }
                 }
             ]
         },
