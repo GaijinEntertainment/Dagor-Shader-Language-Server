@@ -31,10 +31,10 @@
             "begin": "{",
             "end": "}",
             "beginCaptures": {
-                "0": { "name": "punctuation.hlsl" }
+                "0": { "name": "punctuation.dagorsh" }
             },
             "endCaptures": {
-                "0": { "name": "punctuation.hlsl" }
+                "0": { "name": "punctuation.dagorsh" }
             },
             "patterns": [{ "include": "$self" }]
         },
@@ -143,7 +143,7 @@
                 {
                     "comment": "CONTROL KEYWORD",
                     "name": "keyword.control.dagorsh",
-                    "match": "\\b(if|else|supports|interval|compile|include|include_optional|assume|dont_render|no_dynstcode|render_trans|no_ablend|render_stage|use)\\b"
+                    "match": "\\b(if|else|compile|include|include_optional|assume|dont_render|no_dynstcode|render_trans|no_ablend|render_stage|use)\\b"
                 },
                 {
                     "comment": "BLOCK KEYWORD",
@@ -151,7 +151,7 @@
                     "captures": {
                         "1": { "name": "keyword.other.dagorsh" },
                         "3": { "name": "comment.block.dagorsh" },
-                        "5": { "name": "keyword.operator.hlsl" },
+                        "5": { "name": "keyword.operator.dagorsh" },
                         "6": { "name": "comment.block.dagorsh" },
                         "8": { "name": "constant.language.dagorsh" }
                     }
@@ -159,7 +159,7 @@
                 {
                     "comment": "OTHER KEYWORD",
                     "name": "keyword.other.dagorsh",
-                    "match": "\\b(macro|define_macro_if_not_defined|endmacro|shader|block)\\b"
+                    "match": "\\b(macro|define_macro_if_not_defined|endmacro|shader|block|supports|interval)\\b"
                 }
             ]
         },
