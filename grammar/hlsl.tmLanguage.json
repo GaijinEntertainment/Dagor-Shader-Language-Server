@@ -1,6 +1,7 @@
 {
     "scopeName": "source.hlsl",
     "name": "HLSL",
+    "fileTypes": ["hlsl"],
     "patterns": [
         { "include": "#block" },
         { "include": "#comment" },
@@ -326,22 +327,22 @@
             "patterns": [
                 {
                     "comment": "BUFFER TYPE",
-                    "name": "support.class.hlsl",
+                    "name": "storage.type.hlsl",
                     "match": "\\b(AppendStructuredBuffer|Buffer|ByteAddressBuffer|ConsumeStructuredBuffer|RWBuffer|RWByteAddressBuffer|RWStructuredBuffer|StructuredBuffer|tbuffer|cbuffer|ConstantBuffer|RasterizerOrderedBuffer|RasterizerOrderedByteAddressBuffer|RasterizerOrderedStructuredBuffer)\\b"
                 },
                 {
                     "comment": "TEXTURE TYPE",
-                    "name": "support.class.hlsl",
+                    "name": "storage.type.hlsl",
                     "match": "\\b((sampler|texture)(1D|2D|3D|CUBE)?|RWTexture1D|RWTexture1DArray|RWTexture2D|RWTexture2DArray|RWTexture3D|Texture1D|Texture1DArray|Texture2D|Texture2DArray|Texture2DMS|Texture2DMSArray|Texture3D|TextureCube|TextureCubeArray|FeedbackTexture2D|FeedbackTexture2DArray|RasterizerOrderedTexture1D|RasterizerOrderedTexture1DArray|RasterizerOrderedTexture2D|RasterizerOrderedTexture2DArray|RasterizerOrderedTexture3D)\\b"
                 },
                 {
                     "comment": "OTHER NON-PRIMITIVE TYPE",
-                    "name": "support.class.hlsl",
+                    "name": "storage.type.hlsl",
                     "match": "\\b(BlendState|DepthStencilState|InputPatch|LineStream|OutputPatch|PointStream|RasterizerState|SamplerState|SamplerComparisonState|TriangleStream|sampler_state|ComputeShader|DomainShader|GeometryShader|HullShader|PixelShader|VertexShader|RenderTargetView|DepthStencilView|Technique|RayQuery)\\b"
                 },
                 {
                     "comment": "DAGOR NON-PRIMITIVE TYPE",
-                    "name": "support.class.dagorsh",
+                    "name": "storage.type.dagorsh",
                     "match": "@((tex|smp)(2d|3d|Array|Cube|CubeArray)?|shd|buf|cbuf|uav)\\b"
                 },
                 {

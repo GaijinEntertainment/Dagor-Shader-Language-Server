@@ -1,6 +1,7 @@
 {
     "scopeName": "source.dagorsh",
     "name": "Dagor Shader Language",
+    "fileTypes": ["sh"],
     "patterns": [
         { "include": "#block" },
         { "include": "#hlsl-block" },
@@ -58,7 +59,7 @@
                 },
                 {
                     "comment": "CULL MODE",
-                    "match": "\\b(cull_mode)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(ccw|cw|none|cullmd))?\\b",
+                    "match": "\\b(cull_mode)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(ccw|cw|none))?\\b",
                     "captures": {
                         "1": { "name": "support.variable.dagorsh" },
                         "3": { "name": "comment.block.dagorsh" },
@@ -143,7 +144,7 @@
                 {
                     "comment": "CONTROL KEYWORD",
                     "name": "keyword.control.dagorsh",
-                    "match": "\\b(if|else|compile|include|include_optional|assume|dont_render|no_dynstcode|render_trans|no_ablend|render_stage|use)\\b"
+                    "match": "\\b(if|else|compile|include|include_optional|assume|dont_render|no_dynstcode|render_trans|no_ablend|render_stage|use|interval)\\b"
                 },
                 {
                     "comment": "BLOCK KEYWORD",
@@ -159,7 +160,7 @@
                 {
                     "comment": "OTHER KEYWORD",
                     "name": "keyword.other.dagorsh",
-                    "match": "\\b(macro|define_macro_if_not_defined|endmacro|shader|block|supports|interval)\\b"
+                    "match": "\\b(macro|define_macro_if_not_defined|endmacro|shader|block|supports)\\b"
                 }
             ]
         },
@@ -176,7 +177,7 @@
         "modifier": {
             "comment": "MODIFIER",
             "name": "storage.modifier.dagorsh",
-            "match": "\\b(always_referenced|static|dynamic|local|channel|no_warnings|const|undefined_value|public)\\b"
+            "match": "\\b(always_referenced|static|dynamic|local|channel|no_warnings|const|undefined_value|public|signed_pack|unsigned_pack|mul_1k|mul_2k|mul_4k|mul_8k|mul_16k|mul_32767|bounding_pack)\\b"
         },
         "function": {
             "comment": "FUNCTION",
@@ -191,7 +192,7 @@
             "patterns": [
                 {
                     "comment": "NON-PRIMITIVE TYPE",
-                    "name": "support.class.dagorsh",
+                    "name": "storage.type.dagorsh",
                     "match": "(?<!\\.(?:\\s|/\\*.*?\\*/)*)\\b(texture|buffer|const_buffer)\\b"
                 },
                 {
@@ -205,8 +206,8 @@
             "patterns": [
                 {
                     "comment": "NON-PRIMITIVE SHORT TYPE",
-                    "name": "support.class.dagorsh",
-                    "match": "@((tex|smp)(2d|3d|Array|Cube|CubeArray)?|static(Cube|TexArray)?|shd|buf|cbuf|uav|vsf|vsmp|psf|csf|ps_buf|vs_buf|cs_buf|ps_cbuf|vs_cbuf|cs_cbuf)\\b"
+                    "name": "storage.type.dagorsh",
+                    "match": "@((tex|smp)(2d|3d|Array|Cube|CubeArray)?|static(Cube|TexArray)?|shd|buf|cbuf|uav)\\b"
                 },
                 {
                     "comment": "PRIMITIVE SHORT TYPE",
@@ -216,18 +217,9 @@
             ]
         },
         "variable": {
-            "patterns": [
-                {
-                    "comment": "BUILT-IN VARIABLE",
-                    "name": "support.variable.dagorsh",
-                    "match": "\\b(alpha_to_coverage|z_write|z_test|stencil|view_instances|stencil_ref|slope_z_bias|z_bias|two_sided|real_two_sided|globtm|projtm|viewprojtm|local_view_x|local_view_y|local_view_z|local_view_pos|world_local_x|world_local_y|world_local_z|world_local_pos|vpr_const_array)\\b"
-                },
-                {
-                    "comment": "VARIABLE",
-                    "name": "variable.dagorsh",
-                    "match": "[a-zA-Z_]\\w*"
-                }
-            ]
+            "comment": "VARIABLE",
+            "name": "variable.dagorsh",
+            "match": "[a-zA-Z_]\\w*"
         },
         "test": {
             "comment": "ONLY FOR DEBUGGING THE GRAMMAR",
