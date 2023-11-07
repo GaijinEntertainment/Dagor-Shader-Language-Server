@@ -5,8 +5,9 @@ import {
     Diagnostic,
     DiagnosticSeverity,
     InitializeParams,
+    InitializeResult,
+    InitializedParams,
     TextDocumentPositionParams,
-    TextDocumentSyncKind,
     TextDocuments,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -14,26 +15,89 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 export abstract class Server {
     protected connection: Connection;
     protected documents: TextDocuments<TextDocument>;
+    protected workspaceFolder = '';
+    protected supportWorkspaceFolders = false;
+
+    private static server: Server;
+
+    public static getServer(): Server {
+        return Server.server;
+    }
+
+    public async getConfig(name: string): Promise<any> {
+        return await this.connection.workspace.getConfiguration(name);
+    }
 
     public constructor() {
         this.connection = this.createConnection();
         this.documents = new TextDocuments(TextDocument);
-        this.onInitialize();
+        this.initialize();
         this.addFeatures();
         this.listen();
+        Server.server = this;
     }
 
     protected abstract createConnection(): Connection;
 
-    private onInitialize(): void {
+    private initialize(): void {
         this.connection.onInitialize((ip: InitializeParams) => {
-            return {
-                capabilities: {
-                    textDocumentSync: TextDocumentSyncKind.Incremental,
-                    completionProvider: {},
-                },
-            };
+            return this.onInitialize(ip);
         });
+        this.connection.onInitialized(async (ip: InitializedParams) => {
+            await this.onInitialized(ip);
+        });
+    }
+
+    protected abstract onInitialize(ip: InitializeParams): InitializeResult;
+
+    protected async onInitialized(ip: InitializedParams): Promise<void> {
+        if (this.supportWorkspaceFolders) {
+            const wfs = await this.connection.workspace.getWorkspaceFolders();
+            if (wfs?.length) {
+                this.workspaceFolder = wfs[0].uri;
+            }
+        }
+    }
+
+    protected collectClientCapabilities(ip: InitializeParams): void {
+        this.supportWorkspaceFolders =
+            ip.capabilities.workspace?.workspaceFolders ?? false;
+    }
+
+    public getDocuments(): TextDocuments<TextDocument> {
+        return this.documents;
+    }
+
+    public getWorkspaceFolder(): string {
+        return this.workspaceFolder;
+    }
+
+    public showInfoMessage(message: string): void {
+        this.connection.window.showInformationMessage(message);
+    }
+
+    public showWarningMessage(message: string): void {
+        this.connection.window.showWarningMessage(message);
+    }
+
+    public showErrorMessage(message: string): void {
+        this.connection.window.showErrorMessage(message);
+    }
+
+    public log(message: string): void {
+        this.connection.console.log(message);
+    }
+
+    public logInfo(message: string): void {
+        this.connection.console.info(message);
+    }
+
+    public logWarning(message: string): void {
+        this.connection.console.warn(message);
+    }
+
+    public logError(message: string): void {
+        this.connection.console.error(message);
     }
 
     protected addFeatures(): void {
