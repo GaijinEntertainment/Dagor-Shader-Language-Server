@@ -3,10 +3,11 @@ import { log } from '../helper/server-helper';
 
 import * as path from 'path';
 
-const logAllIncludeFolders = false;
-
 export const includeFolders = new Map<string, Map<string, string[]>>();
 //                                    game        config  include folders
+
+const blkContentCache = new Map<string, string>();
+const logAllIncludeFolders = false;
 
 export async function collectIncludeFolders(): Promise<void> {
     const gameFolders = await getGameFolders();
@@ -28,7 +29,7 @@ async function addIncludeFolders(gameFolder: string): Promise<void> {
         includeFolders.set(gameFolder, new Map());
         const shaderConfigs = await getShaderConfigs(shadersFolder);
         for (const shaderConfig of shaderConfigs) {
-            addIncludeFoldersFromBlk(
+            await addIncludeFoldersFromBlk(
                 gameFolder,
                 shaderConfig,
                 `${shadersFolder}/${shaderConfig}`
@@ -61,9 +62,18 @@ async function addIncludeFoldersFromBlk(
         result = [];
         includeFolders.get(gameFolder)?.set(shaderConfig, result);
     }
-    const blkContent = await loadFile(blkPath);
+    const blkContent = await getBlkContent(blkPath);
     addIncludeFoldersFromOneBlk(gameFolder, blkContent, result);
-    followBlkIncludes(gameFolder, shaderConfig, blkPath, blkContent);
+    await followBlkIncludes(gameFolder, shaderConfig, blkPath, blkContent);
+}
+
+async function getBlkContent(blkPath: string): Promise<string> {
+    let blkContent = blkContentCache.get(blkPath);
+    if (!blkContent) {
+        blkContent = await loadFile(blkPath);
+        blkContentCache.set(blkPath, blkContent);
+    }
+    return blkContent;
 }
 
 function addIncludeFoldersFromOneBlk(
@@ -86,12 +96,12 @@ function addIncludeFoldersFromOneBlk(
     }
 }
 
-function followBlkIncludes(
+async function followBlkIncludes(
     gameFolder: string,
     shaderConfig: string,
     blkPath: string,
     blkContent: string
-): void {
+): Promise<void> {
     let regexResult: RegExpExecArray | null;
     const pattern =
         /((?<=\binclude\s*").*?(?="))|((?<=\binclude\s+)[^"]*?(?=(\r|\n|$)))/g;
@@ -101,7 +111,7 @@ function followBlkIncludes(
             regexResult.index + regexResult[0].length
         );
         const workspacePath = path.join(path.dirname(blkPath), relativePath);
-        addIncludeFoldersFromBlk(gameFolder, shaderConfig, workspacePath);
+        await addIncludeFoldersFromBlk(gameFolder, shaderConfig, workspacePath);
     }
 }
 
