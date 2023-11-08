@@ -3,8 +3,10 @@ import { log } from '../helper/server-helper';
 
 import * as path from 'path';
 
-export const includeFolders = new Map<string, Map<string, string[]>>();
-//                                    game        config  include folders
+export type Game = string;
+export type ShaderConfig = string;
+
+export const includeFolders = new Map<Game, Map<ShaderConfig, string[]>>();
 
 const blkContentCache = new Map<string, string>();
 const logAllIncludeFolders = false;

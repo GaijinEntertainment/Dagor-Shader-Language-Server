@@ -10,6 +10,10 @@ export function getWorkspaceFolder(): string {
     return Server.getServer().getWorkspaceFolder();
 }
 
+export async function getConfiguration(name: string): Promise<any> {
+    Server.getServer().getConfiguration(name);
+}
+
 export function showInfoMessage(message: string): void {
     Server.getServer().showInfoMessage(message);
 }

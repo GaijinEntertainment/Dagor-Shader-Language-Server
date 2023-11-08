@@ -24,10 +24,6 @@ export abstract class Server {
         return Server.server;
     }
 
-    public async getConfig(name: string): Promise<any> {
-        return await this.connection.workspace.getConfiguration(name);
-    }
-
     public constructor() {
         this.connection = this.createConnection();
         this.documents = new TextDocuments(TextDocument);
@@ -70,6 +66,10 @@ export abstract class Server {
 
     public getWorkspaceFolder(): string {
         return this.workspaceFolder;
+    }
+
+    public async getConfiguration(name: string): Promise<any> {
+        return await this.connection.workspace.getConfiguration(name);
     }
 
     public showInfoMessage(message: string): void {

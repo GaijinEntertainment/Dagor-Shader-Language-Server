@@ -4,11 +4,11 @@ import { includeFolders } from '../processor/include-processor';
 
 import { exists } from '../helper/fs-helper';
 import {
+    getConfiguration,
     getWorkspaceFolder,
     log,
     showWarningMessage,
 } from '../helper/server-helper';
-import { Server } from '../server';
 
 import * as path from 'path';
 
@@ -78,13 +78,13 @@ async function getIncludeFileLink(
 
 async function getIncludePaths(): Promise<string[]> {
     const game = await getGame();
-    const shaderConfiguration = await getShaderConfig(game);
-    logGameAndConfiguration(game, shaderConfiguration);
-    return includeFolders.get(game)!.get(shaderConfiguration)!;
+    const shaderConfig = await getShaderConfig(game);
+    logGameAndShaderConfig(game, shaderConfig);
+    return includeFolders.get(game)!.get(shaderConfig)!;
 }
 
 async function getGame(): Promise<string> {
-    const game: string = await Server.getServer().getConfig(
+    const game: string = await getConfiguration(
         'launchOption.currentConfig.Game'
     );
     return game ?? includeFolders.keys().next().value;
@@ -106,7 +106,7 @@ async function getShaderConfig(game: string): Promise<string> {
 async function getShaderConfigBasedOnPlatform(
     shaderConfigs: Map<string, string[]>
 ): Promise<string | null> {
-    const platform: string | undefined = await Server.getServer().getConfig(
+    const platform: string | undefined = await getConfiguration(
         'launchOption.currentConfig.Platform'
     );
     if (platform) {
@@ -122,7 +122,7 @@ async function getShaderConfigBasedOnPlatform(
 async function getShaderConfigBasedOnDriver(
     shaderConfigs: Map<string, string[]>
 ): Promise<string | null> {
-    const buildCommand: string = await Server.getServer().getConfig(
+    const buildCommand: string = await getConfiguration(
         'launchOption.currentConfig.Driver.BuildCommand'
     );
     if (buildCommand) {
@@ -143,13 +143,10 @@ async function getShaderConfigBasedOnDriver(
     return null;
 }
 
-function logGameAndConfiguration(
-    game: string,
-    shaderConfiguration: string
-): void {
+function logGameAndShaderConfig(game: string, shaderConfig: string): void {
     if (!logIncludeResolution) {
         return;
     }
     log(`selected game: ${game}`);
-    log(`selected configuration: ${shaderConfiguration}`);
+    log(`selected shader config: ${shaderConfig}`);
 }
