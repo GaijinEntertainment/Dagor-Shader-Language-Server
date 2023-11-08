@@ -37,8 +37,8 @@ export abstract class Server {
     }
 
     protected addFeatures(): void {
-        this.addMockedCodeCompletion();
-        this.addMockedDiagnostics();
+        // this.addMockedCodeCompletion();
+        // this.addMockedDiagnostics();
     }
 
     private addMockedCodeCompletion(): void {
