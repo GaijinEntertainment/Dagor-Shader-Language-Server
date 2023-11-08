@@ -35,7 +35,9 @@ export async function documentLinkResolveProvider(
     if (includeFileLink) {
         return includeFileLink;
     }
-    showWarningMessage("Couldn't find the file");
+    showWarningMessage(
+        "Couldn't find the file. Maybe you should change the launch options."
+    );
     return null;
 }
 
@@ -78,19 +80,25 @@ async function getIncludeFileLink(
 
 async function getIncludePaths(): Promise<string[]> {
     const game = await getGame();
+    if (!game) {
+        return [];
+    }
     const shaderConfig = await getShaderConfig(game);
+    if (!shaderConfig) {
+        return [];
+    }
     logGameAndShaderConfig(game, shaderConfig);
-    return includeFolders.get(game)!.get(shaderConfig)!;
+    return includeFolders.get(game)?.get(shaderConfig) ?? [];
 }
 
-async function getGame(): Promise<string> {
-    const game: string = await getConfiguration(
+async function getGame(): Promise<string | undefined> {
+    const game: string | undefined = await getConfiguration(
         'launchOption.currentConfig.Game'
     );
-    return game ?? includeFolders.keys().next().value;
+    return game ?? includeFolders.keys()?.next()?.value;
 }
 
-async function getShaderConfig(game: string): Promise<string> {
+async function getShaderConfig(game: string): Promise<string | undefined> {
     const shaderConfigs = includeFolders.get(game);
     let shaderConfig = await getShaderConfigBasedOnPlatform(shaderConfigs!);
     if (shaderConfig) {
@@ -100,7 +108,7 @@ async function getShaderConfig(game: string): Promise<string> {
     if (shaderConfig) {
         return shaderConfig;
     }
-    return shaderConfigs!.keys().next().value;
+    return shaderConfigs?.keys().next().value;
 }
 
 async function getShaderConfigBasedOnPlatform(
@@ -122,7 +130,7 @@ async function getShaderConfigBasedOnPlatform(
 async function getShaderConfigBasedOnDriver(
     shaderConfigs: Map<string, string[]>
 ): Promise<string | null> {
-    const buildCommand: string = await getConfiguration(
+    const buildCommand: string | undefined = await getConfiguration(
         'launchOption.currentConfig.Driver.BuildCommand'
     );
     if (buildCommand) {
