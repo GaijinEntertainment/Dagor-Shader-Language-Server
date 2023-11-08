@@ -1,4 +1,4 @@
-import { Dirent } from 'fs';
+import * as fs from 'fs';
 import * as fsp from 'fs/promises';
 
 export async function loadFile(file: string): Promise<string> {
@@ -15,6 +15,10 @@ export async function exists(path: string): Promise<boolean> {
     }
 }
 
-export async function getFolderContent(path: string): Promise<Dirent[]> {
+export async function getFolderContent(path: string): Promise<fs.Dirent[]> {
     return await fsp.readdir(path, { withFileTypes: true });
+}
+
+export function watchFile(path: string, callback: () => void): fs.FSWatcher {
+    return fs.watch(path, callback);
 }
