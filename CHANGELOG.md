@@ -4,5 +4,4 @@ There are no public releases yet.
 
 ## [Unreleased]
 
--   Diagnostics (mocked)
--   Code completion (mocked)
+-   Syntax highlight (not part of the actual language server)

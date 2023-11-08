@@ -43,8 +43,15 @@ This repository contains 2 versions of the language server: the desktop version 
 
 ## Debug
 
+### TypeScript code
+
 -   If you want to write something to the console, use `log`, ˛`logInfo`, `logWarning`, or `logError` (actually, if you run the server from Visual Studio Code, `console.log` will work, however, in Visual Studio, `console.log` will break the extension).
 -   If you want to use breakpoints, you have to configure the client properly. For more informations see the [Visual Studio Code client's build instructions](https://github.com/Gaijin-Games-KFT/Dagor-Shader-Language-Support-for-Visual-Studio-Code/blob/main/BUILD.md).
+
+### TextMate grammar
+
+-   If you want to know which TextMate rule matched at the cursor, press F1, and select **Developer: Inspect Editor Tokens and Scopes**.
+-   If you want to read the steps of the TextMate matching, press F1, and select **Developer: Start Text Mate Syntax Grammar Logging**.
 
 ## Scripts
 
