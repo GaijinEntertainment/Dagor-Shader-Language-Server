@@ -144,7 +144,7 @@
                 {
                     "comment": "CONTROL KEYWORD",
                     "name": "keyword.control.dagorsh",
-                    "match": "\\b(if|else|compile|include|include_optional|assume|dont_render|no_dynstcode|render_trans|no_ablend|render_stage|use|interval)\\b"
+                    "match": "\\b(if|else|compile|include|include_optional|assume|dont_render|no_dynstcode|render_trans|no_ablend|render_stage|interval)\\b"
                 },
                 {
                     "comment": "BLOCK KEYWORD",
@@ -193,12 +193,12 @@
                 {
                     "comment": "NON-PRIMITIVE TYPE",
                     "name": "storage.type.dagorsh",
-                    "match": "(?<!\\.(?:\\s|/\\*.*?\\*/)*)\\b(texture|buffer|const_buffer)\\b"
+                    "match": "(?<!\\.(?:\\s|/\\*.*?\\*/)*)\\b(texture|buffer|const_buffer|sampler)\\b"
                 },
                 {
                     "comment": "PRIMITIVE TYPE",
                     "name": "storage.type.dagorsh",
-                    "match": "\\b(color8|float1|float2|float3|float4|float|int|int4|short2|short4|ubyte4|short2n|short4n|ushort2n|ushort4n|half2|half4|udec3|dec3n)\\b"
+                    "match": "\\b(bool|float|float1|float2|float3|float4|float4x4|int|int4|color8|short2|short4|ubyte4|short2n|short4n|ushort2n|ushort4n|half2|half4|udec3|dec3n)\\b"
                 }
             ]
         },
@@ -207,7 +207,7 @@
                 {
                     "comment": "NON-PRIMITIVE SHORT TYPE",
                     "name": "storage.type.dagorsh",
-                    "match": "@((tex|smp)(2d|3d|Array|Cube|CubeArray)?|static(Cube|TexArray)?|shd|buf|cbuf|uav)\\b"
+                    "match": "@((tex|smp)(2d|3d|Array|Cube|CubeArray)?|static(Cube|TexArray)?|shd|buf|cbuf|uav|sampler)\\b"
                 },
                 {
                     "comment": "PRIMITIVE SHORT TYPE",
