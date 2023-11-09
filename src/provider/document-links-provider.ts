@@ -8,37 +8,82 @@ import { getDocuments } from '../helper/server-helper';
 const debugLabel = false;
 
 export function documentLinksProvider(dlp: DocumentLinkParams): DocumentLink[] {
-    const textDocument = getDocuments().get(dlp.textDocument.uri);
-    if (textDocument == null) {
+    const document = getDocuments().get(dlp.textDocument.uri);
+    if (document == null) {
         return [];
     }
     const links: DocumentLink[] = [];
-    addIncludeLinks(textDocument, links, IncludeType.HLSL_QUOTED);
-    addIncludeLinks(textDocument, links, IncludeType.HLSL_ANGULAR);
-    addIncludeLinks(textDocument, links, IncludeType.DAGORSH);
+    const text = preprocess(document.getText());
+    addIncludeLinks(document, text, links, IncludeType.HLSL_QUOTED);
+    addIncludeLinks(document, text, links, IncludeType.HLSL_ANGULAR);
+    addIncludeLinks(document, text, links, IncludeType.DAGORSH);
     return links;
 }
 
 function addIncludeLinks(
-    textDocument: TextDocument,
+    document: TextDocument,
+    text: string,
     links: DocumentLink[],
     includeType: IncludeType
 ): void {
-    const text = textDocument.getText();
     const pattern = getIncludePattern(includeType);
     let regexResult: RegExpExecArray | null;
     while ((regexResult = pattern.exec(text))) {
         const range = {
-            start: textDocument.positionAt(regexResult.index),
-            end: textDocument.positionAt(
-                regexResult.index + regexResult[0].length
-            ),
+            start: document.positionAt(regexResult.index),
+            end: document.positionAt(regexResult.index + regexResult[0].length),
         };
         if (links.every((link) => !rangesEqual(link.range, range))) {
-            const link = createLink(textDocument, includeType, range);
+            const link = createLink(document, includeType, range);
             links.push(link);
         }
     }
+}
+
+// at the moment it only replaces comments with spaces
+// later there will be a full preprocessing
+function preprocess(text: string): string {
+    let pattern = /\/\*(.|\s)*?\*\//gm;
+    let regexResult: RegExpExecArray | null;
+    while ((regexResult = pattern.exec(text))) {
+        text = replaceExcept(
+            text,
+            regexResult.index,
+            regexResult[0].length,
+            ' ',
+            '\r',
+            '\n'
+        );
+    }
+    pattern = /\/\/.*?$/gm;
+    while ((regexResult = pattern.exec(text))) {
+        text = replaceExcept(
+            text,
+            regexResult.index,
+            regexResult[0].length,
+            ' ',
+            '\r',
+            '\n'
+        );
+    }
+    return text;
+}
+
+function replaceExcept(
+    text: string,
+    start: number,
+    length: number,
+    replacement: string,
+    ...exceptCharacters: string[]
+): string {
+    let result = text;
+    for (let i = start; i < start + length; i++) {
+        if (exceptCharacters.every((char) => char !== result[i])) {
+            result =
+                result.substring(0, i) + replacement + result.substring(i + 1);
+        }
+    }
+    return result;
 }
 
 function getIncludePattern(includeType: IncludeType): RegExp {
