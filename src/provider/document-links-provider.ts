@@ -43,7 +43,7 @@ function addIncludeLinks(
 // at the moment it only replaces comments with spaces
 // later there will be a full preprocessing
 function preprocess(text: string): string {
-    let pattern = /\/\*(.|\s)*?\*\//gm;
+    let pattern = /\/\*[\s\S]*?\*\//gm;
     let regexResult: RegExpExecArray | null;
     while ((regexResult = pattern.exec(text))) {
         text = replaceExcept(
