@@ -11,7 +11,7 @@ export function getWorkspaceFolder(): string {
 }
 
 export async function getConfiguration(name: string): Promise<any> {
-    Server.getServer().getConfiguration(name);
+    return Server.getServer().getConfiguration(name);
 }
 
 export function showInfoMessage(message: string): void {

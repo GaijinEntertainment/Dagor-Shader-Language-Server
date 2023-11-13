@@ -69,7 +69,7 @@ export abstract class Server {
     }
 
     public async getConfiguration(name: string): Promise<any> {
-        return await this.connection.workspace.getConfiguration(name);
+        return this.connection.workspace.getConfiguration(name);
     }
 
     public showInfoMessage(message: string): void {
