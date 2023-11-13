@@ -2,6 +2,7 @@ import { CancellationToken, DocumentLink, Range } from 'vscode-languageserver';
 import { IncludeData } from '../helper/include-data';
 import { includeFolders } from '../processor/include-processor';
 
+import { URI } from 'vscode-uri';
 import { exists } from '../helper/fs-helper';
 import {
     getConfiguration,
@@ -45,16 +46,11 @@ async function getLocalFileLink(
     range: Range,
     data: IncludeData
 ): Promise<DocumentLink | null> {
-    const folderPath = path.parse(data.uri).dir;
-    const filePath = path.join(
-        // Node.js and the language server library handle URIs differently
-        folderPath.replace('file:///', '').replace(/%3A/g, ':'),
-        data.name
-    );
+    const filePath = path.resolve(URI.parse(data.uri).fsPath, '..', data.name);
     if (await exists(filePath)) {
         return {
             range: range,
-            target: `${folderPath}/${data.name}`,
+            target: URI.file(filePath).toString(),
         };
     }
     return null;
