@@ -30,7 +30,7 @@ export class ServerDesktop extends Server {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
                 workspace: { workspaceFolders: { supported: true } },
-                completionProvider: {},
+                // completionProvider: {},
                 documentLinkProvider: { resolveProvider: true },
             },
         };
