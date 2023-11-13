@@ -45,11 +45,12 @@ async function getLocalFileLink(
     range: Range,
     data: IncludeData
 ): Promise<DocumentLink | null> {
-    const filePath = path.resolve(URI.parse(data.uri).fsPath, '..', data.name);
-    if (await exists(filePath)) {
+    const originalFile = URI.parse(data.uri).fsPath;
+    const includedFile = path.resolve(originalFile, '..', data.name);
+    if (originalFile !== includedFile && (await exists(includedFile))) {
         return {
             range: range,
-            target: URI.file(filePath).toString(),
+            target: URI.file(includedFile).toString(),
         };
     }
     return null;
@@ -59,20 +60,20 @@ async function getIncludeFileLink(
     range: Range,
     data: IncludeData
 ): Promise<DocumentLink | null> {
-    const includePaths = await getIncludePaths();
-    for (const includePath of includePaths) {
-        const filePath = path.resolve(includePath, data.name);
-        if (await exists(filePath)) {
+    const includeFolders = await getIncludeFolders();
+    for (const includeFolder of includeFolders) {
+        const includedFile = path.resolve(includeFolder, data.name);
+        if (await exists(includedFile)) {
             return {
                 range: range,
-                target: URI.file(filePath).toString(),
+                target: URI.file(includedFile).toString(),
             };
         }
     }
     return null;
 }
 
-async function getIncludePaths(): Promise<string[]> {
+async function getIncludeFolders(): Promise<string[]> {
     const game = await getGame();
     if (!game) {
         return [];
