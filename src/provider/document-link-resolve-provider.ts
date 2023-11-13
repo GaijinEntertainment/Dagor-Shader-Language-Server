@@ -6,7 +6,6 @@ import { URI } from 'vscode-uri';
 import { exists } from '../helper/fs-helper';
 import {
     getConfiguration,
-    getWorkspaceFolder,
     log,
     showWarningMessage,
 } from '../helper/server-helper';
@@ -61,13 +60,12 @@ async function getIncludeFileLink(
     data: IncludeData
 ): Promise<DocumentLink | null> {
     const includePaths = await getIncludePaths();
-    for (const icludePath of includePaths) {
-        const relativePath = `${icludePath}/${data.name}`;
-        const absolutePath = `${getWorkspaceFolder()}/${relativePath}`;
-        if (await exists(relativePath)) {
+    for (const includePath of includePaths) {
+        const filePath = path.resolve(includePath, data.name);
+        if (await exists(filePath)) {
             return {
                 range: range,
-                target: absolutePath,
+                target: URI.file(filePath).toString(),
             };
         }
     }
