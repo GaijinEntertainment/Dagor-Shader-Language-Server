@@ -90,7 +90,9 @@ async function getGame(): Promise<string | undefined> {
     const game: string | undefined = await getConfiguration(
         'launchOption.currentConfig.Game'
     );
-    return game ?? includeFolders.keys()?.next()?.value;
+    return game
+        ? path.resolve('.', game)
+        : includeFolders.keys()?.next()?.value;
 }
 
 async function getShaderConfig(game: string): Promise<string | undefined> {

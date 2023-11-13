@@ -9,10 +9,10 @@ import { log } from '../helper/server-helper';
 import * as fs from 'fs';
 import * as path from 'path';
 
-export type Game = string;
+export type GameFolder = string;
 export type ShaderConfig = string;
 
-export let includeFolders = new Map<Game, Map<ShaderConfig, string[]>>();
+export let includeFolders = new Map<GameFolder, Map<ShaderConfig, string[]>>();
 
 export async function collectIncludeFolders(): Promise<void> {
     return await new IncludeProcessor().collectIncludeFolders();
@@ -21,7 +21,7 @@ export async function collectIncludeFolders(): Promise<void> {
 class IncludeProcessor {
     private static lastId = 0;
 
-    private includeFolders = new Map<Game, Map<ShaderConfig, string[]>>();
+    private includeFolders = new Map<GameFolder, Map<ShaderConfig, string[]>>();
     private blkContentCache = new Map<string, string>();
     private blkWatchers: fs.FSWatcher[] = [];
     private id = ++IncludeProcessor.lastId;
@@ -39,9 +39,18 @@ class IncludeProcessor {
     }
 
     private async getGameFolders(): Promise<string[]> {
-        const filesAndFolders = await getFolderContent('.');
+        let result = await this.getFoldersFrom('.');
+        if (await exists('./samples')) {
+            const samples = await this.getFoldersFrom('./samples');
+            result = result.concat(samples);
+        }
+        return result;
+    }
+
+    private async getFoldersFrom(pathFrom: string): Promise<string[]> {
+        const filesAndFolders = await getFolderContent(pathFrom);
         const folders = filesAndFolders.filter((item) => item.isDirectory());
-        return folders.map((item) => item.name);
+        return folders.map((item) => path.resolve(pathFrom, item.name));
     }
 
     private async addIncludeFolders(gameFolder: string): Promise<void> {
