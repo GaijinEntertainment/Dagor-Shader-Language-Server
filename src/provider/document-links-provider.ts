@@ -92,7 +92,7 @@ function getIncludePattern(includeType: IncludeType): RegExp {
     } else if (includeType === IncludeType.HLSL_ANGULAR) {
         return /(?<=#\s*include(\s|\/\*.*?\*\/)+<).*?(?=>)/g;
     } else {
-        return /(?<=\binclude(\s|\/\*.*?\*\/)+").*?(?=")/g;
+        return /(?<=\binclude(_optional)?(\s|\/\*.*?\*\/)+").*?(?=")/g;
     }
 }
 
