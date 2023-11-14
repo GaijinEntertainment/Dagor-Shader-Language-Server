@@ -8,6 +8,7 @@ import {
     createConnection,
 } from 'vscode-languageserver/node';
 
+import { SERVER_NAME, SERVER_VERSION } from './core/constant';
 import { collectIncludeFolders } from './processor/include-processor';
 import { documentLinkResolveProvider } from './provider/document-link-resolve-provider';
 import { documentLinksProvider } from './provider/document-links-provider';
@@ -28,9 +29,12 @@ export class ServerDesktop extends Server {
         return {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
-                workspace: { workspaceFolders: { supported: true } },
                 // completionProvider: {},
                 documentLinkProvider: { resolveProvider: true },
+            },
+            serverInfo: {
+                name: SERVER_NAME,
+                version: SERVER_VERSION,
             },
         };
     }

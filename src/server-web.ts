@@ -8,6 +8,7 @@ import {
     createConnection,
 } from 'vscode-languageserver/browser';
 
+import { SERVER_NAME, SERVER_VERSION } from './core/constant';
 import { Server } from './server';
 
 export class ServerWeb extends Server {
@@ -22,6 +23,10 @@ export class ServerWeb extends Server {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
                 // completionProvider: {},
+            },
+            serverInfo: {
+                name: SERVER_NAME,
+                version: SERVER_VERSION,
             },
         };
     }
