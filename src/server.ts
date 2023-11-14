@@ -11,93 +11,80 @@ import {
     TextDocuments,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import {
+    getCapabilities,
+    initializeCapabilities,
+} from './core/capability-manager';
+
+import { Configuration } from './core/configuration';
+import { initializeConfiguration } from './core/configuration-manager';
+import { initializeDebug } from './core/debug';
 
 export abstract class Server {
+    private static server: Server;
+
     protected connection: Connection;
     protected documents: TextDocuments<TextDocument>;
-    protected workspaceFolder = '';
-    protected supportWorkspaceFolders = false;
-
-    private static server: Server;
 
     public static getServer(): Server {
         return Server.server;
     }
 
     public constructor() {
+        Server.server = this;
         this.connection = this.createConnection();
         this.documents = new TextDocuments(TextDocument);
         this.initialize();
         this.addFeatures();
         this.listen();
-        Server.server = this;
     }
 
     protected abstract createConnection(): Connection;
 
     private initialize(): void {
+        initializeDebug(this.connection);
         this.connection.onInitialize((ip: InitializeParams) => {
+            initializeCapabilities(ip.capabilities);
             return this.onInitialize(ip);
         });
         this.connection.onInitialized(async (ip: InitializedParams) => {
+            await initializeConfiguration(this.connection);
             await this.onInitialized(ip);
         });
     }
 
     protected abstract onInitialize(ip: InitializeParams): InitializeResult;
 
-    protected async onInitialized(ip: InitializedParams): Promise<void> {
-        if (this.supportWorkspaceFolders) {
-            const wfs = await this.connection.workspace.getWorkspaceFolders();
-            if (wfs?.length) {
-                this.workspaceFolder = wfs[0].uri;
-            }
-        }
-    }
+    protected async onInitialized(ip: InitializedParams): Promise<void> {}
 
-    protected collectClientCapabilities(ip: InitializeParams): void {
-        this.supportWorkspaceFolders =
-            ip.capabilities.workspace?.workspaceFolders ?? false;
-    }
+    public configurationChanged(
+        oldConfiguration: Configuration,
+        newConfiguration: Configuration
+    ): void {}
 
     public getDocuments(): TextDocuments<TextDocument> {
         return this.documents;
     }
 
-    public getWorkspaceFolder(): string {
-        return this.workspaceFolder;
-    }
-
-    public async getConfiguration(name: string): Promise<any> {
-        return this.connection.workspace.getConfiguration(name);
-    }
-
     public showInfoMessage(message: string): void {
+        if (!getCapabilities().showMessage) {
+            return;
+        }
         this.connection.window.showInformationMessage(message);
     }
 
     public showWarningMessage(message: string): void {
+        if (!getCapabilities().showMessage) {
+            return;
+        }
         this.connection.window.showWarningMessage(message);
     }
 
     public showErrorMessage(message: string): void {
+        if (!getCapabilities().showMessage) {
+            return;
+        }
         this.connection.window.showErrorMessage(message);
-    }
-
-    public log(message: string): void {
-        this.connection.console.log(message);
-    }
-
-    public logInfo(message: string): void {
-        this.connection.console.info(message);
-    }
-
-    public logWarning(message: string): void {
-        this.connection.console.warn(message);
-    }
-
-    public logError(message: string): void {
-        this.connection.console.error(message);
     }
 
     protected addFeatures(): void {

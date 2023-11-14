@@ -25,7 +25,6 @@ export class ServerDesktop extends Server {
     }
 
     protected override onInitialize(ip: InitializeParams): InitializeResult {
-        this.collectClientCapabilities(ip);
         return {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
@@ -39,7 +38,6 @@ export class ServerDesktop extends Server {
     protected override async onInitialized(
         ip: InitializedParams
     ): Promise<void> {
-        await super.onInitialized(ip);
         await collectIncludeFolders();
     }
 }

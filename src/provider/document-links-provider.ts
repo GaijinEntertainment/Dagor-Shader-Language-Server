@@ -1,11 +1,12 @@
 import { DocumentLink, DocumentLinkParams, Range } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+
+import { getCapabilities } from '../core/capability-manager';
+import { showDocumentLinkDebugLabel } from '../core/debug';
 import { rangesEqual } from '../helper/helper';
 import { IncludeData } from '../helper/include-data';
 import { IncludeType } from '../helper/include-type';
 import { getDocuments } from '../helper/server-helper';
-
-const debugLabel = false;
 
 export function documentLinksProvider(dlp: DocumentLinkParams): DocumentLink[] {
     const document = getDocuments().get(dlp.textDocument.uri);
@@ -111,7 +112,7 @@ function createLink(
 }
 
 function getDebugTooltip(includeType: IncludeType): string | undefined {
-    if (!debugLabel) {
+    if (!showDocumentLinkDebugLabel || !getCapabilities().documentLinkTooltip) {
         return undefined;
     }
     if (includeType === IncludeType.HLSL_QUOTED) {

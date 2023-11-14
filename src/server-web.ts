@@ -18,7 +18,6 @@ export class ServerWeb extends Server {
     }
 
     protected override onInitialize(ip: InitializeParams): InitializeResult {
-        this.collectClientCapabilities(ip);
         return {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,

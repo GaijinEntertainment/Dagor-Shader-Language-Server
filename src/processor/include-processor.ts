@@ -1,10 +1,10 @@
+import { log, logShaderConfigs } from '../core/debug';
 import {
     exists,
     getFolderContent,
     loadFile,
     watchFile,
 } from '../helper/fs-helper';
-import { log } from '../helper/server-helper';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -25,7 +25,6 @@ class IncludeProcessor {
     private blkContentCache = new Map<string, string>();
     private blkWatchers: fs.FSWatcher[] = [];
     private id = ++IncludeProcessor.lastId;
-    private logAllIncludeFolders = false;
 
     public async collectIncludeFolders(): Promise<void> {
         const gameFolders = await this.getGameFolders();
@@ -169,7 +168,7 @@ class IncludeProcessor {
     }
 
     private logIncludeFolders(): void {
-        if (!this.logAllIncludeFolders) {
+        if (!logShaderConfigs) {
             return;
         }
         for (const [game, map] of this.includeFolders) {

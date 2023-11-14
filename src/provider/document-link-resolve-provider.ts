@@ -1,18 +1,14 @@
 import { CancellationToken, DocumentLink, Range } from 'vscode-languageserver';
+import { URI } from 'vscode-uri';
+
+import { getExternalConfiguration } from '../core/configuration-manager';
+import { log, logDocumentLinkResolveShaderConfig } from '../core/debug';
+import { exists } from '../helper/fs-helper';
 import { IncludeData } from '../helper/include-data';
+import { showWarningMessage } from '../helper/server-helper';
 import { includeFolders } from '../processor/include-processor';
 
-import { URI } from 'vscode-uri';
-import { exists } from '../helper/fs-helper';
-import {
-    getConfiguration,
-    log,
-    showWarningMessage,
-} from '../helper/server-helper';
-
 import * as path from 'path';
-
-const logIncludeResolution = false;
 
 export async function documentLinkResolveProvider(
     unresolvedLink: DocumentLink,
@@ -74,6 +70,9 @@ async function getIncludeFileLink(
 }
 
 async function getIncludeFolders(): Promise<string[]> {
+    if (!includeFolders.size) {
+        return [];
+    }
     const game = await getGame();
     if (!game) {
         return [];
@@ -87,7 +86,7 @@ async function getIncludeFolders(): Promise<string[]> {
 }
 
 async function getGame(): Promise<string | undefined> {
-    const game: string | undefined = await getConfiguration(
+    const game = await getExternalConfiguration<string>(
         'launchOption.currentConfig.Game'
     );
     return game
@@ -111,7 +110,7 @@ async function getShaderConfig(game: string): Promise<string | undefined> {
 async function getShaderConfigBasedOnPlatform(
     shaderConfigs: Map<string, string[]>
 ): Promise<string | null> {
-    const platform: string | undefined = await getConfiguration(
+    const platform = await getExternalConfiguration<string>(
         'launchOption.currentConfig.Platform'
     );
     if (platform) {
@@ -127,7 +126,7 @@ async function getShaderConfigBasedOnPlatform(
 async function getShaderConfigBasedOnDriver(
     shaderConfigs: Map<string, string[]>
 ): Promise<string | null> {
-    const buildCommand: string | undefined = await getConfiguration(
+    const buildCommand = await getExternalConfiguration<string>(
         'launchOption.currentConfig.Driver.BuildCommand'
     );
     if (buildCommand) {
@@ -149,7 +148,7 @@ async function getShaderConfigBasedOnDriver(
 }
 
 function logGameAndShaderConfig(game: string, shaderConfig: string): void {
-    if (!logIncludeResolution) {
+    if (!logDocumentLinkResolveShaderConfig) {
         return;
     }
     log(`selected game: ${game}`);
