@@ -2,7 +2,7 @@
 
 ## Desktop and web versions
 
-This repository contains 2 versions of the language server: the desktop version can run in IDEs supporting the Language Server Protocol, the web version can run in https://github.dev or https://vscode.dev. At the moment the desktop and the web versions have exactly the same features, but in the future, there will be differences (for example the web version won't be able to run the compiler).
+This repository contains 2 versions of the language server: the desktop version can run in IDEs supporting the Language Server Protocol, the web version can run in https://github.dev or https://vscode.dev. The web version doesn't support document links, because in the browser, VS Code uses virtual workspaces and therefore the language server can't access directly files.
 
 ## Build
 

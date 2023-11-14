@@ -2,11 +2,12 @@
 
 [![build](https://github.com/Gaijin-Games-KFT/Dagor-Shader-Language-Server/actions/workflows/build.yml/badge.svg)](https://github.com/Gaijin-Games-KFT/Dagor-Shader-Language-Server/actions/workflows/build.yml)
 
-Language Server for the Dagor Shader Language. At the moment it's work in progress. There is a [Visual Studio Code client](https://github.com/Gaijin-Games-KFT/Dagor-Shader-Language-Support-for-Visual-Studio-Code).
+Language Server for the Dagor Shader Language. At the moment it's work in progress. There is a [Visual Studio Code client](https://github.com/Gaijin-Games-KFT/Dagor-Shader-Language-Support-for-Visual-Studio-Code). Currently, in order to use the extension, you have to install Node.js.
 
 ## Features
 
 -   Syntax highlight (not part of the actual language server)
+-   Document links (ctrl + click on #include, include, and include_optional directives)
 
 ## Issues
 
