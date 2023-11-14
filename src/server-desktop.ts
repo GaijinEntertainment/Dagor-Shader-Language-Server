@@ -70,7 +70,6 @@ export class ServerDesktop extends Server {
         shaderConfigOverride: string
     ): Promise<void> {
         if (shaderConfigOverride) {
-            this.showWarningMessage(shaderConfigOverride);
             await collectOverrideIncludeFolders();
         } else {
             await collectIncludeFolders();
