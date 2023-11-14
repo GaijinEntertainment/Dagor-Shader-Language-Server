@@ -130,8 +130,9 @@ async function getShaderConfigBasedOnDriver(
         'launchOption.currentConfig.Driver.BuildCommand'
     );
     if (buildCommand) {
-        const pattern = /(?<=\.\/compile(_game)?_shaders_).*?(?=\.bat)/g;
-        const regexResult = pattern.exec(buildCommand);
+        const shaderConfigFileRegex =
+            /(?<=\.\/compile(_game)?_shaders_).*?(?=\.bat)/;
+        const regexResult = shaderConfigFileRegex.exec(buildCommand);
         if (regexResult) {
             const driver = buildCommand.substring(
                 regexResult.index,

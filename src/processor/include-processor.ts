@@ -126,9 +126,9 @@ class IncludeProcessor {
         blkContent: string,
         result: string[]
     ): void {
-        const pattern = /(?<=\bincDir\s*:\s*t\s*=\s*").*?(?=")/g;
+        const incDirRegex = /(?<=\bincDir\s*:\s*t\s*=\s*").*?(?=")/g;
         let regexResult: RegExpExecArray | null;
-        while ((regexResult = pattern.exec(blkContent))) {
+        while ((regexResult = incDirRegex.exec(blkContent))) {
             const relativePath = blkContent.substring(
                 regexResult.index,
                 regexResult.index + regexResult[0].length
@@ -148,9 +148,9 @@ class IncludeProcessor {
         blkContent: string
     ): Promise<void> {
         let regexResult: RegExpExecArray | null;
-        const pattern =
+        const includeRegex =
             /((?<=\binclude\s*").*?(?="))|((?<=\binclude\s+)[^"\s]+(?=\s))/g;
-        while ((regexResult = pattern.exec(blkContent))) {
+        while ((regexResult = includeRegex.exec(blkContent))) {
             const relativePath = blkContent.substring(
                 regexResult.index,
                 regexResult.index + regexResult[0].length

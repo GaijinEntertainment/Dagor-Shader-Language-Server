@@ -27,9 +27,9 @@ function addIncludeLinks(
     links: DocumentLink[],
     includeType: IncludeType
 ): void {
-    const pattern = getIncludePattern(includeType);
+    const includeRegex = getIncludeRegex(includeType);
     let regexResult: RegExpExecArray | null;
-    while ((regexResult = pattern.exec(text))) {
+    while ((regexResult = includeRegex.exec(text))) {
         const range = {
             start: document.positionAt(regexResult.index),
             end: document.positionAt(regexResult.index + regexResult[0].length),
@@ -44,9 +44,9 @@ function addIncludeLinks(
 // at the moment it only replaces comments with spaces
 // later there will be a full preprocessing
 function preprocess(text: string): string {
-    let pattern = /\/\*[\s\S]*?\*\//gm;
+    const blockCommentRegex = /\/\*[\s\S]*?\*\//gm;
     let regexResult: RegExpExecArray | null;
-    while ((regexResult = pattern.exec(text))) {
+    while ((regexResult = blockCommentRegex.exec(text))) {
         text = replaceExcept(
             text,
             regexResult.index,
@@ -56,8 +56,8 @@ function preprocess(text: string): string {
             '\n'
         );
     }
-    pattern = /\/\/.*?$/gm;
-    while ((regexResult = pattern.exec(text))) {
+    const singleLineCommentRegex = /\/\/.*?$/gm;
+    while ((regexResult = singleLineCommentRegex.exec(text))) {
         text = replaceExcept(
             text,
             regexResult.index,
@@ -87,7 +87,7 @@ function replaceExcept(
     return result;
 }
 
-function getIncludePattern(includeType: IncludeType): RegExp {
+function getIncludeRegex(includeType: IncludeType): RegExp {
     if (includeType === IncludeType.HLSL_QUOTED) {
         return /(?<=#\s*include(\s|\/\*.*?\*\/)+").*?(?=")/g;
     } else if (includeType === IncludeType.HLSL_ANGULAR) {
