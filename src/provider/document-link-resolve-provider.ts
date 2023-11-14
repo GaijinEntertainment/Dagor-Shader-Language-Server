@@ -10,6 +10,8 @@ import { includeFolders } from '../processor/include-processor';
 
 import * as path from 'path';
 
+const LAUNCH_OPTION_CURRENT_CONFIG = 'launchOption.currentConfig';
+
 export async function documentLinkResolveProvider(
     unresolvedLink: DocumentLink,
     token: CancellationToken
@@ -87,7 +89,7 @@ async function getIncludeFolders(): Promise<string[]> {
 
 async function getGame(): Promise<string | undefined> {
     const game = await getExternalConfiguration<string>(
-        'launchOption.currentConfig.Game'
+        `${LAUNCH_OPTION_CURRENT_CONFIG}.Game`
     );
     return game
         ? path.resolve('.', game)
@@ -111,7 +113,7 @@ async function getShaderConfigBasedOnPlatform(
     shaderConfigs: Map<string, string[]>
 ): Promise<string | null> {
     const platform = await getExternalConfiguration<string>(
-        'launchOption.currentConfig.Platform'
+        `${LAUNCH_OPTION_CURRENT_CONFIG}.Platform`
     );
     if (platform) {
         for (const shaderConfig of shaderConfigs.keys()) {
@@ -127,7 +129,7 @@ async function getShaderConfigBasedOnDriver(
     shaderConfigs: Map<string, string[]>
 ): Promise<string | null> {
     const buildCommand = await getExternalConfiguration<string>(
-        'launchOption.currentConfig.Driver.BuildCommand'
+        `${LAUNCH_OPTION_CURRENT_CONFIG}.Driver.BuildCommand`
     );
     if (buildCommand) {
         const shaderConfigFileRegex =
