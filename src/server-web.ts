@@ -21,7 +21,7 @@ export class ServerWeb extends Server {
         return {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
-                completionProvider: {},
+                // completionProvider: {},
             },
         };
     }
