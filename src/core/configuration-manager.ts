@@ -51,7 +51,7 @@ async function refreshConfiguration(initial = false): Promise<void> {
     );
     configuration = newConfiguration;
     if (!initial) {
-        Server.getServer().configurationChanged(
+        await Server.getServer().configurationChanged(
             oldConfiguration,
             newConfiguration
         );

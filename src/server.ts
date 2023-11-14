@@ -57,10 +57,10 @@ export abstract class Server {
 
     protected async onInitialized(ip: InitializedParams): Promise<void> {}
 
-    public configurationChanged(
+    public async configurationChanged(
         oldConfiguration: Configuration,
         newConfiguration: Configuration
-    ): void {}
+    ): Promise<void> {}
 
     public getDocuments(): TextDocuments<TextDocument> {
         return this.documents;

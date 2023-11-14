@@ -8,8 +8,13 @@ import {
     createConnection,
 } from 'vscode-languageserver/node';
 
+import { Configuration } from './core/configuration';
+import { getConfiguration } from './core/configuration-manager';
 import { SERVER_NAME, SERVER_VERSION } from './core/constant';
-import { collectIncludeFolders } from './processor/include-processor';
+import {
+    collectIncludeFolders,
+    collectOverrideIncludeFolders,
+} from './processor/include-processor';
 import { documentLinkResolveProvider } from './provider/document-link-resolve-provider';
 import { documentLinksProvider } from './provider/document-links-provider';
 import { Server } from './server';
@@ -42,7 +47,34 @@ export class ServerDesktop extends Server {
     protected override async onInitialized(
         ip: InitializedParams
     ): Promise<void> {
-        await collectIncludeFolders();
+        this.collectShaderIncludeFolders(
+            getConfiguration().shaderConfigOverride
+        );
+    }
+
+    public override async configurationChanged(
+        oldConfiguration: Configuration,
+        newConfiguration: Configuration
+    ): Promise<void> {
+        if (
+            oldConfiguration.shaderConfigOverride !==
+            newConfiguration.shaderConfigOverride
+        ) {
+            await this.collectShaderIncludeFolders(
+                newConfiguration.shaderConfigOverride
+            );
+        }
+    }
+
+    private async collectShaderIncludeFolders(
+        shaderConfigOverride: string
+    ): Promise<void> {
+        if (shaderConfigOverride) {
+            this.showWarningMessage(shaderConfigOverride);
+            await collectOverrideIncludeFolders();
+        } else {
+            await collectIncludeFolders();
+        }
     }
 }
 

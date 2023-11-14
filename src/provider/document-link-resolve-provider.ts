@@ -1,12 +1,18 @@
 import { CancellationToken, DocumentLink, Range } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 
-import { getExternalConfiguration } from '../core/configuration-manager';
+import {
+    getConfiguration,
+    getExternalConfiguration,
+} from '../core/configuration-manager';
 import { log, logDocumentLinkResolveShaderConfig } from '../core/debug';
 import { exists } from '../helper/fs-helper';
 import { IncludeData } from '../helper/include-data';
 import { showWarningMessage } from '../helper/server-helper';
-import { includeFolders } from '../processor/include-processor';
+import {
+    includeFolders,
+    overrideIncludeFolders,
+} from '../processor/include-processor';
 
 import * as path from 'path';
 
@@ -44,7 +50,7 @@ async function getLocalFileLink(
     data: IncludeData
 ): Promise<DocumentLink | null> {
     const originalFile = URI.parse(data.uri).fsPath;
-    const includedFile = path.resolve(originalFile, '..', data.name);
+    const includedFile = path.join(originalFile, '..', data.name);
     if (originalFile !== includedFile && (await exists(includedFile))) {
         return {
             range: range,
@@ -60,7 +66,7 @@ async function getIncludeFileLink(
 ): Promise<DocumentLink | null> {
     const includeFolders = await getIncludeFolders();
     for (const includeFolder of includeFolders) {
-        const includedFile = path.resolve(includeFolder, data.name);
+        const includedFile = path.join(includeFolder, data.name);
         if (await exists(includedFile)) {
             return {
                 range: range,
@@ -72,6 +78,9 @@ async function getIncludeFileLink(
 }
 
 async function getIncludeFolders(): Promise<string[]> {
+    if (getConfiguration().shaderConfigOverride) {
+        return overrideIncludeFolders;
+    }
     if (!includeFolders.size) {
         return [];
     }
@@ -91,9 +100,7 @@ async function getGame(): Promise<string | undefined> {
     const game = await getExternalConfiguration<string>(
         `${LAUNCH_OPTION_CURRENT_CONFIG}.Game`
     );
-    return game
-        ? path.resolve('.', game)
-        : includeFolders.keys()?.next()?.value;
+    return game ?? includeFolders.keys()?.next()?.value;
 }
 
 async function getShaderConfig(game: string): Promise<string | undefined> {
