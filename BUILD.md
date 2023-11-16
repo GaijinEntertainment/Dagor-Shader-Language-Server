@@ -2,7 +2,7 @@
 
 ## Desktop and web versions
 
-This repository contains 2 versions of the language server: the desktop version can run in IDEs supporting the Language Server Protocol, the web version can run in https://github.dev or https://vscode.dev. At the moment the desktop and the web versions have exactly the same features, but in the future, there will be differences (for example the web version won't be able to run the compiler).
+This repository contains 2 versions of the language server: the desktop version can run in IDEs supporting the Language Server Protocol, the web version can run in https://github.dev or https://vscode.dev. The web version doesn't support document links, because in the browser, VS Code uses virtual workspaces and therefore the language server can't access directly files.
 
 ## Build
 
@@ -45,7 +45,7 @@ This repository contains 2 versions of the language server: the desktop version 
 
 ### TypeScript code
 
--   If you want to write something to the console, use `this.connection.console.log` (actually, if you run the server from Visual Studio Code, `console.log` will work, however, in Visual Studio, only `this.connection.console.log` will work, `console.log` will break the extension).
+-   If you want to write something to the console, use `log`, ˛`logInfo`, `logWarning`, or `logError` (actually, if you run the server from Visual Studio Code, `console.log` will work, however, in Visual Studio, `console.log` will break the extension).
 -   If you want to use breakpoints, you have to configure the client properly. For more informations see the [Visual Studio Code client's build instructions](https://github.com/Gaijin-Games-KFT/Dagor-Shader-Language-Support-for-Visual-Studio-Code/blob/main/BUILD.md).
 
 ### TextMate grammar
