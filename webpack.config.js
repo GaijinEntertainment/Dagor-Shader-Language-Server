@@ -5,6 +5,7 @@
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
 
 const path = require('path');
+const child_process = require('child_process');
 
 /** @type WebpackConfig */
 const serverWebConfig = {
@@ -78,4 +79,25 @@ const serverDesktopConfig = {
     devtool: 'source-map',
 };
 
-module.exports = [serverDesktopConfig, serverWebConfig];
+module.exports = (_env, argv) => {
+    if (argv.mode === 'production') {
+        serverDesktopConfig.plugins = [
+            {
+                /**@type {import('webpack').WebpackPluginFunction}*/
+                apply: (compiler) => {
+                    compiler.hooks.afterEmit.tap('AfterEmitPlugin', () => {
+                        child_process.exec(
+                            'npx pkg -t node14-win-x64,node14-linux-x64,node14-macos-x64 --out-path bin out/server-desktop.js',
+                            { cwd: __dirname },
+                            (_err, stdout, stderr) => {
+                                if (stdout) process.stdout.write(stdout);
+                                if (stderr) process.stderr.write(stderr);
+                            }
+                        );
+                    });
+                },
+            },
+        ];
+    }
+    return [serverDesktopConfig, serverWebConfig];
+};

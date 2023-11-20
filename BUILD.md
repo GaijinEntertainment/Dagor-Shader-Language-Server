@@ -2,7 +2,7 @@
 
 ## Desktop and web versions
 
-This repository contains 2 versions of the language server: the desktop version can run in IDEs supporting the Language Server Protocol, the web version can run in https://github.dev or https://vscode.dev. The web version doesn't support document links, because in the browser, VS Code uses virtual workspaces and therefore the language server can't access directly files.
+This repository contains 2 versions of the language server: the desktop version can run in IDEs supporting the Language Server Protocol, the web version can run in https://github.dev or https://vscode.dev. The web version doesn't support document links, because in the browser, VS Code uses virtual workspaces and therefore the language server can't access directly files. For the desktop version, in production mode, platform-specific executables are generated (only on x64 architecture) to make it easier to create Node.js independent clients.
 
 ## Build
 
@@ -41,6 +41,12 @@ This repository contains 2 versions of the language server: the desktop version 
     npm run build
     ```
 
+    or
+
+    ```
+    npm run build-production
+    ```
+
 ## Debug
 
 ### TypeScript code
@@ -55,7 +61,7 @@ This repository contains 2 versions of the language server: the desktop version 
 
 ## Scripts
 
--   **build-production**: Builds both desktop and the web versions of the server in production mode.
+-   **build-production**: Builds both the desktop and the web versions of the server in production mode. It also generates platform-specific executables from them.
 -   **build**: Builds both the server in development mode.
 -   **watch**: Same as **build**, but it rebuilds the code as you change (and save) a file.
 -   **eslint**: Runs ESLint and lists the possible problems in the code. It has to be succesful to be able to merge a pull request.
