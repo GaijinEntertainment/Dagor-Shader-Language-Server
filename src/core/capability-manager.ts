@@ -1,6 +1,6 @@
 import { ClientCapabilities } from 'vscode-languageserver';
 
-import { Capabilities } from './capabilities';
+import { Capabilities } from '../interface/capabilities';
 
 const capabilities: Capabilities = {
     configuration: false,

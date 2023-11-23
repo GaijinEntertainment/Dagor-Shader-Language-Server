@@ -3,9 +3,9 @@ import {
     DidChangeConfigurationNotification,
 } from 'vscode-languageserver';
 
+import { Configuration } from '../interface/configuration';
 import { Server } from '../server';
 import { getCapabilities } from './capability-manager';
-import { Configuration } from './configuration';
 
 let configuration: Configuration = {
     shaderConfigOverride: '',

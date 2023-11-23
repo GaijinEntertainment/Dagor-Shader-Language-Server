@@ -11,14 +11,14 @@ import {
     TextDocuments,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+
 import {
     getCapabilities,
     initializeCapabilities,
 } from './core/capability-manager';
-
-import { Configuration } from './core/configuration';
 import { initializeConfiguration } from './core/configuration-manager';
 import { initializeDebug } from './core/debug';
+import { Configuration } from './interface/configuration';
 
 export abstract class Server {
     private static server: Server;

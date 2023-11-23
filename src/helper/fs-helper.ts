@@ -22,3 +22,8 @@ export async function getFolderContent(path: string): Promise<fs.Dirent[]> {
 export function watchFile(path: string, callback: () => void): fs.FSWatcher {
     return fs.watch(path, callback);
 }
+
+export async function isFile(path: string): Promise<boolean> {
+    const stat = await fsp.stat(path);
+    return stat.isFile();
+}

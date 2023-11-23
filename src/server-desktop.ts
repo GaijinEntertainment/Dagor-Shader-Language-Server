@@ -8,9 +8,9 @@ import {
     createConnection,
 } from 'vscode-languageserver/node';
 
-import { Configuration } from './core/configuration';
 import { getConfiguration } from './core/configuration-manager';
 import { SERVER_NAME, SERVER_VERSION } from './core/constant';
+import { Configuration } from './interface/configuration';
 import {
     collectIncludeFolders,
     collectOverrideIncludeFolders,
