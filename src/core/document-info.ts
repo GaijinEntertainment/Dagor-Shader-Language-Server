@@ -1,5 +1,7 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
+import { syncInitialization } from '../helper/server-helper';
+import { syncIncludeFoldersCollection } from '../processor/include-processor';
 import { preprocess } from '../processor/preprocessor';
 import { Snapshot } from './snapshot';
 
@@ -29,6 +31,8 @@ export class DocumentInfo {
 
     private async analyze(): Promise<void> {
         this.analyzationInProgressVersion = this.document.version;
+        await syncInitialization();
+        await syncIncludeFoldersCollection();
         const snapshot = new Snapshot(
             this.document.version,
             this.document.uri,

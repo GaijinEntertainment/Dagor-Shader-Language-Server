@@ -25,6 +25,7 @@ export abstract class Server {
 
     protected connection: Connection;
     protected documents: TextDocuments<TextDocument>;
+    protected initialized = Promise.resolve();
 
     public static getServer(): Server {
         return Server.server;
@@ -47,15 +48,22 @@ export abstract class Server {
             initializeCapabilities(ip.capabilities);
             return this.onInitialize(ip);
         });
-        this.connection.onInitialized(async (ip: InitializedParams) => {
-            await initializeConfiguration(this.connection);
-            await this.onInitialized(ip);
+        this.initialized = new Promise((resolve) => {
+            this.connection.onInitialized(async (ip: InitializedParams) => {
+                await initializeConfiguration(this.connection);
+                await this.onInitialized(ip);
+                resolve();
+            });
         });
     }
 
     protected abstract onInitialize(ip: InitializeParams): InitializeResult;
 
     protected async onInitialized(ip: InitializedParams): Promise<void> {}
+
+    public syncInitialization(): Promise<void> {
+        return this.initialized;
+    }
 
     public async configurationChanged(
         oldConfiguration: Configuration,
@@ -94,7 +102,9 @@ export abstract class Server {
 
     private addMockedCodeCompletion(): void {
         this.connection.onCompletion(
-            (tdpp: TextDocumentPositionParams): CompletionItem[] => {
+            async (
+                _tdpp: TextDocumentPositionParams
+            ): Promise<CompletionItem[]> => {
                 return [
                     {
                         label: 'Test code completion item 1',

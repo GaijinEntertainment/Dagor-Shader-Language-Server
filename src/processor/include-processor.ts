@@ -16,12 +16,20 @@ export type ShaderConfig = string;
 export let includeFolders = new Map<GameFolder, Map<ShaderConfig, string[]>>();
 export let overrideIncludeFolders: string[] = [];
 
+let includesCollected = Promise.resolve();
+
 export async function collectIncludeFolders(): Promise<void> {
-    return await new IncludeProcessor().collectIncludeFolders();
+    includesCollected = new IncludeProcessor().collectIncludeFolders();
+    await includesCollected;
 }
 
 export async function collectOverrideIncludeFolders(): Promise<void> {
-    return await new IncludeProcessor().collectOverrideIncludeFolders();
+    includesCollected = new IncludeProcessor().collectOverrideIncludeFolders();
+    await includesCollected;
+}
+
+export async function syncIncludeFoldersCollection(): Promise<void> {
+    return includesCollected;
 }
 
 class IncludeProcessor {

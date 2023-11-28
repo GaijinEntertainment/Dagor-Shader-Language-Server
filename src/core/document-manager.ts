@@ -1,4 +1,5 @@
 import { DocumentUri } from 'vscode-languageserver';
+
 import { getDocuments } from '../helper/server-helper';
 import { DocumentInfo } from './document-info';
 import { Snapshot } from './snapshot';

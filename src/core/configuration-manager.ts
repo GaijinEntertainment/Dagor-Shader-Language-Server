@@ -23,7 +23,7 @@ export async function initializeConfiguration(
             undefined
         );
     }
-    connection.onDidChangeConfiguration(async (params) => {
+    connection.onDidChangeConfiguration(async (_params) => {
         await refreshConfiguration();
     });
 }

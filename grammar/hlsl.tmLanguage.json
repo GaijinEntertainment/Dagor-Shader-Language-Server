@@ -189,7 +189,7 @@
                     }
                 },
                 {
-                    "comment": "DAGORSH PREPROCESSOR DIRECTIVE",
+                    "comment": "DSHL PREPROCESSOR DIRECTIVE",
                     "name": "keyword.control.hlsl",
                     "match": "##((\\s|/\\*.*?\\*/)*)(elif|else|endif|if)\\b",
                     "captures": {
@@ -342,7 +342,7 @@
                 },
                 {
                     "comment": "DAGOR NON-PRIMITIVE TYPE",
-                    "name": "storage.type.dagorsh",
+                    "name": "storage.type.dshl",
                     "match": "@((tex|smp)(2d|3d|Array|Cube|CubeArray)?|shd|buf|cbuf|uav)\\b"
                 },
                 {
@@ -357,7 +357,7 @@
                 },
                 {
                     "comment": "DAGOR PRIMITIVE TYPE",
-                    "name": "storage.type.dagorsh",
+                    "name": "storage.type.dshl",
                     "match": "@((f|i)[1-4]|f44)\\b"
                 }
             ]

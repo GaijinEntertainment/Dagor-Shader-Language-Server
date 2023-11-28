@@ -1,17 +1,24 @@
 import { DocumentUri, Position, Range } from 'vscode-languageserver';
 
+import { DefineStatement } from '../interface/define-statement';
 import { IncludeContext } from '../interface/include-context';
 import { IncludeStatement } from '../interface/include-statement';
+import { MacroContext } from '../interface/macro-context';
+import { MacroStatement } from '../interface/macro-statement';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 
 export class Snapshot {
     public readonly version: number;
     public readonly uri: DocumentUri;
     public readonly originalText: string;
+    public text = '';
     public cleanedText = '';
     public preprocessedText = '';
     public includeStatements: IncludeStatement[] = [];
     public includeContexts: IncludeContext[] = [];
+    public defineStatements: DefineStatement[] = [];
+    public macroStatements: MacroStatement[] = [];
+    public macroContexts: MacroContext[] = [];
 
     private preprocessingOffsets: PreprocessingOffset[] = [];
 
@@ -61,6 +68,13 @@ export class Snapshot {
         for (const ic of this.includeContexts) {
             ic.startPosition = this.updatePosition(ic.startPosition, newPo);
             ic.endPosition = this.updatePosition(ic.endPosition, newPo);
+        }
+        for (const ms of this.macroStatements) {
+            ms.position = this.updatePosition(ms.position, newPo);
+        }
+        for (const mc of this.macroContexts) {
+            mc.startPosition = this.updatePosition(mc.startPosition, newPo);
+            mc.endPosition = this.updatePosition(mc.endPosition, newPo);
         }
         this.preprocessingOffsets.push(newPo);
     }

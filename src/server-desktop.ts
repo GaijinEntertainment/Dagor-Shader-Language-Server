@@ -45,9 +45,9 @@ export class ServerDesktop extends Server {
     }
 
     protected override async onInitialized(
-        ip: InitializedParams
+        _ip: InitializedParams
     ): Promise<void> {
-        this.collectShaderIncludeFolders(
+        await this.collectShaderIncludeFolders(
             getConfiguration().shaderConfigOverride
         );
     }
