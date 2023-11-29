@@ -29,7 +29,7 @@ class DshlPreprocessor {
     }
 
     private async preprocessIncludes(): Promise<void> {
-        const regex = /(?<=([^#]|^)\s*)\binclude(_optional)?\s*"(?<path>.*?)"/;
+        const regex = /(?<=(\n|^)[^#]*)\binclude(_optional)?\s*"(?<path>.*?)"/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(this.snapshot.text))) {
             const position = regexResult.index;
@@ -53,14 +53,14 @@ class DshlPreprocessor {
             if (!parentIc) {
                 this.snapshot.includeStatements.push(is);
             }
-
-            await preprocessIncludeStatement(
+            const afterEndPosition = await preprocessIncludeStatement(
                 position,
                 beforeEndPosition,
                 is,
                 parentIc,
                 this.snapshot
             );
+            regex.lastIndex = afterEndPosition;
         }
     }
 

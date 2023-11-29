@@ -123,7 +123,7 @@ export async function preprocessIncludeStatement(
     is: IncludeStatement,
     parentIc: IncludeContext | null,
     snapshot: Snapshot
-): Promise<void> {
+): Promise<number> {
     const uri = await getIncludedDocumentUri(is);
     const includeText = await getIncludeText(uri, parentIc, snapshot);
     const afterEndPosition = position + includeText.length;
@@ -135,6 +135,7 @@ export async function preprocessIncludeStatement(
     );
     addIncludeContext(position, afterEndPosition, uri, parentIc, snapshot);
     changeText(position, beforeEndPosition, includeText, snapshot);
+    return afterEndPosition;
 }
 
 async function getIncludeText(
