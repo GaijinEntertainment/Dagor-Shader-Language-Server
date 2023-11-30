@@ -1,9 +1,11 @@
 import { DocumentUri } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 
+import { collectAndLogPerformance } from '../core/debug';
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
 import { loadFile } from '../helper/fs-helper';
+import { PerformanceHelper } from '../helper/performance-helper';
 import { IncludeContext } from '../interface/include-context';
 import { IncludeStatement } from '../interface/include-statement';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
@@ -14,19 +16,15 @@ import { getIncludedDocumentUri } from './include-resolver';
 export async function preprocess(snapshot: Snapshot): Promise<void> {
     return await new Preprocessor(snapshot).preprocess();
 }
+
 class Preprocessor {
     private snapshot: Snapshot;
+    private ph: PerformanceHelper;
 
     public constructor(snapshot: Snapshot) {
         this.snapshot = snapshot;
         this.snapshot.text = this.snapshot.originalText;
-    }
-
-    public async preprocess(): Promise<void> {
-        this.clean();
-        await preprocessDshl(this.snapshot);
-        await preprocessHlsl(this.snapshot);
-        this.snapshot.preprocessedText = this.snapshot.text;
+        this.ph = new PerformanceHelper(this.snapshot.uri);
     }
 
     public clean(): void {
@@ -34,6 +32,37 @@ class Preprocessor {
         this.preprocessLineContinuations();
         this.preprocessComments();
         this.snapshot.cleanedText = this.snapshot.text;
+    }
+
+    private logPerformance(): void {
+        if (!collectAndLogPerformance) {
+            return;
+        }
+        this.ph.log('preprocessing', 'preprocess');
+        this.ph.log('  global preprocessor', 'clean');
+        this.ph.log('  DSHL preprocessor', 'DSHL');
+        this.ph.log('  HLSL preprocessor', 'HLSL');
+    }
+
+    public async preprocess(): Promise<void> {
+        this.ph.start('preprocess');
+        this.ph.start('clean');
+        this.clean();
+        this.ph.end('clean');
+
+        if (this.snapshot.uri.endsWith('.dshl')) {
+            this.ph.start('DSHL');
+            await preprocessDshl(this.snapshot);
+            this.ph.end('DSHL');
+        }
+
+        this.ph.start('HLSL');
+        await preprocessHlsl(this.snapshot);
+        this.ph.end('HLSL');
+        this.ph.end('preprocess');
+
+        this.logPerformance();
+        this.snapshot.preprocessedText = this.snapshot.text;
     }
 
     private preprocessNewLines(): void {

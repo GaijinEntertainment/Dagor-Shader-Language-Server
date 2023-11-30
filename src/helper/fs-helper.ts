@@ -19,7 +19,10 @@ export async function getFolderContent(path: string): Promise<fs.Dirent[]> {
     return await fsp.readdir(path, { withFileTypes: true });
 }
 
-export function watchFile(path: string, callback: () => void): fs.FSWatcher {
+export function watchFile(
+    path: string,
+    callback: (eventType: fs.WatchEventType, fileName: string | null) => void
+): fs.FSWatcher {
     return fs.watch(path, callback);
 }
 

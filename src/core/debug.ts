@@ -3,6 +3,7 @@ import { Connection } from 'vscode-languageserver';
 export const logShaderConfigs = false;
 export const showDocumentLinkDebugLabel = false;
 export const logDocumentLinkResolveShaderConfig = false;
+export const collectAndLogPerformance = false;
 
 let connection: Connection;
 
