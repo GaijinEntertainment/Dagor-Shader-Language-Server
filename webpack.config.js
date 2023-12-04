@@ -75,6 +75,7 @@ const serverDesktopConfig = {
     },
     externals: {
         vscode: 'commonjs vscode',
+        fsevents: "require('fsevents')",
     },
     devtool: 'source-map',
 };
