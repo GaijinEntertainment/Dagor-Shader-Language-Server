@@ -10,6 +10,7 @@ import {
 
 import { getConfiguration } from './core/configuration-manager';
 import { SERVER_NAME, SERVER_VERSION } from './core/constant';
+import { clearCache } from './core/file-cache-manager';
 import { Configuration } from './interface/configuration';
 import {
     collectIncludeFolders,
@@ -50,6 +51,10 @@ export class ServerDesktop extends Server {
         await this.collectShaderIncludeFolders(
             getConfiguration().shaderConfigOverride
         );
+    }
+
+    protected override onShutdown(): void {
+        clearCache();
     }
 
     public override async configurationChanged(

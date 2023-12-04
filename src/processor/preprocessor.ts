@@ -3,8 +3,8 @@ import { URI } from 'vscode-uri';
 
 import { collectAndLogPerformance } from '../core/debug';
 import { getSnapshot } from '../core/document-manager';
+import { getFileContent } from '../core/file-cache-manager';
 import { Snapshot } from '../core/snapshot';
-import { loadFile } from '../helper/fs-helper';
 import { PerformanceHelper } from '../helper/performance-helper';
 import { IncludeContext } from '../interface/include-context';
 import { IncludeStatement } from '../interface/include-statement';
@@ -164,7 +164,7 @@ export async function preprocessIncludeStatement(
     );
     addIncludeContext(position, afterEndPosition, uri, parentIc, snapshot);
     changeText(position, beforeEndPosition, includeText, snapshot);
-    return afterEndPosition;
+    return position;
 }
 
 async function getIncludeText(
@@ -181,7 +181,7 @@ async function getText(uri: DocumentUri): Promise<string> {
     if (includedSnapshot) {
         return includedSnapshot.cleanedText;
     } else {
-        const text = await loadFile(URI.parse(uri).fsPath);
+        const text = await getFileContent(URI.parse(uri).fsPath);
         includedSnapshot = new Snapshot(-1, uri, text);
         new Preprocessor(includedSnapshot).clean();
         return includedSnapshot.cleanedText;

@@ -1,14 +1,9 @@
 import { getConfiguration } from '../core/configuration-manager';
 import { log, logShaderConfigs } from '../core/debug';
-import {
-    exists,
-    getFolderContent,
-    loadFile,
-    watchFile,
-} from '../helper/fs-helper';
+import { getFileContent } from '../core/file-cache-manager';
+import { exists, getFolderContent } from '../helper/fs-helper';
 import { PerformanceHelper } from '../helper/performance-helper';
 
-import * as fs from 'fs';
 import * as path from 'path';
 
 export type GameFolder = string;
@@ -38,8 +33,6 @@ class IncludeProcessor {
 
     private includeFolders = new Map<GameFolder, Map<ShaderConfig, string[]>>();
     private overrideIncludeFolders: string[] = [];
-    private blkContentCache = new Map<string, string>();
-    private blkWatchers: fs.FSWatcher[] = [];
     private id = ++IncludeProcessor.lastId;
     private override = false;
 
@@ -121,7 +114,7 @@ class IncludeProcessor {
             return;
         }
         const result = this.getResults(shaderConfig, gameFolder);
-        const blkContent = await this.getBlkContent(blkPath);
+        const blkContent = await getFileContent(blkPath);
         this.addIncludeFoldersFromOneBlk(shaderConfig, blkContent, result);
         await this.followBlkIncludes(
             gameFolder,
@@ -144,36 +137,12 @@ class IncludeProcessor {
         }
     }
 
-    private async getBlkContent(blkPath: string): Promise<string> {
-        let blkContent = this.blkContentCache.get(blkPath);
-        if (!blkContent) {
-            // this.addFileWatcher(blkPath);
-            blkContent = await loadFile(blkPath);
-            this.blkContentCache.set(blkPath, blkContent);
-        }
-        return blkContent;
-    }
-
-    private addFileWatcher(blkPath: string): void {
-        const watcher = watchFile(blkPath, async (eventType, fileName) => {
-            for (const blkWatcher of this.blkWatchers) {
-                blkWatcher.close();
-            }
-            if (this.override) {
-                await collectOverrideIncludeFolders();
-            } else {
-                await collectIncludeFolders();
-            }
-        });
-        this.blkWatchers.push(watcher);
-    }
-
     private addIncludeFoldersFromOneBlk(
         shaderConfig: string,
         blkContent: string,
         result: string[]
     ): void {
-        const incDirRegex = /(?<=\bincDir\s*:\s*t\s*=\s*").*?(?=")/g;
+        const incDirRegex = /(?<=\bincDir\s*:\s*t\s*=\s*")[^"]*?(?=")/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = incDirRegex.exec(blkContent))) {
             const relativePath = blkContent.substring(
@@ -196,7 +165,7 @@ class IncludeProcessor {
     ): Promise<void> {
         let regexResult: RegExpExecArray | null;
         const includeRegex =
-            /((?<=\binclude\s*").*?(?="))|((?<=\binclude\s+)[^"\s]+(?=\s))/g;
+            /((?<=\binclude\s*")[^"]*?(?="))|((?<=\binclude\s+)[^"\s]+?(?=\s))/g;
         while ((regexResult = includeRegex.exec(blkContent))) {
             const relativePath = blkContent.substring(
                 regexResult.index,

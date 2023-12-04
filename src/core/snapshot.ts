@@ -113,4 +113,30 @@ export class Snapshot {
         }
         return null;
     }
+
+    public macroContextAt(position: number): MacroContext | null {
+        for (const mc of this.macroContexts) {
+            const result = this.getMacroContext(mc, position);
+            if (result) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    private getMacroContext(
+        mc: MacroContext,
+        position: number
+    ): MacroContext | null {
+        if (mc.startPosition <= position && position <= mc.endPosition) {
+            for (const c of mc.children) {
+                const result = this.getMacroContext(c, position);
+                if (result) {
+                    return result;
+                }
+            }
+            return mc;
+        }
+        return null;
+    }
 }

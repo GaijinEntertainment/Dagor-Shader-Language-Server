@@ -29,6 +29,7 @@
     },
     "dependencies": {
         "antlr4ts": "^0.5.0-alpha.4",
+        "chokidar": "^3.5.3",
         "vscode-languageserver": "^9.0.1",
         "vscode-languageserver-textdocument": "^1.0.11",
         "vscode-uri": "^3.0.8"

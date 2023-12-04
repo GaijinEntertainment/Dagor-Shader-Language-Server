@@ -11,6 +11,10 @@ export function getDocuments(): TextDocuments<TextDocument> {
     return Server.getServer().getDocuments();
 }
 
+export function getRootFolder(): string {
+    return Server.getServer().getRootFolder();
+}
+
 export function showInfoMessage(message: string): void {
     Server.getServer().showInfoMessage(message);
 }

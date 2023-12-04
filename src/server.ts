@@ -11,6 +11,7 @@ import {
     TextDocuments,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { URI } from 'vscode-uri';
 
 import {
     getCapabilities,
@@ -26,6 +27,7 @@ export abstract class Server {
     protected connection: Connection;
     protected documents: TextDocuments<TextDocument>;
     protected initialized = Promise.resolve();
+    protected rootFolder = '';
 
     public static getServer(): Server {
         return Server.server;
@@ -45,6 +47,8 @@ export abstract class Server {
     private initialize(): void {
         initializeDebug(this.connection);
         this.connection.onInitialize((ip: InitializeParams) => {
+            // rootUri and rootPath are deprecated, however, workspaceFolders isn't supported by Visual Studio
+            this.rootFolder = URI.parse(ip.rootUri ?? ip.rootPath ?? '').fsPath;
             initializeCapabilities(ip.capabilities);
             return this.onInitialize(ip);
         });
@@ -55,11 +59,16 @@ export abstract class Server {
                 resolve();
             });
         });
+        this.connection.onShutdown((_token) => {
+            this.onShutdown();
+        });
     }
 
     protected abstract onInitialize(ip: InitializeParams): InitializeResult;
 
     protected async onInitialized(ip: InitializedParams): Promise<void> {}
+
+    protected onShutdown(): void {}
 
     public syncInitialization(): Promise<void> {
         return this.initialized;
@@ -72,6 +81,10 @@ export abstract class Server {
 
     public getDocuments(): TextDocuments<TextDocument> {
         return this.documents;
+    }
+
+    public getRootFolder(): string {
+        return this.rootFolder;
     }
 
     public showInfoMessage(message: string): void {

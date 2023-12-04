@@ -4,6 +4,7 @@ export const logShaderConfigs = false;
 export const showDocumentLinkDebugLabel = false;
 export const logDocumentLinkResolveShaderConfig = false;
 export const collectAndLogPerformance = false;
+export const logCachingBehavior = false;
 
 let connection: Connection;
 

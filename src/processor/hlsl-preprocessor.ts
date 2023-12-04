@@ -29,13 +29,14 @@ class HlslPreprocessor {
     }
 
     public async preprocess(): Promise<void> {
-        const regex = /#.*?(?=\n|$)/;
+        const regex = /#.*?(?=\n|$)/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(this.snapshot.text))) {
             const position = regexResult.index;
             const match = regexResult[0];
             const beforeEndPosition = position + match.length;
             await this.preprocessDirective(position, beforeEndPosition, match);
+            regex.lastIndex = position;
         }
     }
 
@@ -130,7 +131,7 @@ class HlslPreprocessor {
     }
 
     private getIfStatement(text: string, position: number): IfState | null {
-        const regex = /#\s*if\b(?<condition>.*?)(?=\n|$)/;
+        const regex = /#\s*?if\b(?<condition>.*?)(?=\n|$)/;
         const regexResult = regex.exec(text);
         if (regexResult && regexResult.groups) {
             const condition = this.evaluateCondition(
@@ -148,17 +149,17 @@ class HlslPreprocessor {
     }
 
     private getElifStatement(text: string, position: number): IfState | null {
-        const regex = /#\s*elif\b(?<condition>.*?)(?=\n|$)/;
+        const regex = /#\s*?elif\b(?<condition>.*?)(?=\n|$)/;
         const regexResult = regex.exec(text);
         if (regexResult && regexResult.groups) {
             const last = this.ifStack[this.ifStack.length - 1];
             const condition =
-                !last.already &&
+                !(last?.already ?? false) &&
                 this.evaluateCondition(regexResult.groups.condition, position);
             const is: IfState = {
-                position: last.condition ? position : last.position,
+                position: last?.condition ?? true ? position : last.position,
                 condition,
-                already: last.already || condition,
+                already: last?.already || condition,
             };
             return is;
         }
@@ -166,13 +167,13 @@ class HlslPreprocessor {
     }
 
     private getElseStatement(text: string, position: number): IfState | null {
-        const regex = /#\s*else\b.*?(?=\n|$)/;
+        const regex = /#\s*?else\b.*?(?=\n|$)/;
         const regexResult = regex.exec(text);
         if (regexResult) {
             const last = this.ifStack[this.ifStack.length - 1];
-            const condition = !last.already;
+            const condition = !(last?.already ?? false);
             const is: IfState = {
-                position: last.condition ? position : last.position,
+                position: last?.condition ?? true ? position : last.position,
                 condition,
                 already: true,
             };
@@ -182,7 +183,7 @@ class HlslPreprocessor {
     }
 
     private isEndifStatement(text: string): boolean {
-        const regex = /#\s*endif\b.*?(?=\n|$)/;
+        const regex = /#\s*?endif\b.*?(?=\n|$)/;
         return !!regex.exec(text);
     }
 
@@ -199,6 +200,7 @@ class HlslPreprocessor {
         //The CharStreams.fromString method only accepts UTF-8 and other methods of the CharStreams class are not implemented in TypeScript.
         const charStream = new ANTLRInputStream(text);
         const lexer = new ConditionLexer(charStream);
+        lexer.removeErrorListeners();
         // this.tokens = lexer.getAllTokens();
         // lexer.reset();
         return lexer;
@@ -212,7 +214,7 @@ class HlslPreprocessor {
     }
 
     private getIfdefStatement(text: string, position: number): IfState | null {
-        const regex = /#\s*(?<directive>ifn?def\b)(?<condition>.*?)(?=\n|$)/;
+        const regex = /#\s*?(?<directive>ifn?def\b)(?<condition>.*?)(?=\n|$)/;
         const regexResult = regex.exec(text);
         if (regexResult && regexResult.groups) {
             const directive = regexResult.groups.directive;
@@ -240,7 +242,7 @@ class HlslPreprocessor {
         position: number
     ): DefineStatement | null {
         let regex =
-            /#\s*define\s+(?<name>[a-zA-Z_]\w*)(?<content>[^(].*?)?(?=\n|$)/;
+            /#\s*?define\s+?(?<name>[a-zA-Z_]\w*?)(?<content>[^(].*?)?(?=\n|$)/;
         let regexResult = regex.exec(text);
         if (regexResult && regexResult.groups) {
             const name = regexResult.groups.name;
@@ -257,7 +259,7 @@ class HlslPreprocessor {
             return ds;
         }
         regex =
-            /#\s*define\s+(?<name>[a-zA-Z_]\w*)\((?<params>\s*[a-zA-Z_]\w*(\s*,\s*[a-zA-Z_]\w*)*\s*,?)?\s*\)(?<content>.*?)?(?=\n|$)/;
+            /#\s*?define\s+?(?<name>[a-zA-Z_]\w*?)\((?<params>\s*?[a-zA-Z_]\w*?(\s*?,\s*?[a-zA-Z_]\w*?)*?\s*?,?)?\s*?\)(?<content>.*?)?(?=\n|$)/;
         regexResult = regex.exec(text);
         if (regexResult && regexResult.groups) {
             const name = regexResult.groups.name;
@@ -281,7 +283,7 @@ class HlslPreprocessor {
     }
 
     private isUndefStatement(text: string, position: number): boolean {
-        const regex = /#\s*undef\s+(?<name>[a-zA-Z_]\w*).*?(?=\n|$)/;
+        const regex = /#\s*?undef\s+?(?<name>[a-zA-Z_]\w*?).*?(?=\n|$)/;
         const regexResult = regex.exec(text);
         if (regexResult && regexResult.groups) {
             if (this.ifStack.every((is) => is.condition)) {
@@ -303,7 +305,7 @@ class HlslPreprocessor {
         position: number,
         parentIc: IncludeContext | null
     ): IncludeStatement | null {
-        let regex = /(?<=#\s*include\s*").*?(?=")/;
+        let regex = /(?<=#\s*include\s*")[^"]*?(?=")/;
         let result = this.createIncludeStatement(
             regex,
             text,
@@ -314,7 +316,7 @@ class HlslPreprocessor {
         if (result) {
             return result;
         }
-        regex = /(?<=#\s*include\s*<).*?(?=>)/;
+        regex = /(?<=#\s*include\s*<)[^>]*?(?=>)/;
         result = this.createIncludeStatement(
             regex,
             text,
