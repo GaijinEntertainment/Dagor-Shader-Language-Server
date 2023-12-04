@@ -13,7 +13,7 @@ This repository contains 2 versions of the language server: the desktop version 
 5. Clone the repository
 
     ```
-    git clone https://github.com/Gaijin-Games-KFT/Dagor-Shader-Language-Server.git
+    git clone https://github.com/GaijinEntertainment/Dagor-Shader-Language-Server.git
     ```
 
 6. Go inside the repository's root folder
@@ -53,7 +53,7 @@ This repository contains 2 versions of the language server: the desktop version 
 ### TypeScript code
 
 -   If you want to write something to the console, use `log`, ˛`logInfo`, `logWarning`, or `logError` (actually, if you run the server from Visual Studio Code, `console.log` will work, however, in Visual Studio, `console.log` will break the extension).
--   If you want to use breakpoints, you have to configure the client properly. For more informations see the [Visual Studio Code client's build instructions](https://github.com/Gaijin-Games-KFT/Dagor-Shader-Language-Support-for-Visual-Studio-Code/blob/main/BUILD.md).
+-   If you want to use breakpoints, you have to configure the client properly. For more informations see the [Visual Studio Code client's build instructions](https://github.com/GaijinEntertainment/Dagor-Shader-Language-Support-for-Visual-Studio-Code/blob/main/BUILD.md).
 
 ### TextMate grammar
 
