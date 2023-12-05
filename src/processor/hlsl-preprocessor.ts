@@ -3,14 +3,19 @@ import { ANTLRInputStream, CommonTokenStream } from 'antlr4ts';
 import { ConditionLexer } from '../_generated/ConditionLexer';
 import { ConditionParser } from '../_generated/ConditionParser';
 import { Snapshot } from '../core/snapshot';
+import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
+import { IfState } from '../interface/if-state';
 import { IncludeContext } from '../interface/include-context';
 import { IncludeStatement } from '../interface/include-statement';
 import { IncludeType } from '../interface/include-type';
+import { StringRange } from '../interface/string-range';
 import { ConditionVisitor } from './condition-visitor';
 import {
     addPreprocessingOffset,
     changeText,
+    getMacroParameters,
+    getStringRanges,
     preprocessIncludeStatement,
 } from './preprocessor';
 
@@ -18,11 +23,10 @@ export async function preprocessHlsl(snapshot: Snapshot): Promise<void> {
     return await new HlslPreprocessor(snapshot).preprocess();
 }
 
-type IfState = { position: number; condition: boolean; already: boolean };
-
 class HlslPreprocessor {
     private snapshot: Snapshot;
     private ifStack: IfState[] = [];
+    private stringPositions: StringRange[] = [];
 
     public constructor(snapshot: Snapshot) {
         this.snapshot = snapshot;
@@ -37,6 +41,85 @@ class HlslPreprocessor {
             const beforeEndPosition = position + match.length;
             await this.preprocessDirective(position, beforeEndPosition, match);
             regex.lastIndex = position;
+        }
+        this.expandMacros();
+    }
+
+    private expandMacros(): void {
+        if (!this.snapshot.defineStatements.length) {
+            return;
+        }
+        const macroNames = this.snapshot.defineStatements
+            .map((ds) => ds.name)
+            .join('|');
+        const regex = new RegExp(`\\b(${macroNames})\\b`, 'g');
+        let regexResult: RegExpExecArray | null;
+        while ((regexResult = regex.exec(this.snapshot.text))) {
+            const position = regexResult.index;
+            const match = regexResult[0];
+            regex.lastIndex = position + match.length;
+
+            const mp = getMacroParameters(regex.lastIndex, this.snapshot);
+            const objectLike = !mp;
+            const ds =
+                this.snapshot.defineStatements.find(
+                    (ds) =>
+                        ds.name === match &&
+                        ds.position <= position &&
+                        ds.objectLike === objectLike &&
+                        ds.parameters.length === (mp?.parameters?.length ?? 0)
+                ) ?? null;
+            if (!ds) {
+                continue;
+            }
+            const parentDc = this.snapshot.defineContextAt(position);
+            if (this.isCircularDefineExpansion(parentDc, ds)) {
+                continue;
+            }
+            const beforeEndPosition = mp
+                ? mp.endPosition
+                : position + match.length;
+            this.stringPositions = getStringRanges(
+                beforeEndPosition,
+                this.snapshot
+            );
+            if (
+                this.stringPositions.some(
+                    (sr) =>
+                        sr.startPosition <= position &&
+                        position <= sr.endPosition
+                )
+            ) {
+                continue;
+            }
+
+            if (objectLike) {
+                const pasteText = ds.content;
+                const afterEndPosition = position + pasteText.length;
+                addPreprocessingOffset(
+                    position,
+                    beforeEndPosition,
+                    afterEndPosition,
+                    this.snapshot
+                );
+                changeText(
+                    position,
+                    beforeEndPosition,
+                    pasteText,
+                    this.snapshot
+                );
+                regex.lastIndex = position;
+                const mc: DefineContext = {
+                    define: ds,
+                    startPosition: position,
+                    endPosition: afterEndPosition,
+                    parent: null,
+                    children: [],
+                };
+                this.snapshot.defineContexts.push(mc);
+            } else {
+                // TODO: function-like
+            }
         }
     }
 
@@ -241,12 +324,16 @@ class HlslPreprocessor {
         text: string,
         position: number
     ): DefineStatement | null {
+        if (this.ifStack.some((is) => !is.condition)) {
+            return null;
+        }
         let regex =
-            /#\s*?define\s+?(?<name>[a-zA-Z_]\w*?)(?<content>[^(].*?)?(?=\n|$)/;
+            /#\s*?define\s+?(?<name>[a-zA-Z_]\w*?)\s+?(?<content>.*?)?(?=\n|$)/;
         let regexResult = regex.exec(text);
         if (regexResult && regexResult.groups) {
             const name = regexResult.groups.name;
-            const content = regexResult.groups.content?.trim() ?? '';
+            const content =
+                regexResult.groups.content?.trim().replace(/##/g, '') ?? '';
             const ds: DefineStatement = {
                 objectLike: true,
                 position: regexResult.index + position,
@@ -283,6 +370,9 @@ class HlslPreprocessor {
     }
 
     private isUndefStatement(text: string, position: number): boolean {
+        if (this.ifStack.some((is) => !is.condition)) {
+            return false;
+        }
         const regex = /#\s*?undef\s+?(?<name>[a-zA-Z_]\w*?).*?(?=\n|$)/;
         const regexResult = regex.exec(text);
         if (regexResult && regexResult.groups) {
@@ -362,6 +452,20 @@ class HlslPreprocessor {
             return is;
         }
         return null;
+    }
+
+    private isCircularDefineExpansion(
+        dc: DefineContext | null,
+        ds: DefineStatement | null
+    ): boolean {
+        let currentDc: DefineContext | null = dc;
+        while (currentDc) {
+            if (currentDc.define === ds) {
+                return true;
+            }
+            currentDc = currentDc.parent;
+        }
+        return false;
     }
 }
 

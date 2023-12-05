@@ -8,7 +8,9 @@ import { Snapshot } from '../core/snapshot';
 import { PerformanceHelper } from '../helper/performance-helper';
 import { IncludeContext } from '../interface/include-context';
 import { IncludeStatement } from '../interface/include-statement';
+import { MacroParameters } from '../interface/macro-parameters';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
+import { StringRange } from '../interface/string-range';
 import { preprocessDshl } from './dshl-preprocessor';
 import { preprocessHlsl } from './hlsl-preprocessor';
 import { getIncludedDocumentUri } from './include-resolver';
@@ -204,4 +206,109 @@ function isCircularInclude(
         currentIc = currentIc.parent;
     }
     return false;
+}
+
+export function getMacroParameters(
+    position: number,
+    snapshot: Snapshot
+): MacroParameters | null {
+    let rounded = 0;
+    let curly = 0;
+    let square = 0;
+    let angular = 0;
+    let parameterPosition = -1;
+    let insideParameters = false;
+    const parameters: string[] = [];
+    for (let i = position; i < snapshot.text.length; i++) {
+        const charactor = snapshot.text[i];
+        if (charactor === ' ' || charactor === '\t' || charactor === '\n') {
+            continue;
+        }
+        if (!insideParameters && charactor === '(') {
+            insideParameters = true;
+            parameterPosition = i + 1;
+            continue;
+        }
+        if (!insideParameters) {
+            return null;
+        }
+        if (insideParameters) {
+            if (charactor === '(') {
+                rounded++;
+            } else if (charactor === ')') {
+                if (
+                    rounded === 0 &&
+                    curly === 0 &&
+                    square === 0 &&
+                    angular === 0
+                ) {
+                    if (parameterPosition !== -1) {
+                        const parameter = snapshot.text
+                            .substring(parameterPosition, i)
+                            .trim();
+                        if (parameter) {
+                            parameters.push(parameter);
+                        }
+                    }
+                    return { endPosition: i + 1, parameters };
+                }
+                rounded--;
+            } else if (charactor === '{') {
+                curly++;
+            } else if (charactor === '}') {
+                curly--;
+            } else if (charactor === '[') {
+                square++;
+            } else if (charactor === ']') {
+                square--;
+            } else if (charactor === '<') {
+                angular++;
+            } else if (charactor === '>') {
+                angular--;
+            }
+
+            if (
+                rounded === 0 &&
+                curly === 0 &&
+                square === 0 &&
+                angular === 0 &&
+                charactor === ','
+            ) {
+                if (parameterPosition !== -1) {
+                    const parameter = snapshot.text
+                        .substring(parameterPosition, i)
+                        .trim();
+                    if (parameter) {
+                        parameters.push(parameter);
+                    }
+                }
+                parameterPosition = i + 1;
+            }
+        }
+    }
+    return null;
+}
+
+export function getStringRanges(
+    limitPosition: number,
+    snapshot: Snapshot
+): StringRange[] {
+    const stringPositions: StringRange[] = [];
+    const regex =
+        /(?<=#\s*error).*?(?=\n|$)|(?<=#\s*include\s*<)[^>]*?(?=>)|(?<=")[^"]*?(?=")/g;
+    let regexResult: RegExpExecArray | null;
+    while ((regexResult = regex.exec(snapshot.text))) {
+        const position = regexResult.index;
+        const match = regexResult[0];
+        const endPosition = position + match.length;
+        const sr: StringRange = {
+            startPosition: position,
+            endPosition: endPosition,
+        };
+        stringPositions.push(sr);
+        if (position > limitPosition) {
+            break;
+        }
+    }
+    return stringPositions;
 }

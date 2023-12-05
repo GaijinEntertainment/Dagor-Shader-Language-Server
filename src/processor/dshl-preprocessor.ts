@@ -9,6 +9,8 @@ import { StringRange } from '../interface/string-range';
 import {
     addPreprocessingOffset,
     changeText,
+    getMacroParameters,
+    getStringRanges,
     preprocessIncludeStatement,
 } from './preprocessor';
 
@@ -219,7 +221,7 @@ class DshlPreprocessor {
             if (!ms) {
                 continue;
             }
-            const mp = this.getMacroParameters(regex.lastIndex);
+            const mp = getMacroParameters(regex.lastIndex, this.snapshot);
             if (!mp || ms.parameters.length !== mp.parameters.length) {
                 continue;
             }
@@ -228,7 +230,10 @@ class DshlPreprocessor {
                 continue;
             }
             const beforeEndPosition = mp.endPosition;
-            this.updateStringLiterals(beforeEndPosition);
+            this.stringPositions = getStringRanges(
+                beforeEndPosition,
+                this.snapshot
+            );
             if (
                 this.stringPositions.some(
                     (sr) =>
@@ -271,84 +276,6 @@ class DshlPreprocessor {
         );
     }
 
-    private getMacroParameters(position: number): MacroParameters | null {
-        let rounded = 0;
-        let curly = 0;
-        let square = 0;
-        let angular = 0;
-        let parameterPosition = -1;
-        let insideParameters = false;
-        const parameters: string[] = [];
-        for (let i = position; i < this.snapshot.text.length; i++) {
-            const charactor = this.snapshot.text[i];
-            if (charactor === ' ' || charactor === '\t' || charactor === '\n') {
-                continue;
-            }
-            if (!insideParameters && charactor === '(') {
-                insideParameters = true;
-                parameterPosition = i + 1;
-                continue;
-            }
-            if (!insideParameters) {
-                return null;
-            }
-            if (insideParameters) {
-                if (charactor === '(') {
-                    rounded++;
-                } else if (charactor === ')') {
-                    if (
-                        rounded === 0 &&
-                        curly === 0 &&
-                        square === 0 &&
-                        angular === 0
-                    ) {
-                        if (parameterPosition !== -1) {
-                            const parameter = this.snapshot.text
-                                .substring(parameterPosition, i)
-                                .trim();
-                            if (parameter) {
-                                parameters.push(parameter);
-                            }
-                        }
-                        return { endPosition: i + 1, parameters };
-                    }
-                    rounded--;
-                } else if (charactor === '{') {
-                    curly++;
-                } else if (charactor === '}') {
-                    curly--;
-                } else if (charactor === '[') {
-                    square++;
-                } else if (charactor === ']') {
-                    square--;
-                } else if (charactor === '<') {
-                    angular++;
-                } else if (charactor === '>') {
-                    angular--;
-                }
-
-                if (
-                    rounded === 0 &&
-                    curly === 0 &&
-                    square === 0 &&
-                    angular === 0 &&
-                    charactor === ','
-                ) {
-                    if (parameterPosition !== -1) {
-                        const parameter = this.snapshot.text
-                            .substring(parameterPosition, i)
-                            .trim();
-                        if (parameter) {
-                            parameters.push(parameter);
-                        }
-                    }
-                    parameterPosition = i + 1;
-                }
-            }
-        }
-        return null;
-    }
-
     private getMacroPasteText(ms: MacroStatement, me: MacroParameters): string {
         let result = ms.content;
         for (let i = 0; i < ms.parameters.length; i++) {
@@ -358,26 +285,6 @@ class DshlPreprocessor {
             result = result.replace(regex, parameterValue);
         }
         return result;
-    }
-
-    private updateStringLiterals(limitPosition: number): void {
-        this.stringPositions = [];
-        const regex =
-            /(?<=#\s*error).*?(?=\n|$)|(?<=#\s*include\s*<)[^>]*?(?=>)|(?<=")[^"]*?(?=")/g;
-        let regexResult: RegExpExecArray | null;
-        while ((regexResult = regex.exec(this.snapshot.text))) {
-            const position = regexResult.index;
-            const match = regexResult[0];
-            const endPosition = position + match.length;
-            const sr: StringRange = {
-                startPosition: position,
-                endPosition: endPosition,
-            };
-            this.stringPositions.push(sr);
-            if (position > limitPosition) {
-                return;
-            }
-        }
     }
 
     private isCircularMacroExpansion(

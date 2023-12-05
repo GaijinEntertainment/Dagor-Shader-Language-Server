@@ -1,5 +1,6 @@
 import { DocumentUri, Position, Range } from 'vscode-languageserver';
 
+import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { IncludeContext } from '../interface/include-context';
 import { IncludeStatement } from '../interface/include-statement';
@@ -19,6 +20,7 @@ export class Snapshot {
     public defineStatements: DefineStatement[] = [];
     public macroStatements: MacroStatement[] = [];
     public macroContexts: MacroContext[] = [];
+    public defineContexts: DefineContext[] = [];
 
     private preprocessingOffsets: PreprocessingOffset[] = [];
 
@@ -75,6 +77,10 @@ export class Snapshot {
         for (const mc of this.macroContexts) {
             mc.startPosition = this.updatePosition(mc.startPosition, newPo);
             mc.endPosition = this.updatePosition(mc.endPosition, newPo);
+        }
+        for (const dc of this.defineContexts) {
+            dc.startPosition = this.updatePosition(dc.startPosition, newPo);
+            dc.endPosition = this.updatePosition(dc.endPosition, newPo);
         }
         this.preprocessingOffsets.push(newPo);
     }
@@ -136,6 +142,32 @@ export class Snapshot {
                 }
             }
             return mc;
+        }
+        return null;
+    }
+
+    public defineContextAt(position: number): DefineContext | null {
+        for (const dc of this.defineContexts) {
+            const result = this.getDefineContext(dc, position);
+            if (result) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    private getDefineContext(
+        dc: DefineContext,
+        position: number
+    ): DefineContext | null {
+        if (dc.startPosition <= position && position <= dc.endPosition) {
+            for (const c of dc.children) {
+                const result = this.getDefineContext(c, position);
+                if (result) {
+                    return result;
+                }
+            }
+            return dc;
         }
         return null;
     }

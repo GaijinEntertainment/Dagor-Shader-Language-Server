@@ -3,6 +3,7 @@ import { log, logShaderConfigs } from '../core/debug';
 import { getFileContent } from '../core/file-cache-manager';
 import { exists, getFolderContent } from '../helper/fs-helper';
 import { PerformanceHelper } from '../helper/performance-helper';
+import { getRootFolder } from '../helper/server-helper';
 
 import * as path from 'path';
 
@@ -53,7 +54,9 @@ class IncludeProcessor {
 
     public async collectOverrideIncludeFolders(): Promise<void> {
         this.override = true;
-        const shaderConfig = getConfiguration().shaderConfigOverride;
+        const shaderConfig = path.resolve(
+            getConfiguration().shaderConfigOverride
+        );
         if (await exists(shaderConfig)) {
             await this.addIncludeFoldersFromBlk('', shaderConfig, shaderConfig);
         }
@@ -65,21 +68,27 @@ class IncludeProcessor {
 
     private async getGameFolders(): Promise<string[]> {
         let result = await this.getFoldersFrom('.');
-        if (await exists('./samples')) {
-            const samples = await this.getFoldersFrom('./samples');
+        const absoluteSamplesPath = path.resolve(getRootFolder(), 'samples');
+        if (await exists(absoluteSamplesPath)) {
+            const samples = await this.getFoldersFrom('samples');
             result = result.concat(samples);
         }
         return result;
     }
 
     private async getFoldersFrom(pathFrom: string): Promise<string[]> {
-        const filesAndFolders = await getFolderContent(pathFrom);
+        const absolutePath = path.resolve(getRootFolder(), pathFrom);
+        const filesAndFolders = await getFolderContent(absolutePath);
         const folders = filesAndFolders.filter((item) => item.isDirectory());
         return folders.map((item) => path.join(pathFrom, item.name));
     }
 
     private async addIncludeFolders(gameFolder: string): Promise<void> {
-        const shadersFolder = `${gameFolder}/prog/shaders`;
+        const shadersFolder = path.resolve(
+            getRootFolder(),
+            gameFolder,
+            'prog/shaders'
+        );
         if (await exists(shadersFolder)) {
             this.includeFolders.set(gameFolder, new Map());
             const shaderConfigs = await this.getShaderConfigs(shadersFolder);
@@ -149,7 +158,7 @@ class IncludeProcessor {
                 regexResult.index,
                 regexResult.index + regexResult[0].length
             );
-            const workspacePath = path.resolve(
+            const workspacePath = path.join(
                 path.dirname(shaderConfig),
                 relativePath
             );
