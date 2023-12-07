@@ -1,4 +1,4 @@
-export interface StringRange {
+export interface ElementRange {
     startPosition: number;
     endPosition: number;
 }

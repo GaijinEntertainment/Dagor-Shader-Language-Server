@@ -190,12 +190,11 @@ export class ConditionVisitor
                 ? 1n
                 : 0n;
         }
+        if (identifier) {
+            return 0n;
+        }
         if (ctx.LRB()) {
             return this.visit(ctx.expression(0));
-        }
-        if (identifier) {
-            // TODO: macro expansion
-            return 0n;
         }
         return null;
     }

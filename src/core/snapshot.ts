@@ -74,13 +74,19 @@ export class Snapshot {
         for (const ms of this.macroStatements) {
             ms.position = this.updatePosition(ms.position, newPo);
         }
+        for (const ds of this.defineStatements) {
+            ds.position = this.updatePosition(ds.position, newPo);
+        }
         for (const mc of this.macroContexts) {
             mc.startPosition = this.updatePosition(mc.startPosition, newPo);
             mc.endPosition = this.updatePosition(mc.endPosition, newPo);
         }
         for (const dc of this.defineContexts) {
             dc.startPosition = this.updatePosition(dc.startPosition, newPo);
-            dc.endPosition = this.updatePosition(dc.endPosition, newPo);
+            dc.afterEndPosition = this.updatePosition(
+                dc.afterEndPosition,
+                newPo
+            );
         }
         this.preprocessingOffsets.push(newPo);
     }
@@ -160,7 +166,7 @@ export class Snapshot {
         dc: DefineContext,
         position: number
     ): DefineContext | null {
-        if (dc.startPosition <= position && position <= dc.endPosition) {
+        if (dc.startPosition <= position && position <= dc.afterEndPosition) {
             for (const c of dc.children) {
                 const result = this.getDefineContext(c, position);
                 if (result) {

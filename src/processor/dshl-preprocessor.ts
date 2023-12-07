@@ -1,15 +1,15 @@
 import { Snapshot } from '../core/snapshot';
 import { PerformanceHelper } from '../helper/performance-helper';
+import { ElementRange } from '../interface/element-range';
 import { IncludeStatement } from '../interface/include-statement';
 import { IncludeType } from '../interface/include-type';
 import { MacroContext } from '../interface/macro-context';
-import { MacroParameters } from '../interface/macro-parameters';
+import { MacroArguments } from '../interface/macro-parameters';
 import { MacroStatement } from '../interface/macro-statement';
-import { StringRange } from '../interface/string-range';
 import {
     addPreprocessingOffset,
     changeText,
-    getMacroParameters,
+    getMacroArguments,
     getStringRanges,
     preprocessIncludeStatement,
 } from './preprocessor';
@@ -20,7 +20,7 @@ export async function preprocessDshl(snapshot: Snapshot): Promise<void> {
 
 class DshlPreprocessor {
     private snapshot: Snapshot;
-    private stringPositions: StringRange[] = [];
+    private stringPositions: ElementRange[] = [];
 
     public constructor(snapshot: Snapshot) {
         this.snapshot = snapshot;
@@ -41,14 +41,14 @@ class DshlPreprocessor {
         this.removeIncompleteDirectives();
         ph.end('removeIncompleteDirectives');
 
-        ph.start('expandMacros');
+        ph.start('expandMacros DSHL');
         await this.expandMacros();
-        ph.end('expandMacros');
+        ph.end('expandMacros DSHL');
 
         ph.log('expanding includes', 'preprocessIncludes');
         ph.log('finding macros', 'preprocessMacros');
         ph.log('removing other directives', 'removeIncompleteDirectives');
-        ph.log('expanding macros', 'expandMacros');
+        ph.log('expanding macros', 'expandMacros DSHL');
     }
 
     private async preprocessIncludes(): Promise<void> {
@@ -113,9 +113,8 @@ class DshlPreprocessor {
             regex.lastIndex = position;
 
             if (
-                match.startsWith('define_macro_if_not_defined') &&
+                match.startsWith('define_macro_if_not_defined') ||
                 this.snapshot.macroStatements.some(
-                    //TODO: do we need this?
                     (ms) => ms.name === name && ms.position < position
                 )
             ) {
@@ -221,18 +220,18 @@ class DshlPreprocessor {
             if (!ms) {
                 continue;
             }
-            const mp = getMacroParameters(regex.lastIndex, this.snapshot);
-            if (!mp || ms.parameters.length !== mp.parameters.length) {
+            const ma = getMacroArguments(regex.lastIndex, this.snapshot);
+            if (!ma || ms.parameters.length !== ma.arguments.length) {
                 continue;
             }
             const parentMc = this.snapshot.macroContextAt(position);
             if (this.isCircularMacroExpansion(parentMc, ms)) {
                 continue;
             }
-            const beforeEndPosition = mp.endPosition;
+            const beforeEndPosition = ma.endPosition;
             this.stringPositions = getStringRanges(
                 beforeEndPosition,
-                this.snapshot
+                this.snapshot.text
             );
             if (
                 this.stringPositions.some(
@@ -244,7 +243,7 @@ class DshlPreprocessor {
                 continue;
             }
 
-            const pasteText = this.getMacroPasteText(ms, mp);
+            const pasteText = this.getMacroPasteText(ms, ma);
             const afterEndPosition = position + pasteText.length;
             addPreprocessingOffset(
                 position,
@@ -276,11 +275,11 @@ class DshlPreprocessor {
         );
     }
 
-    private getMacroPasteText(ms: MacroStatement, me: MacroParameters): string {
+    private getMacroPasteText(ms: MacroStatement, ma: MacroArguments): string {
         let result = ms.content;
         for (let i = 0; i < ms.parameters.length; i++) {
             const parameterName = ms.parameters[i];
-            const parameterValue = me.parameters[i];
+            const parameterValue = ma.arguments[i];
             const regex = new RegExp(`\\b${parameterName}\\b`, 'g');
             result = result.replace(regex, parameterValue);
         }

@@ -1,4 +1,4 @@
-export interface MacroParameters {
+export interface MacroArguments {
     endPosition: number;
-    parameters: string[];
+    arguments: string[];
 }

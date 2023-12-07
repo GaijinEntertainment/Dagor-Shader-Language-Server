@@ -6,11 +6,11 @@ import { getSnapshot } from '../core/document-manager';
 import { getFileContent } from '../core/file-cache-manager';
 import { Snapshot } from '../core/snapshot';
 import { PerformanceHelper } from '../helper/performance-helper';
+import { ElementRange } from '../interface/element-range';
 import { IncludeContext } from '../interface/include-context';
 import { IncludeStatement } from '../interface/include-statement';
-import { MacroParameters } from '../interface/macro-parameters';
+import { MacroArguments } from '../interface/macro-parameters';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
-import { StringRange } from '../interface/string-range';
 import { preprocessDshl } from './dshl-preprocessor';
 import { preprocessHlsl } from './hlsl-preprocessor';
 import { getIncludedDocumentUri } from './include-resolver';
@@ -142,10 +142,25 @@ export function changeText(
     pasteText: string,
     snapshot: Snapshot
 ): void {
-    snapshot.text =
-        snapshot.text.substring(0, position) +
+    snapshot.text = getChangedText(
+        position,
+        beforeEndPosition,
+        pasteText,
+        snapshot.text
+    );
+}
+
+export function getChangedText(
+    position: number,
+    beforeEndPosition: number,
+    pasteText: string,
+    text: string
+): string {
+    return (
+        text.substring(0, position) +
         pasteText +
-        snapshot.text.substring(beforeEndPosition);
+        text.substring(beforeEndPosition)
+    );
 }
 
 export async function preprocessIncludeStatement(
@@ -208,23 +223,29 @@ function isCircularInclude(
     return false;
 }
 
-export function getMacroParameters(
-    position: number,
+export function getMacroArguments(
+    identifierEndPosition: number,
     snapshot: Snapshot
-): MacroParameters | null {
+): MacroArguments | null {
     let rounded = 0;
     let curly = 0;
     let square = 0;
     let angular = 0;
+    let lastCharacterIsEscape = false;
+    let stringLiteral = false;
+    let characterLiteral = false;
     let parameterPosition = -1;
     let insideParameters = false;
     const parameters: string[] = [];
-    for (let i = position; i < snapshot.text.length; i++) {
-        const charactor = snapshot.text[i];
-        if (charactor === ' ' || charactor === '\t' || charactor === '\n') {
+    for (let i = identifierEndPosition; i < snapshot.text.length; i++) {
+        if (i !== 0) {
+            lastCharacterIsEscape = snapshot.text[i - 1] === '\\';
+        }
+        const character = snapshot.text[i];
+        if (character === ' ' || character === '\t' || character === '\n') {
             continue;
         }
-        if (!insideParameters && charactor === '(') {
+        if (!insideParameters && character === '(') {
             insideParameters = true;
             parameterPosition = i + 1;
             continue;
@@ -233,46 +254,55 @@ export function getMacroParameters(
             return null;
         }
         if (insideParameters) {
-            if (charactor === '(') {
-                rounded++;
-            } else if (charactor === ')') {
-                if (
-                    rounded === 0 &&
-                    curly === 0 &&
-                    square === 0 &&
-                    angular === 0
-                ) {
-                    if (parameterPosition !== -1) {
-                        const parameter = snapshot.text
-                            .substring(parameterPosition, i)
-                            .trim();
-                        if (parameter) {
-                            parameters.push(parameter);
+            if (!stringLiteral && !characterLiteral) {
+                if (character === '(') {
+                    rounded++;
+                } else if (character === ')') {
+                    if (
+                        rounded === 0 &&
+                        curly === 0 &&
+                        square === 0 &&
+                        angular === 0
+                    ) {
+                        if (parameterPosition !== -1) {
+                            const parameter = snapshot.text
+                                .substring(parameterPosition, i)
+                                .trim();
+                            if (parameter) {
+                                parameters.push(parameter);
+                            }
                         }
+                        return {
+                            endPosition: i + 1,
+                            arguments: parameters,
+                        };
                     }
-                    return { endPosition: i + 1, parameters };
+                    rounded--;
+                } else if (character === '{') {
+                    curly++;
+                } else if (character === '}') {
+                    curly--;
+                } else if (character === '[') {
+                    square++;
+                } else if (character === ']') {
+                    square--;
+                } else if (character === '<') {
+                    angular++;
+                } else if (character === '>') {
+                    angular--;
                 }
-                rounded--;
-            } else if (charactor === '{') {
-                curly++;
-            } else if (charactor === '}') {
-                curly--;
-            } else if (charactor === '[') {
-                square++;
-            } else if (charactor === ']') {
-                square--;
-            } else if (charactor === '<') {
-                angular++;
-            } else if (charactor === '>') {
-                angular--;
             }
-
+            if (character === '"' && !lastCharacterIsEscape) {
+                stringLiteral = !stringLiteral;
+            } else if (character === "'" && !lastCharacterIsEscape) {
+                characterLiteral = !characterLiteral;
+            }
             if (
                 rounded === 0 &&
                 curly === 0 &&
                 square === 0 &&
                 angular === 0 &&
-                charactor === ','
+                character === ','
             ) {
                 if (parameterPosition !== -1) {
                     const parameter = snapshot.text
@@ -290,25 +320,24 @@ export function getMacroParameters(
 }
 
 export function getStringRanges(
-    limitPosition: number,
-    snapshot: Snapshot
-): StringRange[] {
-    const stringPositions: StringRange[] = [];
+    endPosition: number,
+    text: string
+): ElementRange[] {
+    const stringPositions: ElementRange[] = [];
     const regex =
-        /(?<=#\s*error).*?(?=\n|$)|(?<=#\s*include\s*<)[^>]*?(?=>)|(?<=")[^"]*?(?=")/g;
+        /(?<=#\s*error).*?(?=\n|$)|(?<=#\s*include\s*<)[^>]*?(?=>)|"([^"]*?[^"\\])?"/g;
     let regexResult: RegExpExecArray | null;
-    while ((regexResult = regex.exec(snapshot.text))) {
+    // regex.lastIndex = startPosition;
+    const t = text.substring(0, endPosition + 1);
+    while ((regexResult = regex.exec(t))) {
         const position = regexResult.index;
         const match = regexResult[0];
         const endPosition = position + match.length;
-        const sr: StringRange = {
+        const sr: ElementRange = {
             startPosition: position,
             endPosition: endPosition,
         };
         stringPositions.push(sr);
-        if (position > limitPosition) {
-            break;
-        }
     }
     return stringPositions;
 }
