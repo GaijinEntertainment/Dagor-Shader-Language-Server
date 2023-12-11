@@ -8,7 +8,7 @@ export async function loadFile(file: string): Promise<string> {
 
 export async function exists(path: string): Promise<boolean> {
     try {
-        await fsp.access(path, fsp.constants.R_OK);
+        await fsp.access(path, fs.constants.R_OK);
         return true;
     } catch {
         // folder or file doesn't exist

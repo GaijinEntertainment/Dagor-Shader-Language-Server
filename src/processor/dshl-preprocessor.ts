@@ -33,7 +33,7 @@ class DshlPreprocessor {
         this.preprocessMacros();
         this.ph.end('preprocessMacros');
         this.ph.start('expandMacros');
-        this.expandMacros();
+        // this.expandMacros();
         this.ph.end('expandMacros');
         this.ph.end('preprocess');
         this.ph.log('  DSHL preprocessor', 'preprocess');
@@ -62,14 +62,14 @@ class DshlPreprocessor {
                 parentIc,
                 this.snapshot
             );
-            await Preprocessor.includeContent(
-                position,
-                beforeEndPosition,
-                is,
-                parentIc,
-                this.snapshot
-            );
-            regex.lastIndex = position;
+            // await Preprocessor.includeContent(
+            //     position,
+            //     beforeEndPosition,
+            //     is,
+            //     parentIc,
+            //     this.snapshot
+            // );
+            // regex.lastIndex = position;
         }
     }
 
