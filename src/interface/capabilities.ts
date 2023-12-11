@@ -5,4 +5,5 @@ export interface Capabilities {
     documentLinkTooltip: boolean;
     showMessage: boolean;
     workspaceFolders: boolean;
+    watchFiles: boolean;
 }

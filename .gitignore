@@ -1,3 +1,5 @@
 bin
+grammar/antlr/.antlr
 node_modules
 out
+src/_generated

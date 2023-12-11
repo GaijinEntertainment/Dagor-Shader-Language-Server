@@ -1,6 +1,6 @@
 import { ClientCapabilities } from 'vscode-languageserver';
 
-import { Capabilities } from './capabilities';
+import { Capabilities } from '../interface/capabilities';
 
 const capabilities: Capabilities = {
     configuration: false,
@@ -9,6 +9,7 @@ const capabilities: Capabilities = {
     documentLinkTooltip: false,
     showMessage: false,
     workspaceFolders: false,
+    watchFiles: false,
 };
 
 export function initializeCapabilities(
@@ -23,6 +24,8 @@ export function initializeCapabilities(
     capabilities.showMessage = !!clientCapabilities.window?.showMessage;
     capabilities.workspaceFolders =
         !!clientCapabilities.workspace?.workspaceFolders;
+    capabilities.watchFiles =
+        !!clientCapabilities.workspace?.didChangeWatchedFiles;
 }
 
 export function getCapabilities(): Capabilities {

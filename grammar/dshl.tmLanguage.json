@@ -1,7 +1,7 @@
 {
-    "scopeName": "source.dagorsh",
+    "scopeName": "source.dshl",
     "name": "Dagor Shader Language",
-    "fileTypes": ["sh"],
+    "fileTypes": ["dshl"],
     "patterns": [
         { "include": "#block" },
         { "include": "#hlsl-block" },
@@ -23,7 +23,7 @@
             "begin": "\\b(hlsl)\\b",
             "end": "(?<=})",
             "beginCaptures": {
-                "0": { "name": "keyword.other.dagorsh" }
+                "0": { "name": "keyword.other.dshl" }
             },
             "patterns": [{ "include": "#stage" }, { "include": "source.hlsl" }]
         },
@@ -32,10 +32,10 @@
             "begin": "{",
             "end": "}",
             "beginCaptures": {
-                "0": { "name": "punctuation.dagorsh" }
+                "0": { "name": "punctuation.dshl" }
             },
             "endCaptures": {
-                "0": { "name": "punctuation.dagorsh" }
+                "0": { "name": "punctuation.dshl" }
             },
             "patterns": [{ "include": "$self" }]
         },
@@ -43,62 +43,62 @@
             "patterns": [
                 {
                     "comment": "BOOL AND NULL LITERAL",
-                    "name": "constant.language.dagorsh",
+                    "name": "constant.language.dshl",
                     "match": "\\b(true|false|NULL)\\b"
                 },
                 {
                     "comment": "BLEND",
                     "match": "\\b(blend_(asrc|adst|src|dst))(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(zero|one|sc|isc|sa|isa|da|ida|dc|idc|sasat|bf|ibf))?\\b",
                     "captures": {
-                        "1": { "name": "support.variable.dagorsh" },
-                        "4": { "name": "comment.block.dagorsh" },
-                        "6": { "name": "keyword.operator.dagorsh" },
-                        "7": { "name": "comment.block.dagorsh" },
-                        "9": { "name": "constant.language.dagorsh" }
+                        "1": { "name": "support.variable.dshl" },
+                        "4": { "name": "comment.block.dshl" },
+                        "6": { "name": "keyword.operator.dshl" },
+                        "7": { "name": "comment.block.dshl" },
+                        "9": { "name": "constant.language.dshl" }
                     }
                 },
                 {
                     "comment": "CULL MODE",
                     "match": "\\b(cull_mode)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(ccw|cw|none))?\\b",
                     "captures": {
-                        "1": { "name": "support.variable.dagorsh" },
-                        "3": { "name": "comment.block.dagorsh" },
-                        "5": { "name": "keyword.operator.dagorsh" },
-                        "6": { "name": "comment.block.dagorsh" },
-                        "8": { "name": "constant.language.dagorsh" }
+                        "1": { "name": "support.variable.dshl" },
+                        "3": { "name": "comment.block.dshl" },
+                        "5": { "name": "keyword.operator.dshl" },
+                        "6": { "name": "comment.block.dshl" },
+                        "8": { "name": "constant.language.dshl" }
                     }
                 },
                 {
                     "comment": "DEPTH AND STENCIL FUNC",
                     "match": "\\b(z_func|stencil_func)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(never|less|equal|lessequal|greater|notequal|greaterequal|always))?\\b",
                     "captures": {
-                        "1": { "name": "support.variable.dagorsh" },
-                        "3": { "name": "comment.block.dagorsh" },
-                        "5": { "name": "keyword.operator.dagorsh" },
-                        "6": { "name": "comment.block.dagorsh" },
-                        "8": { "name": "constant.language.dagorsh" }
+                        "1": { "name": "support.variable.dshl" },
+                        "3": { "name": "comment.block.dshl" },
+                        "5": { "name": "keyword.operator.dshl" },
+                        "6": { "name": "comment.block.dshl" },
+                        "8": { "name": "constant.language.dshl" }
                     }
                 },
                 {
                     "comment": "STENCIL",
                     "match": "\\b(stencil_pass|stencil_fail|stencil_zfail)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)(keep|zero|replace|incrsat|decrsat|incr|dect))?\\b",
                     "captures": {
-                        "1": { "name": "support.variable.dagorsh" },
-                        "3": { "name": "comment.block.dagorsh" },
-                        "5": { "name": "keyword.operator.dagorsh" },
-                        "6": { "name": "comment.block.dagorsh" },
-                        "8": { "name": "constant.language.dagorsh" }
+                        "1": { "name": "support.variable.dshl" },
+                        "3": { "name": "comment.block.dshl" },
+                        "5": { "name": "keyword.operator.dshl" },
+                        "6": { "name": "comment.block.dshl" },
+                        "8": { "name": "constant.language.dshl" }
                     }
                 },
                 {
                     "comment": "COLOR WRITE",
                     "match": "\\b(color_write)(((\\s|/\\*.*?\\*/)*)(=)((\\s|/\\*.*?\\*/)*)([rgba]{1,4}))?\\b",
                     "captures": {
-                        "1": { "name": "support.variable.dagorsh" },
-                        "3": { "name": "comment.block.dagorsh" },
-                        "5": { "name": "keyword.operator.dagorsh" },
-                        "6": { "name": "comment.block.dagorsh" },
-                        "8": { "name": "constant.language.dagorsh" }
+                        "1": { "name": "support.variable.dshl" },
+                        "3": { "name": "comment.block.dshl" },
+                        "5": { "name": "keyword.operator.dshl" },
+                        "6": { "name": "comment.block.dshl" },
+                        "8": { "name": "constant.language.dshl" }
                     }
                 }
             ]
@@ -107,13 +107,13 @@
             "patterns": [
                 {
                     "comment": "MULTI LINE COMMENT",
-                    "name": "comment.block.dagorsh",
+                    "name": "comment.block.dshl",
                     "begin": "/\\*",
                     "end": "\\*/"
                 },
                 {
                     "comment": "SINGLE LINE COMMENT",
-                    "name": "comment.line.double-slash.dagorsh",
+                    "name": "comment.line.double-slash.dshl",
                     "begin": "//",
                     "end": "$"
                 }
@@ -121,7 +121,7 @@
         },
         "string-literal": {
             "comment": "STRING LITERAL",
-            "name": "string.quoted.double.dagorsh",
+            "name": "string.quoted.double.dshl",
             "begin": "\"",
             "end": "\""
         },
@@ -129,12 +129,12 @@
             "patterns": [
                 {
                     "comment": "FLOATING POINT LITERAL",
-                    "name": "constant.numeric.dagorsh",
+                    "name": "constant.numeric.dshl",
                     "match": "((\\d+?\\.\\d+|\\d+\\.)([eE][+-]?\\d+)?|\\d+[eE][+-]?\\d+)[hHfFlL]?"
                 },
                 {
                     "comment": "FIXED POINT LITERAL",
-                    "name": "constant.numeric.dagorsh",
+                    "name": "constant.numeric.dshl",
                     "match": "(0[xX](\\d|[a-fA-F])+|[1-9]\\d*|0[0-7]*)[uUlL]?"
                 }
             ]
@@ -143,61 +143,61 @@
             "patterns": [
                 {
                     "comment": "CONTROL KEYWORD",
-                    "name": "keyword.control.dagorsh",
+                    "name": "keyword.control.dshl",
                     "match": "\\b(if|else|compile|include|include_optional|assume|dont_render|no_dynstcode|render_trans|no_ablend|render_stage|interval)\\b"
                 },
                 {
                     "comment": "BLOCK KEYWORD",
                     "match": "\\b(block)(((\\s|/\\*.*?\\*/)*)(\\()((\\s|/\\*.*?\\*/)*)(frame|global_const|scene|object)\\b)?",
                     "captures": {
-                        "1": { "name": "keyword.other.dagorsh" },
-                        "3": { "name": "comment.block.dagorsh" },
-                        "5": { "name": "keyword.operator.dagorsh" },
-                        "6": { "name": "comment.block.dagorsh" },
-                        "8": { "name": "constant.language.dagorsh" }
+                        "1": { "name": "keyword.other.dshl" },
+                        "3": { "name": "comment.block.dshl" },
+                        "5": { "name": "keyword.operator.dshl" },
+                        "6": { "name": "comment.block.dshl" },
+                        "8": { "name": "constant.language.dshl" }
                     }
                 },
                 {
                     "comment": "OTHER KEYWORD",
-                    "name": "keyword.other.dagorsh",
+                    "name": "keyword.other.dshl",
                     "match": "\\b(macro|define_macro_if_not_defined|endmacro|shader|block|supports)\\b"
                 }
             ]
         },
         "stage": {
             "comment": "STAGE",
-            "name": "constant.language.dagorsh",
+            "name": "constant.language.dshl",
             "match": "(?<=\\((\\s|/\\*.*?\\*/)*)(vs|hs|ds|gs|ps|cs)(?=(\\s|/\\*.*?\\*/)*\\))"
         },
         "operator": {
             "comment": "OPERATOR",
-            "name": "keyword.operator.dagorsh",
+            "name": "keyword.operator.dshl",
             "match": "[+\\-*/%\\[\\]~<>&|^?:(),.!=;$]"
         },
         "modifier": {
             "comment": "MODIFIER",
-            "name": "storage.modifier.dagorsh",
+            "name": "storage.modifier.dshl",
             "match": "\\b(always_referenced|static|dynamic|local|channel|no_warnings|const|undefined_value|public|signed_pack|unsigned_pack|mul_1k|mul_2k|mul_4k|mul_8k|mul_16k|mul_32767|bounding_pack)\\b"
         },
         "function": {
             "comment": "FUNCTION",
             "match": "\\b([a-zA-Z_]\\w*)((\\s|/\\*.*?\\*/)*)(\\()",
             "captures": {
-                "1": { "name": "entity.name.function.dagorsh" },
-                "2": { "name": "comment.block.dagorsh" },
-                "4": { "name": "keyword.operator.dagorsh" }
+                "1": { "name": "entity.name.function.dshl" },
+                "2": { "name": "comment.block.dshl" },
+                "4": { "name": "keyword.operator.dshl" }
             }
         },
         "type": {
             "patterns": [
                 {
                     "comment": "NON-PRIMITIVE TYPE",
-                    "name": "storage.type.dagorsh",
+                    "name": "storage.type.dshl",
                     "match": "(?<!\\.(?:\\s|/\\*.*?\\*/)*)\\b(texture|buffer|const_buffer|sampler)\\b"
                 },
                 {
                     "comment": "PRIMITIVE TYPE",
-                    "name": "storage.type.dagorsh",
+                    "name": "storage.type.dshl",
                     "match": "\\b(bool|float|float1|float2|float3|float4|float4x4|int|int4|color8|short2|short4|ubyte4|short2n|short4n|ushort2n|ushort4n|half2|half4|udec3|dec3n)\\b"
                 }
             ]
@@ -206,24 +206,24 @@
             "patterns": [
                 {
                     "comment": "NON-PRIMITIVE SHORT TYPE",
-                    "name": "storage.type.dagorsh",
+                    "name": "storage.type.dshl",
                     "match": "@((tex|smp)(2d|3d|Array|Cube|CubeArray)?|static(Cube|TexArray)?|shd|buf|cbuf|uav|sampler)\\b"
                 },
                 {
                     "comment": "PRIMITIVE SHORT TYPE",
-                    "name": "storage.type.dagorsh",
+                    "name": "storage.type.dshl",
                     "match": "@((f|i)[1-4]|f44)\\b"
                 }
             ]
         },
         "variable": {
             "comment": "VARIABLE",
-            "name": "variable.dagorsh",
+            "name": "variable.dshl",
             "match": "[a-zA-Z_]\\w*"
         },
         "test": {
             "comment": "ONLY FOR DEBUGGING THE GRAMMAR",
-            "name": "invalid.illegal.dagorsh",
+            "name": "invalid.illegal.dshl",
             "match": "."
         }
     }

@@ -8,34 +8,35 @@ This repository contains 2 versions of the language server: the desktop version 
 
 1. Download and install Node.js (<https://nodejs.org/en/download>)
 2. Download and install git (<https://git-scm.com/downloads>)
-3. Open cmd
-4. Clone the repository
+3. Download and install OpenJDK (<https://learn.microsoft.com/en-us/java/openjdk/download>)
+4. Open cmd
+5. Clone the repository
 
     ```
-    git clone https://github.com/Gaijin-Games-KFT/Dagor-Shader-Language-Server.git
+    git clone https://github.com/GaijinEntertainment/Dagor-Shader-Language-Server.git
     ```
 
-5. Go inside the repository's root folder
+6. Go inside the repository's root folder
 
     ```
     cd Dagor-Shader-Language-Server
     ```
 
-6. Install dependencies
+7. Install dependencies
 
     ```
     npm install
     ```
 
-7. Open the client's folder in Visual Studio Code
+8. Generate code with ANTLR
 
     ```
-    code .
+    npm run generate-antlr
     ```
 
-    When Visual Studio Code opens, it'll suggest you to install the recommanded extensions. They're all useful, but none of them is required.
+    You have to generate code again, every time you change ANTLR grammars in the **grammar/antlr** folder.
 
-8. Build the code
+9. Build the code
 
     ```
     npm run build
@@ -52,7 +53,7 @@ This repository contains 2 versions of the language server: the desktop version 
 ### TypeScript code
 
 -   If you want to write something to the console, use `log`, ˛`logInfo`, `logWarning`, or `logError` (actually, if you run the server from Visual Studio Code, `console.log` will work, however, in Visual Studio, `console.log` will break the extension).
--   If you want to use breakpoints, you have to configure the client properly. For more informations see the [Visual Studio Code client's build instructions](https://github.com/Gaijin-Games-KFT/Dagor-Shader-Language-Support-for-Visual-Studio-Code/blob/main/BUILD.md).
+-   If you want to use breakpoints, you have to configure the client properly. For more informations see the [Visual Studio Code client's build instructions](https://github.com/GaijinEntertainment/Dagor-Shader-Language-Support-for-Visual-Studio-Code/blob/main/BUILD.md).
 
 ### TextMate grammar
 
@@ -64,6 +65,7 @@ This repository contains 2 versions of the language server: the desktop version 
 -   **build-production**: Builds both the desktop and the web versions of the server in production mode. It also generates platform-specific executables from them.
 -   **build**: Builds both the server in development mode.
 -   **watch**: Same as **build**, but it rebuilds the code as you change (and save) a file.
+-   **generate-antlr**: Generates the ANTLR lexer's and parser's code. It's required to run it before building, if you changed the ANTLR grammars (or if you haven't ever generated code).
 -   **eslint**: Runs ESLint and lists the possible problems in the code. It has to be succesful to be able to merge a pull request.
 -   **prettier-lint**: Prettier checks if all files are formatted correctly. It has to be succesful to be able to merge a pull request.
 -   **prettier-format**: Prettier formats all files. Usually not necesary to use it, because files are automatically formatted before commiting.

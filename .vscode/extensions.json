@@ -4,6 +4,7 @@
         "esbenp.prettier-vscode",
         "dbaeumer.vscode-eslint",
         "github.vscode-github-actions",
-        "redcmd.tmlanguage-syntax-highlighter"
+        "redcmd.tmlanguage-syntax-highlighter",
+        "mike-lischke.vscode-antlr4"
     ]
 }

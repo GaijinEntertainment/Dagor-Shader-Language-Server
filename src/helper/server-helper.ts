@@ -3,8 +3,16 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { Server } from '../server';
 
+export async function syncInitialization(): Promise<void> {
+    return Server.getServer().syncInitialization();
+}
+
 export function getDocuments(): TextDocuments<TextDocument> {
     return Server.getServer().getDocuments();
+}
+
+export function getRootFolder(): string {
+    return Server.getServer().getRootFolder();
 }
 
 export function showInfoMessage(message: string): void {
