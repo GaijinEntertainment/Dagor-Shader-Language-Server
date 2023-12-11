@@ -20,7 +20,12 @@ export async function documentLinksProvider(
     ph.start('documentLinksProvider');
     const links: DocumentLink[] = [];
     for (const is of snapshot.includeStatements) {
-        if (!positionsEqual(is.originalRange.start, is.originalRange.end)) {
+        if (
+            !positionsEqual(
+                is.pathOriginalRange.start,
+                is.pathOriginalRange.end
+            )
+        ) {
             const link = await createLink(is);
             links.push(link);
         }
@@ -32,7 +37,7 @@ export async function documentLinksProvider(
 
 async function createLink(is: IncludeStatement): Promise<DocumentLink> {
     const tooltip = await getDebugTooltip(is);
-    return { range: is.originalRange, data: is, tooltip };
+    return { range: is.pathOriginalRange, data: is, tooltip };
 }
 
 async function getDebugTooltip(

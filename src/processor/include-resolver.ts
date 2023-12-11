@@ -41,7 +41,7 @@ async function getRelativeDocumentUri(
     is: IncludeStatement
 ): Promise<DocumentUri | null> {
     const includerUri = URI.parse(is.includerUri).fsPath;
-    const includedUri = path.join(includerUri, '..', is.name);
+    const includedUri = path.join(includerUri, '..', is.path);
     if (
         includerUri !== includedUri &&
         (await exists(includedUri)) &&
@@ -57,7 +57,7 @@ async function getDocumentUriInIncludeFolder(
 ): Promise<DocumentUri | null> {
     const includeFolders = await getIncludeFolders();
     for (const includeFolder of includeFolders) {
-        const includedUri = path.join(includeFolder, is.name);
+        const includedUri = path.join(includeFolder, is.path);
         if ((await exists(includedUri)) && (await isFile(includedUri))) {
             return URI.file(includedUri).toString();
         }

@@ -2,11 +2,13 @@ import { DocumentUri, Position, Range } from 'vscode-languageserver';
 
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
+import { ElementRange } from '../interface/element-range';
 import { IncludeContext } from '../interface/include-context';
 import { IncludeStatement } from '../interface/include-statement';
 import { MacroContext } from '../interface/macro-context';
 import { MacroStatement } from '../interface/macro-statement';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
+import { RangeWithChildren } from '../interface/range-with-children';
 
 export class Snapshot {
     public readonly version: number;
@@ -21,6 +23,7 @@ export class Snapshot {
     public macroStatements: MacroStatement[] = [];
     public macroContexts: MacroContext[] = [];
     public defineContexts: DefineContext[] = [];
+    public stringRanges: ElementRange[] = [];
 
     private preprocessingOffsets: PreprocessingOffset[] = [];
 
@@ -68,8 +71,7 @@ export class Snapshot {
             po.position = this.updatePosition(po.position, newPo);
         }
         for (const ic of this.includeContexts) {
-            ic.startPosition = this.updatePosition(ic.startPosition, newPo);
-            ic.endPosition = this.updatePosition(ic.endPosition, newPo);
+            this.updateOffsetAndChildren(ic, newPo);
         }
         for (const ms of this.macroStatements) {
             ms.position = this.updatePosition(ms.position, newPo);
@@ -78,8 +80,7 @@ export class Snapshot {
             ds.position = this.updatePosition(ds.position, newPo);
         }
         for (const mc of this.macroContexts) {
-            mc.startPosition = this.updatePosition(mc.startPosition, newPo);
-            mc.endPosition = this.updatePosition(mc.endPosition, newPo);
+            this.updateOffsetAndChildren(mc, newPo);
         }
         for (const dc of this.defineContexts) {
             dc.startPosition = this.updatePosition(dc.startPosition, newPo);
@@ -88,7 +89,22 @@ export class Snapshot {
                 newPo
             );
         }
+        for (const sr of this.stringRanges) {
+            sr.startPosition = this.updatePosition(sr.startPosition, newPo);
+            sr.endPosition = this.updatePosition(sr.endPosition, newPo);
+        }
         this.preprocessingOffsets.push(newPo);
+    }
+
+    private updateOffsetAndChildren(
+        rwc: RangeWithChildren,
+        po: PreprocessingOffset
+    ): void {
+        rwc.startPosition = this.updatePosition(rwc.startPosition, po);
+        rwc.endPosition = this.updatePosition(rwc.endPosition, po);
+        for (const tc of rwc.children) {
+            this.updateOffsetAndChildren(tc, po);
+        }
     }
 
     private updatePosition(position: number, po: PreprocessingOffset): number {
@@ -100,7 +116,16 @@ export class Snapshot {
         return position;
     }
 
-    public includeContextAt(position: number): IncludeContext | null {
+    public getIncludeContextAt(position: number): IncludeContext | null {
+        return (
+            this.includeContexts.find(
+                (ic) =>
+                    ic.startPosition <= position && position < ic.endPosition
+            ) ?? null
+        );
+    }
+
+    public getIncludeContextDeepAt(position: number): IncludeContext | null {
         for (const ic of this.includeContexts) {
             const result = this.getIncludeContext(ic, position);
             if (result) {
@@ -114,7 +139,7 @@ export class Snapshot {
         ic: IncludeContext,
         position: number
     ): IncludeContext | null {
-        if (ic.startPosition <= position && position <= ic.endPosition) {
+        if (ic.startPosition <= position && position < ic.endPosition) {
             for (const c of ic.children) {
                 const result = this.getIncludeContext(c, position);
                 if (result) {
@@ -126,7 +151,16 @@ export class Snapshot {
         return null;
     }
 
-    public macroContextAt(position: number): MacroContext | null {
+    public getMacroContextAt(position: number): MacroContext | null {
+        return (
+            this.macroContexts.find(
+                (ic) =>
+                    ic.startPosition <= position && position < ic.endPosition
+            ) ?? null
+        );
+    }
+
+    public getMacroContextDeepAt(position: number): MacroContext | null {
         for (const mc of this.macroContexts) {
             const result = this.getMacroContext(mc, position);
             if (result) {
@@ -140,7 +174,7 @@ export class Snapshot {
         mc: MacroContext,
         position: number
     ): MacroContext | null {
-        if (mc.startPosition <= position && position <= mc.endPosition) {
+        if (mc.startPosition <= position && position < mc.endPosition) {
             for (const c of mc.children) {
                 const result = this.getMacroContext(c, position);
                 if (result) {
@@ -166,7 +200,7 @@ export class Snapshot {
         dc: DefineContext,
         position: number
     ): DefineContext | null {
-        if (dc.startPosition <= position && position <= dc.afterEndPosition) {
+        if (dc.startPosition <= position && position < dc.afterEndPosition) {
             for (const c of dc.children) {
                 const result = this.getDefineContext(c, position);
                 if (result) {
@@ -176,5 +210,16 @@ export class Snapshot {
             return dc;
         }
         return null;
+    }
+
+    public getMacroStatement(
+        name: string,
+        position: number
+    ): MacroStatement | null {
+        return (
+            this.macroStatements.find(
+                (ms) => ms.name === name && ms.position <= position
+            ) ?? null
+        );
     }
 }
