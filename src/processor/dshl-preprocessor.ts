@@ -33,7 +33,7 @@ class DshlPreprocessor {
         this.preprocessMacros();
         this.ph.end('preprocessMacros');
         this.ph.start('expandMacros');
-        // this.expandMacros();
+        this.expandMacros();
         this.ph.end('expandMacros');
         this.ph.end('preprocess');
         this.ph.log('  DSHL preprocessor', 'preprocess');
@@ -62,20 +62,20 @@ class DshlPreprocessor {
                 parentIc,
                 this.snapshot
             );
-            // await Preprocessor.includeContent(
-            //     position,
-            //     beforeEndPosition,
-            //     is,
-            //     parentIc,
-            //     this.snapshot
-            // );
-            // regex.lastIndex = position;
+            await Preprocessor.includeContent(
+                position,
+                beforeEndPosition,
+                is,
+                parentIc,
+                this.snapshot
+            );
+            regex.lastIndex = position;
         }
     }
 
     private preprocessMacros(): void {
         const regex =
-            /(?<beforeContent>\b(?:macro|define_macro_if_not_defined)\s+(?<name>[a-zA-Z_]\w*)\s*\(\s*(?<parameters>[a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*\s*(,\s*)?)?\))(?<content>\s*(\r?\n)?(^[^\r\n]*(?:\r?\n))*?(\r?\n)?\s*)endmacro/gm;
+            /(?<beforeContent>\b(?<beforeName>(?:macro|define_macro_if_not_defined)\s+)(?<name>[a-zA-Z_]\w*)\s*\(\s*(?<parameters>[a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*\s*(,\s*)?)?\))(?<content>\s*(\r?\n)?(^[^\r\n]*(?:\r?\n))*?(\r?\n)?\s*)endmacro/gm;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(this.snapshot.text))) {
             const position = regexResult.index;
@@ -91,6 +91,16 @@ class DshlPreprocessor {
                 content,
                 position + (regexResult.groups?.beforeContent?.length ?? 0)
             );
+            const beforeNameOffset =
+                regexResult.groups?.beforeName?.length ?? 0;
+            const nameOriginalRange = this.snapshot.getOriginalRange(
+                beforeNameOffset + position,
+                beforeNameOffset + position + name.length
+            );
+            const originalRange = this.snapshot.getOriginalRange(
+                position,
+                beforeEndPosition
+            );
             Preprocessor.removeTextAndAddOffset(
                 position,
                 beforeEndPosition,
@@ -101,8 +111,12 @@ class DshlPreprocessor {
             if (this.snapshot.macroStatements.some((ms) => ms.name === name)) {
                 continue;
             }
+            const ic = this.snapshot.getIncludeContextDeepAt(position);
             const ms: MacroStatement = {
+                uri: ic?.uri ?? this.snapshot.uri,
                 position,
+                originalRange,
+                nameOriginalRange,
                 name,
                 parameters:
                     regexResult.groups?.parameters
@@ -202,6 +216,10 @@ class DshlPreprocessor {
     ): void {
         const pasteText = this.getMacroPasteText(ms, ma);
         const afterEndPosition = position + pasteText.length;
+        const originalRange = this.snapshot.getOriginalRange(
+            position,
+            beforeEndPosition
+        );
         Preprocessor.changeTextAndAddOffset(
             position,
             beforeEndPosition,
@@ -213,6 +231,7 @@ class DshlPreprocessor {
             macro: ms,
             startPosition: position,
             endPosition: afterEndPosition,
+            originalRange,
             parent: parentMc,
             children: [],
         };

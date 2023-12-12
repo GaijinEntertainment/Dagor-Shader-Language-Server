@@ -16,6 +16,7 @@ import {
     collectIncludeFolders,
     collectOverrideIncludeFolders,
 } from './processor/include-processor';
+import { definitionProvider } from './provider/definition-provider';
 import { documentLinkResolveProvider } from './provider/document-link-resolve-provider';
 import { documentLinksProvider } from './provider/document-links-provider';
 import { Server } from './server';
@@ -29,12 +30,14 @@ export class ServerDesktop extends Server {
         super.addFeatures();
         this.connection.onDocumentLinks(documentLinksProvider);
         this.connection.onDocumentLinkResolve(documentLinkResolveProvider);
+        this.connection.onDefinition(definitionProvider);
     }
 
     protected override onInitialize(ip: InitializeParams): InitializeResult {
         return {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
+                definitionProvider: true,
                 // completionProvider: {},
                 documentLinkProvider: { resolveProvider: true },
             },
