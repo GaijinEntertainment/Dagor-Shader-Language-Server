@@ -1,11 +1,11 @@
+import * as path from 'path';
+
 import { getConfiguration } from '../core/configuration-manager';
 import { log, logShaderConfigs } from '../core/debug';
 import { getFileContent } from '../core/file-cache-manager';
 import { exists, getFolderContent } from '../helper/fs-helper';
 import { PerformanceHelper } from '../helper/performance-helper';
 import { getRootFolder } from '../helper/server-helper';
-
-import * as path from 'path';
 
 export type GameFolder = string;
 export type ShaderConfig = string;

@@ -1,8 +1,9 @@
-import { DocumentUri } from 'vscode-languageserver';
+import { Snapshot } from '../../core/snapshot';
 
 export interface IncludeContext {
-    uri: DocumentUri;
+    snapshot: Snapshot;
     startPosition: number;
+    localStartPosition: number;
     endPosition: number;
     parent: IncludeContext | null;
     children: IncludeContext[];

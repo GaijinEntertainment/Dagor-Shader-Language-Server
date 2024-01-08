@@ -1,4 +1,5 @@
 import { DocumentUri } from 'vscode-languageserver';
+
 import { collectAndLogPerformance, log } from '../core/debug';
 
 export class PerformanceHelper {
@@ -77,6 +78,17 @@ export class PerformanceHelper {
             .filter((e) => e.name.startsWith(`[${name}]`))
             .map((e) => e.duration);
         return entries.reduce((prev, curr) => prev + curr, 0) / entries.length;
+    }
+
+    public static getGlobalSum(name: string): number {
+        if (!collectAndLogPerformance) {
+            return 0;
+        }
+        return performance
+            .getEntriesByType('measure')
+            .filter((e) => e.name.startsWith(`[${name}]`))
+            .map((e) => e.duration)
+            .reduce((prev, curr) => prev + curr, 0);
     }
 
     public log(displayName: string, name: string): void {

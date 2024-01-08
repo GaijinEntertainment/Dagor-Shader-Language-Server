@@ -1,4 +1,4 @@
-import { MacroArguments } from '../interface/macro-parameters';
+import { MacroArguments } from '../interface/macro/macro-parameters';
 
 export class MacroArgumentsProcesor {
     text: string;

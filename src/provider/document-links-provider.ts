@@ -1,12 +1,12 @@
 import { DocumentLink, DocumentLinkParams } from 'vscode-languageserver';
-
 import { URI } from 'vscode-uri';
+
 import { getCapabilities } from '../core/capability-manager';
 import { showDocumentLinkDebugLabel } from '../core/debug';
 import { getSnapshot } from '../core/document-manager';
 import { positionsEqual } from '../helper/helper';
 import { PerformanceHelper } from '../helper/performance-helper';
-import { IncludeStatement } from '../interface/include-statement';
+import { IncludeStatement } from '../interface/include/include-statement';
 import { getIncludedDocumentUri } from '../processor/include-resolver';
 
 export async function documentLinksProvider(

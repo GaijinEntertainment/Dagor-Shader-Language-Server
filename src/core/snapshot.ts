@@ -3,10 +3,10 @@ import { DocumentUri, Position, Range } from 'vscode-languageserver';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
-import { IncludeContext } from '../interface/include-context';
-import { IncludeStatement } from '../interface/include-statement';
-import { MacroContext } from '../interface/macro-context';
-import { MacroStatement } from '../interface/macro-statement';
+import { IncludeContext } from '../interface/include/include-context';
+import { IncludeStatement } from '../interface/include/include-statement';
+import { MacroContext } from '../interface/macro/macro-context';
+import { MacroStatement } from '../interface/macro/macro-statement';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { RangeWithChildren } from '../interface/range-with-children';
 
@@ -43,16 +43,64 @@ export class Snapshot {
     }
 
     public getOriginalPosition(position: number): Position {
-        const offset = this.preprocessingOffsets
-            .filter((c) => c.position <= position)
-            .map((c) => c.offset)
-            .reduce((prev, curr) => prev + curr, 0);
-        const originalPosition = position - offset;
-        return this.positionAt(originalPosition);
+        const ic = this.getIncludeContextDeepAt(position);
+        const icc = this.getIncludeChain(ic);
+        let startPosition = icc.length ? icc[0].startPosition : 0;
+        let offset = this.getOffset(
+            position,
+            startPosition,
+            this.preprocessingOffsets
+        );
+        position -= offset;
+        for (let i = 0; i < icc.length; i++) {
+            const c = icc[i];
+            startPosition =
+                icc.length > i + 1 ? icc[i + 1].localStartPosition : 0;
+            offset = this.getOffset(
+                position,
+                startPosition,
+                c.snapshot.preprocessingOffsets
+            );
+            position -= offset;
+        }
+        const text = icc.length
+            ? icc[icc.length - 1].snapshot.originalText
+            : this.originalText;
+        return this.positionAt(text, position);
     }
 
-    private positionAt(position: number): Position {
-        const lines = this.originalText.split('\n');
+    private getIncludeChain(ic: IncludeContext | null): IncludeContext[] {
+        if (!ic) {
+            return [];
+        }
+        const result = [ic];
+        let current = ic;
+        while (current.parent) {
+            result.push(current.parent);
+            current = current.parent;
+        }
+        return result.reverse();
+    }
+
+    private getOffset(
+        position: number,
+        startPosition: number,
+        pofs: PreprocessingOffset[]
+    ): number {
+        return (
+            pofs
+                .filter(
+                    (c) =>
+                        c.afterEndPosition < position &&
+                        c.afterEndPosition >= startPosition
+                )
+                .map((c) => c.offset)
+                .reduce((prev, curr) => prev + curr, 0) + startPosition
+        );
+    }
+
+    private positionAt(text: string, position: number): Position {
+        const lines = text.split('\n');
         let line = 0;
         let character = 0;
         for (; line < lines.length; line++) {
@@ -68,7 +116,10 @@ export class Snapshot {
 
     public addPreprocessingOffset(newPo: PreprocessingOffset): void {
         for (const po of this.preprocessingOffsets) {
-            po.position = this.updatePosition(po.position, newPo);
+            po.afterEndPosition = this.updatePosition(
+                po.afterEndPosition,
+                newPo
+            );
         }
         for (const ic of this.includeContexts) {
             this.updateOffsetAndChildren(ic, newPo);
@@ -139,7 +190,7 @@ export class Snapshot {
         ic: IncludeContext,
         position: number
     ): IncludeContext | null {
-        if (ic.startPosition <= position && position < ic.endPosition) {
+        if (ic.startPosition <= position && position <= ic.endPosition) {
             for (const c of ic.children) {
                 const result = this.getIncludeContext(c, position);
                 if (result) {

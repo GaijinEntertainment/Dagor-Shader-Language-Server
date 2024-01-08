@@ -8,8 +8,8 @@ import {
 import { LAUNCH_OPTION_CURRENT_CONFIG } from '../core/constant';
 import { log, logDocumentLinkResolveShaderConfig } from '../core/debug';
 import { exists, isFile } from '../helper/fs-helper';
-import { IncludeStatement } from '../interface/include-statement';
-import { IncludeType } from '../interface/include-type';
+import { IncludeStatement } from '../interface/include/include-statement';
+import { IncludeType } from '../interface/include/include-type';
 import {
     ShaderConfig,
     includeFolders,

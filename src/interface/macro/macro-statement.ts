@@ -1,5 +1,7 @@
 import { DocumentUri, Range } from 'vscode-languageserver';
 
+import { MacroType } from './macro-type';
+
 export interface MacroStatement {
     uri: DocumentUri;
     position: number;
@@ -8,4 +10,5 @@ export interface MacroStatement {
     name: string;
     parameters: string[];
     content: string;
+    type: MacroType;
 }

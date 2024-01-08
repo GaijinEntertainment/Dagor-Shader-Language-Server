@@ -1,20 +1,15 @@
-import { DocumentUri, Range } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
+import { Range } from 'vscode-languageserver';
 
-import { getSnapshot } from '../core/document-manager';
-import { getFileContent } from '../core/file-cache-manager';
 import { Snapshot } from '../core/snapshot';
 import { PerformanceHelper } from '../helper/performance-helper';
 import { ElementRange } from '../interface/element-range';
-import { IncludeContext } from '../interface/include-context';
-import { IncludeStatement } from '../interface/include-statement';
-import { IncludeType } from '../interface/include-type';
-import { MacroContext } from '../interface/macro-context';
-import { MacroArguments } from '../interface/macro-parameters';
+import { IncludeContext } from '../interface/include/include-context';
+import { IncludeStatement } from '../interface/include/include-statement';
+import { IncludeType } from '../interface/include/include-type';
+import { MacroContext } from '../interface/macro/macro-context';
+import { MacroArguments } from '../interface/macro/macro-parameters';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { preprocessDshl } from './dshl-preprocessor';
-import { preprocessHlsl } from './hlsl-preprocessor';
-import { getIncludedDocumentUri } from './include-resolver';
 import { MacroArgumentsProcesor } from './macro-arguments-processor';
 
 export async function preprocess(snapshot: Snapshot): Promise<void> {
@@ -52,24 +47,19 @@ export class Preprocessor {
         if (this.snapshot.uri.endsWith('.dshl')) {
             await preprocessDshl(this.snapshot);
         }
-        await preprocessHlsl(this.snapshot);
+        // TODO
+        // await preprocessHlsl(this.snapshot);
         this.snapshot.preprocessedText = this.snapshot.text;
         this.ph.end('preprocess');
         this.ph.log('preprocessing', 'preprocess');
     }
 
     private preprocessLineContinuations(): void {
-        this.preprocessRegex(/\\\r?\n/g);
-    }
-
-    private preprocessComments(): void {
-        this.preprocessRegex(/\/\/.*|\/\*[\s\S*]*?\*\//g, ' ');
-    }
-
-    private preprocessRegex(regex: RegExp, pasteText = ''): void {
         let regexResult: RegExpExecArray | null;
+        const regex = /\\\r?\n/g;
         while ((regexResult = regex.exec(this.snapshot.text))) {
             const position = regexResult.index;
+            const pasteText = '';
             const match = regexResult[0];
             const beforeEndPosition = position + match.length;
             const afterEndPosition = position + pasteText.length;
@@ -81,6 +71,35 @@ export class Preprocessor {
                 this.snapshot
             );
             regex.lastIndex = afterEndPosition;
+        }
+    }
+
+    private preprocessComments(): void {
+        const regex =
+            /"(?:[^"]|\\")*"|(?<=#[ \t]*include[ \t]*)<[^>]*>|(?<=#[ \t]*error).*|'(?:[^']|\\')*'|\/\/.*|\/\*[\s\S*]*?\*\//g;
+        let regexResult: RegExpExecArray | null;
+        while ((regexResult = regex.exec(this.snapshot.text))) {
+            const position = regexResult.index;
+            const match = regexResult[0];
+            const beforeEndPosition = position + match.length;
+            if (match.startsWith('//') || match.startsWith('/*')) {
+                const pasteText = ' ';
+                const afterEndPosition = position + pasteText.length;
+                Preprocessor.changeTextAndAddOffset(
+                    position,
+                    beforeEndPosition,
+                    afterEndPosition,
+                    pasteText,
+                    this.snapshot
+                );
+                regex.lastIndex = afterEndPosition;
+            } else {
+                const sr: ElementRange = {
+                    startPosition: position,
+                    endPosition: beforeEndPosition,
+                };
+                this.snapshot.stringRanges.push(sr);
+            }
         }
     }
 
@@ -146,112 +165,42 @@ export class Preprocessor {
         );
     }
 
-    public static async includeContent(
-        position: number,
+    public static createIncludeStatement(
         beforeEndPosition: number,
-        is: IncludeStatement,
+        type: IncludeType,
+        path: string,
+        parentMc: MacroContext | null,
         parentIc: IncludeContext | null,
         snapshot: Snapshot
-    ): Promise<void> {
-        const uri = await getIncludedDocumentUri(is);
-        const includeText = await Preprocessor.getIncludeText(
-            uri,
-            parentIc,
-            snapshot
-        );
-        const afterEndPosition = position + includeText.length;
-        Preprocessor.changeTextAndAddOffset(
-            position,
+    ): IncludeStatement {
+        const pathOriginalRange = Preprocessor.getIncludePathOriginalRange(
             beforeEndPosition,
-            afterEndPosition,
-            includeText,
+            path,
             snapshot
         );
-        const ic = Preprocessor.createIncludeContext(
-            position,
-            afterEndPosition,
-            uri,
-            parentIc,
-            snapshot
-        );
-        if (ic) {
-            Preprocessor.updateStringRanges(
-                position,
-                afterEndPosition,
-                snapshot
-            );
-        }
-    }
-
-    private static createIncludeContext(
-        position: number,
-        afterEndPosition: number,
-        uri: DocumentUri | null,
-        parentIc: IncludeContext | null,
-        snapshot: Snapshot
-    ): IncludeContext | null {
-        if (!uri) {
-            return null;
-        }
-        const ic: IncludeContext = {
-            startPosition: position,
-            endPosition: afterEndPosition,
-            uri,
-            parent: parentIc,
-            children: [],
+        const is: IncludeStatement = {
+            path,
+            pathOriginalRange,
+            type,
+            includerUri: parentIc?.snapshot?.uri ?? snapshot.uri,
         };
-        if (parentIc) {
-            parentIc.children.push(ic);
-        } else {
-            snapshot.includeContexts.push(ic);
+        if (!parentMc && !parentIc) {
+            snapshot.includeStatements.push(is);
         }
-        return ic;
+        return is;
     }
 
-    private static async getIncludeText(
-        uri: DocumentUri | null,
-        parentIc: IncludeContext | null,
+    public static getIncludePathOriginalRange(
+        beforeEndPosition: number,
+        path: string,
         snapshot: Snapshot
-    ): Promise<string> {
-        const circularInclude = Preprocessor.isCircularInclude(
-            parentIc,
-            uri,
-            snapshot
-        );
-        return uri && !circularInclude ? await Preprocessor.getText(uri) : '';
+    ): Range {
+        const pathEndPosition = beforeEndPosition - 1;
+        const pathStartPosition = pathEndPosition - path.length;
+        return snapshot.getOriginalRange(pathStartPosition, pathEndPosition);
     }
 
-    private static async getText(uri: DocumentUri): Promise<string> {
-        let includedSnapshot = await getSnapshot(uri);
-        if (includedSnapshot) {
-            return includedSnapshot.cleanedText;
-        } else {
-            const text = await getFileContent(URI.parse(uri).fsPath);
-            includedSnapshot = new Snapshot(-1, uri, text);
-            new Preprocessor(includedSnapshot).clean();
-            return includedSnapshot.cleanedText;
-        }
-    }
-
-    private static isCircularInclude(
-        ic: IncludeContext | null,
-        uri: DocumentUri | null,
-        snapshot: Snapshot
-    ): boolean {
-        if (snapshot.uri === uri) {
-            return true;
-        }
-        let currentIc: IncludeContext | null = ic;
-        while (currentIc) {
-            if (currentIc.uri === uri) {
-                return true;
-            }
-            currentIc = currentIc.parent;
-        }
-        return false;
-    }
-
-    public static updateStringRanges(
+    public static addStringRanges(
         startPosition: number,
         endPosition: number,
         snapshot: Snapshot
@@ -275,7 +224,7 @@ export class Preprocessor {
 
     public static isInString(position: number, snapshot: Snapshot): boolean {
         return snapshot.stringRanges.some(
-            (sr) => sr.startPosition <= position && position <= sr.endPosition
+            (sr) => sr.startPosition <= position && position < sr.endPosition
         );
     }
 
@@ -285,40 +234,5 @@ export class Preprocessor {
     ): MacroArguments | null {
         const map = new MacroArgumentsProcesor(snapshot.text);
         return map.getMacroArguments(identifierEndPosition);
-    }
-
-    public static createIncludeStatement(
-        beforeEndPosition: number,
-        type: IncludeType,
-        path: string,
-        parentMc: MacroContext | null,
-        parentIc: IncludeContext | null,
-        snapshot: Snapshot
-    ): IncludeStatement {
-        const pathOriginalRange = this.getIncludePathOriginalRange(
-            beforeEndPosition,
-            path,
-            snapshot
-        );
-        const is: IncludeStatement = {
-            path,
-            pathOriginalRange,
-            type,
-            includerUri: parentIc?.uri ?? snapshot.uri,
-        };
-        if (!parentMc && !parentIc) {
-            snapshot.includeStatements.push(is);
-        }
-        return is;
-    }
-
-    private static getIncludePathOriginalRange(
-        beforeEndPosition: number,
-        path: string,
-        snapshot: Snapshot
-    ): Range {
-        const pathEndPosition = beforeEndPosition - 1;
-        const pathStartPosition = pathEndPosition - path.length;
-        return snapshot.getOriginalRange(pathStartPosition, pathEndPosition);
     }
 }

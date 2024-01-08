@@ -1,3 +1,5 @@
+import * as chokidar from 'chokidar';
+
 import { loadFile, watchFile } from '../helper/fs-helper';
 import {
     collectIncludeFolders,
@@ -5,8 +7,6 @@ import {
 } from '../processor/include-processor';
 import { getConfiguration } from './configuration-manager';
 import { log, logCachingBehavior } from './debug';
-
-import * as chokidar from 'chokidar';
 
 interface FileCache {
     watcher: chokidar.FSWatcher;

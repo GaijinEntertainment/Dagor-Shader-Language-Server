@@ -1,4 +1,5 @@
 import { Range } from 'vscode-languageserver';
+
 import { MacroStatement } from './macro-statement';
 
 export interface MacroContext {
@@ -6,6 +7,8 @@ export interface MacroContext {
     startPosition: number;
     endPosition: number;
     originalRange: Range;
+    originalNameRange: Range;
     parent: MacroContext | null;
     children: MacroContext[];
+    isNotVisible: boolean;
 }

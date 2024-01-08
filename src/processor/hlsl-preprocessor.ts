@@ -1,15 +1,22 @@
 import { ANTLRInputStream, CommonTokenStream } from 'antlr4ts';
+import { DocumentUri } from 'vscode-languageserver';
+import { URI } from 'vscode-uri';
 
 import { ConditionLexer } from '../_generated/ConditionLexer';
 import { ConditionParser } from '../_generated/ConditionParser';
+import { getSnapshot } from '../core/document-manager';
+import { getFileContent } from '../core/file-cache-manager';
 import { Snapshot } from '../core/snapshot';
 import { PerformanceHelper } from '../helper/performance-helper';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
 import { IfState } from '../interface/if-state';
-import { IncludeType } from '../interface/include-type';
+import { IncludeContext } from '../interface/include/include-context';
+import { IncludeStatement } from '../interface/include/include-statement';
+import { IncludeType } from '../interface/include/include-type';
 import { ConditionVisitor } from './condition-visitor';
+import { getIncludedDocumentUri } from './include-resolver';
 import { Preprocessor } from './preprocessor';
 
 export async function preprocessHlsl(snapshot: Snapshot): Promise<void> {
@@ -34,12 +41,12 @@ export class HlslPreprocessor {
         this.ph.end('preprocessDirectives');
         this.refreshMacroNames();
         this.ph.start('expandMacros');
-        // HlslPreprocessor.expandMacros(
-        //     0,
-        //     this.snapshot.text.length,
-        //     this.snapshot,
-        //     this.macroNames
-        // );
+        HlslPreprocessor.expandMacros(
+            0,
+            this.snapshot.text.length,
+            this.snapshot,
+            this.macroNames
+        );
         this.ph.end('expandMacros');
         this.ph.end('preprocess');
         this.ph.log('  HLSL preprocessor', 'preprocess');
@@ -71,112 +78,112 @@ export class HlslPreprocessor {
         const regexResult = this.getIncludeRegexResult(match);
         if (regexResult) {
             await this.preprocessInclude(regexResult, position);
-            // if (
-            //     this.ifStack.some((is) => !is.condition) ||
-            //     Preprocessor.isInString(position, this.snapshot)
-            // ) {
-            return beforeEndPosition;
-            // }
-            // return position;
+            if (
+                this.ifStack.some((is) => !is.condition) ||
+                Preprocessor.isInString(position, this.snapshot)
+            ) {
+                return beforeEndPosition;
+            }
+            return position;
         }
 
-        // const is2 = this.getIfdefStatement(match, position);
-        // if (is2) {
-        //     this.ifStack.push(is2);
-        //     Preprocessor.removeTextAndAddOffset(
-        //         position,
-        //         beforeEndPosition,
-        //         this.snapshot
-        //     );
-        //     return position;
-        // }
-        // const is4 = this.getIfStatement(match, position);
-        // if (is4) {
-        //     this.ifStack.push(is4);
-        //     Preprocessor.removeTextAndAddOffset(
-        //         position,
-        //         beforeEndPosition + is4.offset,
-        //         this.snapshot
-        //     );
-        //     return position;
-        // }
-        // const is5 = this.getElifStatement(match, position);
-        // if (is5) {
-        //     const oldIs = this.ifStack.pop();
-        //     if (oldIs && !oldIs.condition) {
-        //         Preprocessor.removeTextAndAddOffset(
-        //             position,
-        //             beforeEndPosition + is5.offset,
-        //             this.snapshot
-        //         );
-        //         this.ifStack.push(is5);
-        //         return oldIs.position;
-        //     } else {
-        //         Preprocessor.removeTextAndAddOffset(
-        //             position,
-        //             beforeEndPosition + is5.offset,
-        //             this.snapshot
-        //         );
-        //         this.ifStack.push(is5);
-        //         return position;
-        //     }
-        // }
-        // const es = this.getElseStatement(match, position);
-        // if (es) {
-        //     const oldIs = this.ifStack.pop();
-        //     if (oldIs && !oldIs.condition) {
-        //         Preprocessor.removeTextAndAddOffset(
-        //             oldIs.position,
-        //             beforeEndPosition,
-        //             this.snapshot
-        //         );
-        //         this.ifStack.push(es);
-        //         return oldIs.position;
-        //     } else {
-        //         Preprocessor.removeTextAndAddOffset(
-        //             position,
-        //             beforeEndPosition,
-        //             this.snapshot
-        //         );
-        //         this.ifStack.push(es);
-        //         return position;
-        //     }
-        // }
-        // if (this.isEndifStatement(match)) {
-        //     const is3 = this.ifStack.pop();
-        //     if (is3 && !is3.condition) {
-        //         Preprocessor.removeTextAndAddOffset(
-        //             is3.position,
-        //             beforeEndPosition,
-        //             this.snapshot
-        //         );
-        //         return is3.position;
-        //     } else {
-        //         Preprocessor.removeTextAndAddOffset(
-        //             position,
-        //             beforeEndPosition,
-        //             this.snapshot
-        //         );
-        //         return position;
-        //     }
-        // }
-        // const ds = this.getDefineStatement(match, position);
-        // if (ds) {
-        //     Preprocessor.removeTextAndAddOffset(
-        //         position,
-        //         beforeEndPosition,
-        //         this.snapshot
-        //     );
-        //     return position;
-        // }
-        // if (this.isUndefStatement(match, position)) {
-        //     Preprocessor.removeTextAndAddOffset(
-        //         position,
-        //         beforeEndPosition,
-        //         this.snapshot
-        //     );
-        //     return position;
-        // }
+        const is2 = this.getIfdefStatement(match, position);
+        if (is2) {
+            this.ifStack.push(is2);
+            Preprocessor.removeTextAndAddOffset(
+                position,
+                beforeEndPosition,
+                this.snapshot
+            );
+            return position;
+        }
+        const is4 = this.getIfStatement(match, position);
+        if (is4) {
+            this.ifStack.push(is4);
+            Preprocessor.removeTextAndAddOffset(
+                position,
+                beforeEndPosition + is4.offset,
+                this.snapshot
+            );
+            return position;
+        }
+        const is5 = this.getElifStatement(match, position);
+        if (is5) {
+            const oldIs = this.ifStack.pop();
+            if (oldIs && !oldIs.condition) {
+                Preprocessor.removeTextAndAddOffset(
+                    position,
+                    beforeEndPosition + is5.offset,
+                    this.snapshot
+                );
+                this.ifStack.push(is5);
+                return oldIs.position;
+            } else {
+                Preprocessor.removeTextAndAddOffset(
+                    position,
+                    beforeEndPosition + is5.offset,
+                    this.snapshot
+                );
+                this.ifStack.push(is5);
+                return position;
+            }
+        }
+        const es = this.getElseStatement(match, position);
+        if (es) {
+            const oldIs = this.ifStack.pop();
+            if (oldIs && !oldIs.condition) {
+                Preprocessor.removeTextAndAddOffset(
+                    oldIs.position,
+                    beforeEndPosition,
+                    this.snapshot
+                );
+                this.ifStack.push(es);
+                return oldIs.position;
+            } else {
+                Preprocessor.removeTextAndAddOffset(
+                    position,
+                    beforeEndPosition,
+                    this.snapshot
+                );
+                this.ifStack.push(es);
+                return position;
+            }
+        }
+        if (this.isEndifStatement(match)) {
+            const is3 = this.ifStack.pop();
+            if (is3 && !is3.condition) {
+                Preprocessor.removeTextAndAddOffset(
+                    is3.position,
+                    beforeEndPosition,
+                    this.snapshot
+                );
+                return is3.position;
+            } else {
+                Preprocessor.removeTextAndAddOffset(
+                    position,
+                    beforeEndPosition,
+                    this.snapshot
+                );
+                return position;
+            }
+        }
+        const ds = this.getDefineStatement(match, position);
+        if (ds) {
+            Preprocessor.removeTextAndAddOffset(
+                position,
+                beforeEndPosition,
+                this.snapshot
+            );
+            return position;
+        }
+        if (this.isUndefStatement(match, position)) {
+            Preprocessor.removeTextAndAddOffset(
+                position,
+                beforeEndPosition,
+                this.snapshot
+            );
+            return position;
+        }
         return beforeEndPosition;
     }
 
@@ -215,13 +222,13 @@ export class HlslPreprocessor {
             if (this.ifStack.some((is) => !is.condition)) {
                 return;
             }
-            // await Preprocessor.includeContent(
-            //     position,
-            //     beforeEndPosition,
-            //     is,
-            //     parentIc,
-            //     this.snapshot
-            // );
+            await HlslPreprocessor.includeContent(
+                position,
+                beforeEndPosition,
+                is,
+                parentIc,
+                this.snapshot
+            );
         }
     }
 
@@ -458,6 +465,110 @@ export class HlslPreprocessor {
         this.macroNames = umn.join('|');
     }
 
+    public static async includeContent(
+        position: number,
+        beforeEndPosition: number,
+        is: IncludeStatement,
+        parentIc: IncludeContext | null,
+        snapshot: Snapshot
+    ): Promise<void> {
+        const uri = await getIncludedDocumentUri(is);
+        const includeText = await HlslPreprocessor.getIncludeText(
+            uri,
+            parentIc,
+            snapshot
+        );
+        const afterEndPosition = position + includeText.length;
+        Preprocessor.changeTextAndAddOffset(
+            position,
+            beforeEndPosition,
+            afterEndPosition,
+            includeText,
+            snapshot
+        );
+        const ic = HlslPreprocessor.createIncludeContext(
+            position,
+            afterEndPosition,
+            uri,
+            parentIc,
+            snapshot
+        );
+        if (ic) {
+            Preprocessor.addStringRanges(position, afterEndPosition, snapshot);
+        }
+    }
+
+    private static createIncludeContext(
+        position: number,
+        afterEndPosition: number,
+        uri: DocumentUri | null,
+        parentIc: IncludeContext | null,
+        snapshot: Snapshot
+    ): IncludeContext | null {
+        if (!uri) {
+            return null;
+        }
+        const ic: IncludeContext = {
+            startPosition: position,
+            localStartPosition: position,
+            endPosition: afterEndPosition,
+            snapshot,
+            parent: parentIc,
+            children: [],
+        };
+        if (parentIc) {
+            parentIc.children.push(ic);
+        } else {
+            snapshot.includeContexts.push(ic);
+        }
+        return ic;
+    }
+
+    private static async getIncludeText(
+        uri: DocumentUri | null,
+        parentIc: IncludeContext | null,
+        snapshot: Snapshot
+    ): Promise<string> {
+        const circularInclude = HlslPreprocessor.isCircularInclude(
+            parentIc,
+            uri,
+            snapshot
+        );
+        return uri && !circularInclude
+            ? await HlslPreprocessor.getText(uri)
+            : '';
+    }
+
+    private static async getText(uri: DocumentUri): Promise<string> {
+        let includedSnapshot = await getSnapshot(uri);
+        if (includedSnapshot) {
+            return includedSnapshot.cleanedText;
+        } else {
+            const text = await getFileContent(URI.parse(uri).fsPath);
+            includedSnapshot = new Snapshot(-1, uri, text);
+            new Preprocessor(includedSnapshot).clean();
+            return includedSnapshot.cleanedText;
+        }
+    }
+
+    private static isCircularInclude(
+        ic: IncludeContext | null,
+        uri: DocumentUri | null,
+        snapshot: Snapshot
+    ): boolean {
+        if (snapshot.uri === uri) {
+            return true;
+        }
+        let currentIc = ic;
+        while (currentIc) {
+            if (currentIc?.snapshot?.uri === uri) {
+                return true;
+            }
+            currentIc = currentIc.parent;
+        }
+        return false;
+    }
+
     public static isDefined(
         text: string,
         position: number,
@@ -526,7 +637,7 @@ export class HlslPreprocessor {
             }
             const macroSnapshot = new Snapshot(-1, '', '');
             macroSnapshot.text = ds.content;
-            Preprocessor.updateStringRanges(
+            Preprocessor.addStringRanges(
                 0,
                 macroSnapshot.text.length,
                 macroSnapshot
@@ -579,7 +690,7 @@ export class HlslPreprocessor {
                                 replacement,
                                 macroSnapshot
                             );
-                            Preprocessor.updateStringRanges(
+                            Preprocessor.addStringRanges(
                                 parameterStartPosition,
                                 parameterAfterEndPosition,
                                 macroSnapshot
@@ -661,7 +772,7 @@ export class HlslPreprocessor {
                     macroSnapshot.text,
                     snapshot
                 );
-                Preprocessor.updateStringRanges(
+                Preprocessor.addStringRanges(
                     identifierStartPosition,
                     afterEndPosition,
                     snapshot
@@ -708,7 +819,7 @@ export class HlslPreprocessor {
                     macroSnapshot.text,
                     snapshot
                 );
-                Preprocessor.updateStringRanges(
+                Preprocessor.addStringRanges(
                     identifierStartPosition,
                     afterEndPosition,
                     snapshot
@@ -726,7 +837,7 @@ export class HlslPreprocessor {
     private static stringify(argument: string): string {
         const argumentSnapshot = new Snapshot(-1, '', '');
         argumentSnapshot.text = argument;
-        Preprocessor.updateStringRanges(0, argument.length, argumentSnapshot);
+        Preprocessor.addStringRanges(0, argument.length, argumentSnapshot);
         const regex = /"|\\/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(argumentSnapshot.text))) {

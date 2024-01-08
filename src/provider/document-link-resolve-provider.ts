@@ -2,7 +2,7 @@ import { CancellationToken, DocumentLink } from 'vscode-languageserver';
 
 import { PerformanceHelper } from '../helper/performance-helper';
 import { showWarningMessage } from '../helper/server-helper';
-import { IncludeStatement } from '../interface/include-statement';
+import { IncludeStatement } from '../interface/include/include-statement';
 import { getIncludedDocumentUri } from '../processor/include-resolver';
 
 export async function documentLinkResolveProvider(
