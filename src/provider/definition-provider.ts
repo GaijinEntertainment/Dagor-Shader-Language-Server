@@ -5,6 +5,7 @@ import {
     LocationLink,
 } from 'vscode-languageserver';
 
+import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
 
@@ -20,12 +21,20 @@ export async function definitionProvider(
         .find((mc) => rangeContains(mc.originalNameRange, params.position));
     if (mc) {
         const ms = mc.macro;
-        const result: LocationLink = {
-            targetRange: ms.originalRange,
-            targetSelectionRange: ms.nameOriginalRange,
-            targetUri: ms.uri,
-        };
-        return [result];
+        if (getCapabilities().definitionLink) {
+            const result: LocationLink = {
+                targetRange: ms.originalRange,
+                targetSelectionRange: ms.nameOriginalRange,
+                targetUri: ms.uri,
+            };
+            return [result];
+        } else {
+            const result: Definition = {
+                range: ms.nameOriginalRange,
+                uri: ms.uri,
+            };
+            return result;
+        }
     }
     return null;
 }
