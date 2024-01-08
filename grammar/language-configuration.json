@@ -30,7 +30,7 @@
         }
     },
     "indentationRules": {
-        "increaseIndentPattern": "^((?!\\/\\/).)*(\\{[^}\"']*|\\([^)\"']*|\\[[^\\]\"']*|(case|default)\\s+.*?:\\s*|(if|else|for|do)\\b[^{]*|while\\b[^{;]*)$",
+        "increaseIndentPattern": "^((?!\\/\\/).)*(\\{[^}\"']*|\\([^)\"']*|\\[[^\\]\"']*|(case|default)\\s+.*?:\\s*)$",
         "decreaseIndentPattern": "^((?!.*?\\/\\*).*\\*/)?\\s*[\\)\\}\\]].*$"
     }
 }

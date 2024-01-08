@@ -125,9 +125,9 @@
                     "match": "(?<=\\b(register)(\\s|/\\*.*?\\*/)*\\((\\s|/\\*.*?\\*/)*)((b|t|c|s|u|r|x|v|cb|icb|o|oDepth|oMask|vPrim|vInstanceID|vicp|vocp|vForkInstanceID|vpc|vJoinInstanceID|vcp|vDomain|g|vThreadID|vThreadGroupID|vThreadIDInGroup|vThreadIDInGroupFlattened)\\d*)"
                 },
                 {
-                    "comment": "PACKAGEOFFSET TYPE",
+                    "comment": "PACKOFFSET TYPE",
                     "name": "constant.language.hlsl",
-                    "match": "(?<=\\b(packageoffset)(\\s|/\\*.*?\\*/)*\\((\\s|/\\*.*?\\*/)*)c"
+                    "match": "(?<=\\b(packoffset)(\\s|/\\*.*?\\*/)*\\((\\s|/\\*.*?\\*/)*)c"
                 }
             ]
         },
@@ -155,7 +155,7 @@
                 {
                     "comment": "ATTRIBUTE",
                     "name": "storage.modifier.hlsl",
-                    "match": "(?<=\\[(\\s|/\\*.*?\\*/)*)(domain|earlydepthstencil|instance|maxtessfactor|numthreads|outputcontrolpoints|outputtopology|partitioning|patchconstantfunc|fastopt|unroll|loop|allow_uav_condition|branch|flatten|call|maxvertexcount|ifAll|ifAny|isolate|maxexports|maxInstructionCount|maxtempreg|noExpressionOptimizations|predicate|predicateBlock|reduceTempRegUsage|removeUnusedInputs|sampreg|unused|xps|WaveSize|forcecase)\\b"
+                    "match": "(?<=\\[(\\s|/\\*.*?\\*/)*)(domain|earlydepthstencil|instance|maxtessfactor|numthreads|outputcontrolpoints|outputtopology|partitioning|patchconstantfunc|fastopt|unroll|loop|allow_uav_condition|branch|flatten|call|maxvertexcount|ifAll|ifAny|isolate|maxexports|maxInstructionCount|maxtempreg|noExpressionOptimizations|predicate|predicateBlock|reduceTempRegUsage|removeUnusedInputs|sampreg|unused|xps|WaveSize|forcecase|WaveOpsIncludeHelperLanes|shader)\\b"
                 },
                 {
                     "comment": "SEMANTIC",
@@ -170,7 +170,7 @@
                 {
                     "comment": "NON-NUMBERED SYSTEM VALUE SEMANTIC",
                     "name": "storage.modifier.hlsl",
-                    "match": "(?i)(?<=:(\\s|/\\*.*?\\*/)*)(SV_Coverage|SV_Depth|SV_DepthGreaterEqual|SV_DepthLessEqual|SV_DispatchThreadID|SV_DomainLocation|SV_GroupID|SV_GroupIndex|SV_GroupThreadID|SV_GSInstanceID|SV_InnerCoverage|SV_StencilRef|SV_InsideTessFactor|SV_InstanceID|SV_IsFrontFace|SV_OutputControlPointID|SV_Position|SV_PrimitiveID|SV_RenderTargetArrayIndex|SV_SampleIndex|SV_TessFactor|SV_VertexID|SV_ViewportArrayIndex|SV_ShadingRate|SV_ViewID|SV_Barycentrics)\\b"
+                    "match": "(?i)(?<=:(\\s|/\\*.*?\\*/)*)(SV_Coverage|SV_Depth|SV_DepthGreaterEqual|SV_DepthLessEqual|SV_DispatchThreadID|SV_DomainLocation|SV_GroupID|SV_GroupIndex|SV_GroupThreadID|SV_GSInstanceID|SV_InnerCoverage|SV_StencilRef|SV_InsideTessFactor|SV_InstanceID|SV_IsFrontFace|SV_OutputControlPointID|SV_Position|SV_PrimitiveID|SV_RenderTargetArrayIndex|SV_SampleIndex|SV_TessFactor|SV_VertexID|SV_ViewportArrayIndex|SV_ShadingRate|SV_ViewID|SV_Barycentrics|SV_CullPrimitive)\\b"
                 }
             ]
         },
@@ -325,6 +325,16 @@
         },
         "built-in-type": {
             "patterns": [
+                {
+                    "comment": "STRUCT TYPE",
+                    "name": "storage.type.hlsl",
+                    "match": "\\b(RaytracingAccelerationStructure|RayDesc|BuiltInTriangleIntersectionAttributes|StateObjectConfig|GlobalRootSignature|LocalRootSignature|SubobjectToEntrypointAssociation|RaytracingShaderConfig|RaytracingPipelineConfig|RaytracingPipelineConfig1|TriangleHitGroup|ProceduralPrimitiveHitGroup)\\b"
+                },
+                {
+                    "comment": "ENUM TYPE",
+                    "name": "storage.type.hlsl",
+                    "match": "\\b(RAY_FLAG|RAYTRACING_PIPELINE_FLAG|COMMITTED_STATUS|CANDIDATE_TYPE)\\b"
+                },
                 {
                     "comment": "BUFFER TYPE",
                     "name": "storage.type.hlsl",

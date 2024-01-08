@@ -5,7 +5,7 @@ import { log, logShaderConfigs } from '../core/debug';
 import { getFileContent } from '../core/file-cache-manager';
 import { exists, getFolderContent } from '../helper/fs-helper';
 import { PerformanceHelper } from '../helper/performance-helper';
-import { getRootFolder } from '../helper/server-helper';
+import { getRootFolder, showWarningMessage } from '../helper/server-helper';
 
 export type GameFolder = string;
 export type ShaderConfig = string;
@@ -59,6 +59,10 @@ class IncludeProcessor {
         );
         if (await exists(shaderConfig)) {
             await this.addIncludeFoldersFromBlk('', shaderConfig, shaderConfig);
+        } else {
+            showWarningMessage(
+                `Couldn't find the shader config file: ${shaderConfig}`
+            );
         }
         this.logOverrideIncludeFolders();
         if (this.id === IncludeProcessor.lastId) {

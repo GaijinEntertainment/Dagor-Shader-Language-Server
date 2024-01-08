@@ -5,6 +5,8 @@ import { Capabilities } from '../interface/capabilities';
 const capabilities: Capabilities = {
     configuration: false,
     configurationChange: false,
+    definition: false,
+    definitionLink: false,
     documentLink: false,
     documentLinkTooltip: false,
     showMessage: false,
@@ -18,6 +20,9 @@ export function initializeCapabilities(
     capabilities.configuration = !!clientCapabilities.workspace?.configuration;
     capabilities.configurationChange =
         !!clientCapabilities.workspace?.didChangeConfiguration;
+    capabilities.definition = !!clientCapabilities.textDocument?.definition;
+    capabilities.definitionLink =
+        !!clientCapabilities.textDocument?.definition?.linkSupport;
     capabilities.documentLink = !!clientCapabilities.textDocument?.documentLink;
     capabilities.documentLinkTooltip =
         !!clientCapabilities.textDocument?.documentLink?.tooltipSupport;

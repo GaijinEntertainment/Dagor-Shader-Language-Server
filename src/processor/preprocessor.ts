@@ -10,6 +10,7 @@ import { MacroContext } from '../interface/macro/macro-context';
 import { MacroArguments } from '../interface/macro/macro-parameters';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { preprocessDshl } from './dshl-preprocessor';
+import { preprocessHlsl } from './hlsl-preprocessor';
 import { MacroArgumentsProcesor } from './macro-arguments-processor';
 
 export async function preprocess(snapshot: Snapshot): Promise<void> {
@@ -48,7 +49,7 @@ export class Preprocessor {
             await preprocessDshl(this.snapshot);
         }
         // TODO
-        // await preprocessHlsl(this.snapshot);
+        await preprocessHlsl(this.snapshot);
         this.snapshot.preprocessedText = this.snapshot.text;
         this.ph.end('preprocess');
         this.ph.log('preprocessing', 'preprocess');
