@@ -100,6 +100,11 @@
                         "6": { "name": "comment.block.dshl" },
                         "8": { "name": "constant.language.dshl" }
                     }
+                },
+                {
+                    "comment": "REGISTER",
+                    "name": "constant.language.dshl",
+                    "match": "\\b(register)\\b"
                 }
             ]
         },
