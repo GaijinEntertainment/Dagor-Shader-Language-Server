@@ -104,7 +104,7 @@ export class Snapshot {
         let line = 0;
         let character = 0;
         for (; line < lines.length; line++) {
-            if (character + lines[line].length + 1 >= position) {
+            if (character + lines[line].length >= position) {
                 character = position - character;
                 break;
             } else {

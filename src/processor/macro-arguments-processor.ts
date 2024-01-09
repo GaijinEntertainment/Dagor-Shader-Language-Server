@@ -1,7 +1,9 @@
-import { MacroArguments } from '../interface/macro/macro-parameters';
+import { Snapshot } from '../core/snapshot';
+import { MacroArgument } from '../interface/macro/macro-argument';
+import { MacroArguments } from '../interface/macro/macro-arguments';
 
 export class MacroArgumentsProcesor {
-    text: string;
+    snapshot: Snapshot;
     index = -1;
     character = '';
     lastCharacterIsEscape = false;
@@ -10,10 +12,11 @@ export class MacroArgumentsProcesor {
     characterLiteral = false;
     insideArguments = false;
     argumentPosition = -1;
-    arguments: string[] = [];
+    argumentIdentifierPosition = -1;
+    arguments: MacroArgument[] = [];
 
-    public constructor(text: string) {
-        this.text = text;
+    public constructor(snapshot: Snapshot) {
+        this.snapshot = snapshot;
     }
 
     public getMacroArguments(
@@ -21,10 +24,10 @@ export class MacroArgumentsProcesor {
     ): MacroArguments | null {
         for (
             this.index = identifierEndPosition;
-            this.index < this.text.length;
+            this.index < this.snapshot.text.length;
             this.index++
         ) {
-            this.setCharacter(this.text);
+            this.setCharacter(this.snapshot.text);
             if (this.isCharacterWhitespace()) {
                 continue;
             }
@@ -77,17 +80,25 @@ export class MacroArgumentsProcesor {
     }
 
     private addArgumentIfExists(): void {
-        if (this.argumentPosition !== -1) {
-            const argument = this.text
-                .substring(this.argumentPosition, this.index)
+        if (this.argumentIdentifierPosition !== -1) {
+            const argument = this.snapshot.text
+                .substring(this.argumentIdentifierPosition, this.index)
                 .trim();
             if (argument) {
-                this.arguments.push(argument);
+                this.arguments.push({
+                    content: argument,
+                    originalPosition: this.snapshot.getOriginalPosition(
+                        this.argumentIdentifierPosition
+                    ),
+                });
             }
         }
     }
 
     private handleCharacters(): void {
+        if (this.argumentIdentifierPosition === -1) {
+            this.argumentIdentifierPosition = this.index;
+        }
         if (this.character === '"' && !this.lastCharacterIsEscape) {
             this.stringLiteral = !this.stringLiteral;
         } else if (this.character === "'" && !this.lastCharacterIsEscape) {
@@ -96,6 +107,7 @@ export class MacroArgumentsProcesor {
             if (this.isArgumentSeparatorComma()) {
                 this.addArgumentIfExists();
                 this.argumentPosition = this.index + 1;
+                this.argumentIdentifierPosition = -1;
             } else if (this.character === '(') {
                 this.roundedBrackets++;
             } else if (this.character === ')') {

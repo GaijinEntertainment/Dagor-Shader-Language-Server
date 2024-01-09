@@ -676,7 +676,7 @@ export class HlslPreprocessor {
                             const argument = ma
                                 ? ma.arguments[
                                       ds.parameters.indexOf(parameterName)
-                                  ]
+                                  ].content
                                 : parameterName;
                             const replacement = stringification
                                 ? HlslPreprocessor.stringify(argument)

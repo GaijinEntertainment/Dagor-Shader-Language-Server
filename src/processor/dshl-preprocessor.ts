@@ -9,8 +9,8 @@ import { IncludeContext } from '../interface/include/include-context';
 import { IncludeResult } from '../interface/include/include-result';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
+import { MacroArguments } from '../interface/macro/macro-arguments';
 import { MacroContext } from '../interface/macro/macro-context';
-import { MacroArguments } from '../interface/macro/macro-parameters';
 import { MacroStatement } from '../interface/macro/macro-statement';
 import { MacroType } from '../interface/macro/macro-type';
 import { getIncludedDocumentUri } from './include-resolver';
@@ -253,6 +253,7 @@ class DshlPreprocessor {
             parameters: parametersArray,
             content,
             type,
+            usages: [],
         };
         this.snapshot.macroStatements.push(ms);
         return ms;
@@ -374,6 +375,7 @@ class DshlPreprocessor {
             originalRange,
             originalNameRange,
             ms,
+            ma,
             parentMc
         );
         Preprocessor.addStringRanges(position, afterEndPosition, this.snapshot);
@@ -396,7 +398,7 @@ class DshlPreprocessor {
         while ((regexResult = regex.exec(contentSnapshot.text))) {
             const position = regexResult.index;
             const match = regexResult[0];
-            const argument = ma.arguments[ms.parameters.indexOf(match)];
+            const argument = ma.arguments[ms.parameters.indexOf(match)].content;
             const beforeEndPosition = position + match.length;
             const afterEndPosition = position + argument.length;
             if (Preprocessor.isInString(position, contentSnapshot)) {
@@ -420,20 +422,23 @@ class DshlPreprocessor {
         originalRange: Range,
         originalNameRange: Range,
         ms: MacroStatement,
+        ma: MacroArguments,
         parentMc: MacroContext | null
     ): MacroContext {
         const isNotVisible =
             !!parentMc || !!this.snapshot.getIncludeContextAt(position);
         const mc: MacroContext = {
-            macro: ms,
+            macroStatement: ms,
             startPosition: position,
             endPosition: afterEndPosition,
             originalRange,
-            originalNameRange,
+            nameOriginalRange: originalNameRange,
             parent: parentMc,
             children: [],
             isNotVisible,
+            arguments: ma.arguments,
         };
+        ms.usages.push(mc);
         this.snapshot.macroContexts.push(mc);
         return mc;
     }
@@ -444,7 +449,7 @@ class DshlPreprocessor {
     ): boolean {
         let currentMc: MacroContext | null = mc;
         while (currentMc) {
-            if (currentMc.macro === ms) {
+            if (currentMc.macroStatement === ms) {
                 return true;
             }
             currentMc = currentMc.parent;

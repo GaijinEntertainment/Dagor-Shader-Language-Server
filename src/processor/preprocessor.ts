@@ -6,8 +6,8 @@ import { ElementRange } from '../interface/element-range';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
+import { MacroArguments } from '../interface/macro/macro-arguments';
 import { MacroContext } from '../interface/macro/macro-context';
-import { MacroArguments } from '../interface/macro/macro-parameters';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { preprocessDshl } from './dshl-preprocessor';
 import { preprocessHlsl } from './hlsl-preprocessor';
@@ -233,7 +233,7 @@ export class Preprocessor {
         identifierEndPosition: number,
         snapshot: Snapshot
     ): MacroArguments | null {
-        const map = new MacroArgumentsProcesor(snapshot.text);
+        const map = new MacroArgumentsProcesor(snapshot);
         return map.getMacroArguments(identifierEndPosition);
     }
 }
