@@ -22,12 +22,14 @@ import {
 import {
     hlslAttributes,
     hlslBufferTypes,
+    hlslDshlPreprocessorDirectives,
     hlslEnumTypes,
     hlslFunctions,
     hlslKeywords,
     hlslModifiers,
     hlslNonPrimitiveTypes,
     hlslPreprocessorDirectives,
+    hlslPreprocessorPragmaDirectives,
     hlslPrimitiveTypes,
     hlslSemantics,
     hlslStructTypes,
@@ -51,6 +53,18 @@ export async function completionProvider(
     addCompletionItems(
         result,
         hlslPreprocessorDirectives,
+        CompletionItemKind.Keyword,
+        'preprocessor directive'
+    );
+    addCompletionItems(
+        result,
+        hlslPreprocessorPragmaDirectives,
+        CompletionItemKind.Keyword,
+        'preprocessor pragma directive'
+    );
+    addCompletionItems(
+        result,
+        hlslDshlPreprocessorDirectives,
         CompletionItemKind.Keyword,
         'preprocessor directive'
     );

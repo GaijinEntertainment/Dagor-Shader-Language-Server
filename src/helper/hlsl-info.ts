@@ -350,6 +350,59 @@ export const hlslPreprocessorDirectives: LanguageElementInfo[] = [
     },
 ];
 
+export const hlslPreprocessorPragmaDirectives: LanguageElementInfo[] = [
+    {
+        name: 'def',
+        description:
+            'Pragma directive that manually allocates a floating-point shader register.',
+        links: [
+            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-pragma-def',
+        ],
+    },
+    {
+        name: 'message',
+        description: 'Pragma directive that produces compiler-time messages.',
+        links: [
+            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/message-pragma-directive--directx-hlsl-',
+        ],
+    },
+    {
+        name: 'pack_matrix',
+        description:
+            'Pragma directive that specifies packing alignment for matrices.',
+        links: [
+            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-pragma-pack-matrix',
+        ],
+    },
+    {
+        name: 'warning',
+        description:
+            'Pragma directive that modifies the behavior of compiler warning messages.',
+        links: [
+            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-pragma-warning',
+        ],
+    },
+];
+
+export const hlslDshlPreprocessorDirectives: LanguageElementInfo[] = [
+    {
+        name: '##if',
+        sortName: 'if',
+    },
+    {
+        name: '##elif',
+        sortName: 'elif',
+    },
+    {
+        name: '##else',
+        sortName: 'else',
+    },
+    {
+        name: '##endif',
+        sortName: 'endif',
+    },
+];
+
 export const hlslModifiers: LanguageElementInfo[] = [
     {
         name: 'centroid',
