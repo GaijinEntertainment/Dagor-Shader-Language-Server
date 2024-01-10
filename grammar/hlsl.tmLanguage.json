@@ -122,7 +122,7 @@
                 {
                     "comment": "REGISTER TYPE",
                     "name": "constant.language.hlsl",
-                    "match": "(?<=\\b(register)(\\s|/\\*.*?\\*/)*\\((\\s|/\\*.*?\\*/)*)((b|t|c|s|u|r|x|v|cb|icb|o|oDepth|oMask|vPrim|vInstanceID|vicp|vocp|vForkInstanceID|vpc|vJoinInstanceID|vcp|vDomain|g|vThreadID|vThreadGroupID|vThreadIDInGroup|vThreadIDInGroupFlattened)\\d*)"
+                    "match": "(?<=\\b(register)(\\s|/\\*.*?\\*/)*\\((\\s|/\\*.*?\\*/)*)((b|t|c|s|u)\\d*)"
                 },
                 {
                     "comment": "PACKOFFSET TYPE",
