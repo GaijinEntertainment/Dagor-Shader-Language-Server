@@ -191,10 +191,10 @@ class DshlPreprocessor {
             const beforeEndPosition = position + match.length;
             const name = regexResult.groups?.name ?? '';
             const content = regexResult.groups?.content ?? '';
-            this.addIncludesInMacro(
-                content,
-                position + (regexResult.groups?.beforeContent?.length ?? 0)
-            );
+            const contentOffset =
+                position + (regexResult.groups?.beforeContent?.length ?? 0);
+            this.addIncludesInMacro(content, contentOffset);
+            this.addMacrosInMacro(content, contentOffset);
             const beforeNameOffset =
                 regexResult.groups?.beforeName?.length ?? 0;
             const nameOriginalRange = this.snapshot.getOriginalRange(
@@ -300,7 +300,17 @@ class DshlPreprocessor {
         );
     }
 
-    private expandMacros(): void {
+    private handleMacros(
+        text: string,
+        macroFunction: (
+            position: number,
+            identifierEndPosition: number,
+            ms: MacroStatement,
+            ma: MacroArguments,
+            regex: RegExp
+        ) => string,
+        offset = 0
+    ): void {
         if (!this.snapshot.macroStatements.length) {
             return;
         }
@@ -309,8 +319,8 @@ class DshlPreprocessor {
             .join('|');
         const regex = new RegExp(`\\b(${macroNames})\\b`, 'g');
         let regexResult: RegExpExecArray | null;
-        while ((regexResult = regex.exec(this.snapshot.text))) {
-            const position = regexResult.index;
+        while ((regexResult = regex.exec(text))) {
+            const position = offset + regexResult.index;
             const match = regexResult[0];
             const identifierEndPosition = position + match.length;
             if (Preprocessor.isInString(position, this.snapshot)) {
@@ -327,21 +337,73 @@ class DshlPreprocessor {
             if (!ma || ms.parameters.length !== ma.arguments.length) {
                 continue;
             }
-            const parentMc = this.snapshot.getMacroContextDeepAt(position);
-            if (this.isCircularMacroExpansion(parentMc, ms)) {
-                continue;
-            }
-            const beforeEndPosition = ma.endPosition;
-            this.expandMacro(
+            text = macroFunction(
                 position,
                 identifierEndPosition,
-                beforeEndPosition,
                 ms,
                 ma,
-                parentMc
+                regex
             );
-            regex.lastIndex = position;
         }
+    }
+
+    private addMacrosInMacro(text: string, offset: number): void {
+        this.handleMacros(
+            text,
+            (position, identifierEndPosition, ms, ma, regex) => {
+                this.addMacroInMacro(position, identifierEndPosition, ms, ma);
+                return text;
+            },
+            offset
+        );
+    }
+
+    private addMacroInMacro(
+        position: number,
+        identifierEndPosition: number,
+        ms: MacroStatement,
+        ma: MacroArguments
+    ): void {
+        const originalRange = this.snapshot.getOriginalRange(
+            position,
+            ma.endPosition
+        );
+        const originalNameRange = this.snapshot.getOriginalRange(
+            position,
+            identifierEndPosition
+        );
+        this.createMacroContext(
+            position,
+            ma.endPosition,
+            originalRange,
+            originalNameRange,
+            ms,
+            ma,
+            null
+        );
+    }
+
+    private expandMacros(): void {
+        this.handleMacros(
+            this.snapshot.text,
+            (position, identifierEndPosition, ms, ma, regex) => {
+                const parentMc = this.snapshot.getMacroContextDeepAt(position);
+                if (this.isCircularMacroExpansion(parentMc, ms)) {
+                    return this.snapshot.text;
+                }
+                const beforeEndPosition = ma.endPosition;
+                this.expandMacro(
+                    position,
+                    identifierEndPosition,
+                    beforeEndPosition,
+                    ms,
+                    ma,
+                    parentMc
+                );
+                regex.lastIndex = position;
+                return this.snapshot.text;
+            }
+        );
     }
 
     private expandMacro(
