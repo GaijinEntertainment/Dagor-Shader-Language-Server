@@ -9,6 +9,7 @@ import { getCapabilities } from './capability-manager';
 
 let configuration: Configuration = {
     shaderConfigOverride: '',
+    folding: false,
 };
 let connection: Connection;
 
