@@ -48,7 +48,6 @@ export class Preprocessor {
         if (this.snapshot.uri.endsWith('.dshl')) {
             await preprocessDshl(this.snapshot);
         }
-        // TODO
         await preprocessHlsl(this.snapshot);
         this.snapshot.preprocessedText = this.snapshot.text;
         this.ph.end('preprocess');

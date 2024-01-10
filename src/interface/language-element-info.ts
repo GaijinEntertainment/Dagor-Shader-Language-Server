@@ -4,4 +4,5 @@ export interface LanguageElementInfo {
     description?: string;
     links?: string[];
     type?: string;
+    additionalInfo?: string;
 }

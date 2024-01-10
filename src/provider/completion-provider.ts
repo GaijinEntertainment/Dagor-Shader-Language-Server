@@ -218,10 +218,12 @@ function getKind(kind: CompletionItemKind): CompletionItemKind | undefined {
 }
 
 function getDetail(item: LanguageElementInfo, type: string): string {
-    //TODO: normalize - function
     let header = item.name;
     if (type) {
         header += ` - ${type}`;
+    }
+    if (item.additionalInfo) {
+        header += ` (${item.additionalInfo})`;
     }
     if (
         getCapabilities().completionDocumentationFormat.length ||
@@ -300,6 +302,7 @@ function createVectorAndMatrixTypes(
 ): LanguageElementInfo[] {
     const result: LanguageElementInfo[] = [];
     for (const item of items) {
+        item.additionalInfo = 'scalar';
         result.push(item);
         for (let i = 1; i <= 4; i++) {
             result.push({
@@ -307,6 +310,7 @@ function createVectorAndMatrixTypes(
                 description: item.description,
                 links: item.links,
                 type: item.type,
+                additionalInfo: 'vector',
             });
             for (let j = 1; j <= 4; j++) {
                 result.push({
@@ -314,6 +318,7 @@ function createVectorAndMatrixTypes(
                     description: item.description,
                     links: item.links,
                     type: item.type,
+                    additionalInfo: 'matrix',
                 });
             }
         }
