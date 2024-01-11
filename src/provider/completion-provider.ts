@@ -141,12 +141,7 @@ function getHlslItems(): CompletionItem[] {
         CompletionItemKind.Class,
         'type'
     );
-    addCompletionItems(
-        result,
-        createVectorAndMatrixTypes(hlslPrimitiveTypes),
-        CompletionItemKind.Class,
-        'type'
-    );
+    addPrimitiveTypes(result, hlslPrimitiveTypes);
     addCompletionItems(
         result,
         hlslVariables,
@@ -247,15 +242,25 @@ function addCompletionItems(
     type = ''
 ): void {
     result.push(
-        ...items.map<CompletionItem>((item) => ({
-            label: item.name,
-            kind: getKind(kind),
-            detail: getDetail(item, type),
-            sortText: item.sortName ?? item.name,
-            labelDetails: getLabelDetails(item),
-            documentation: getDocumentation(item),
-        }))
+        ...items.map<CompletionItem>((item) =>
+            getCompletionItem(item, kind, type)
+        )
     );
+}
+
+function getCompletionItem(
+    item: LanguageElementInfo,
+    kind: CompletionItemKind,
+    type = ''
+): CompletionItem {
+    return {
+        label: item.name,
+        kind: getKind(kind),
+        detail: getDetail(item, type),
+        sortText: item.sortName ?? item.name,
+        labelDetails: getLabelDetails(item),
+        documentation: getDocumentation(item),
+    };
 }
 
 function getKind(kind: CompletionItemKind): CompletionItemKind | undefined {
@@ -269,16 +274,14 @@ function getDetail(item: LanguageElementInfo, type: string): string {
     if (type) {
         header += ` - ${type}`;
     }
-    if (item.additionalInfo) {
-        header += ` (${item.additionalInfo})`;
-    }
     if (
         getCapabilities().completionDocumentationFormat.length ||
         !item.description
     ) {
         return header;
     } else {
-        return `${header}\n${item.description}`;
+        const documentation = getDocumentationText(item);
+        return `${header}\n${documentation}`;
     }
 }
 
@@ -295,6 +298,7 @@ function getLabelDetails(
 function getDocumentation(
     item: LanguageElementInfo
 ): MarkupContent | undefined {
+    const documentationText = getDocumentationText(item);
     if (
         getCapabilities().completionDocumentationFormat.includes(
             MarkupKind.Markdown
@@ -302,8 +306,7 @@ function getDocumentation(
     ) {
         return {
             kind: MarkupKind.Markdown,
-            value:
-                (item.description ?? '') + createDocumentationLinks(item.links),
+            value: documentationText + createDocumentationLinks(item.links),
         };
     } else if (
         getCapabilities().completionDocumentationFormat.includes(
@@ -312,11 +315,19 @@ function getDocumentation(
     ) {
         return {
             kind: MarkupKind.PlainText,
-            value: item.description ?? '',
+            value: documentationText,
         };
     } else {
         return undefined;
     }
+}
+
+function getDocumentationText(item: LanguageElementInfo): string {
+    let documentation = item.description ?? '';
+    if (item.additionalInfo) {
+        documentation = `${item.additionalInfo}\n\n${documentation}`;
+    }
+    return documentation;
 }
 
 function createDocumentationLinks(links: string[] | undefined): string {
@@ -344,31 +355,94 @@ function getLinkName(link: string): string {
     return linkName;
 }
 
-function createVectorAndMatrixTypes(
+function addPrimitiveTypes(
+    result: CompletionItem[],
     items: LanguageElementInfo[]
-): LanguageElementInfo[] {
-    const result: LanguageElementInfo[] = [];
+): void {
     for (const item of items) {
-        item.additionalInfo = 'scalar';
-        result.push(item);
+        addScalarTypes(result, item);
         for (let i = 1; i <= 4; i++) {
-            result.push({
-                name: `${item.name}${i}`,
-                description: item.description,
-                links: item.links,
-                type: item.type,
-                additionalInfo: 'vector',
-            });
+            addVectorTypes(result, item, i);
             for (let j = 1; j <= 4; j++) {
-                result.push({
-                    name: `${item.name}${i}x${j}`,
-                    description: item.description,
-                    links: item.links,
-                    type: item.type,
-                    additionalInfo: 'matrix',
-                });
+                addMatrixTypes(result, item, i, j);
             }
         }
     }
-    return result;
+}
+
+function addScalarTypes(
+    result: CompletionItem[],
+    item: LanguageElementInfo
+): void {
+    result.push(getCompletionItem(item, CompletionItemKind.Class, 'type'));
+    result.push(
+        getCompletionItem(
+            { ...item, type: item.name, description: undefined },
+            CompletionItemKind.Function,
+            'constructor'
+        )
+    );
+}
+
+function addVectorTypes(
+    result: CompletionItem[],
+    item: LanguageElementInfo,
+    i: number
+): void {
+    const vectorLink =
+        'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-vector';
+    const name = `${item.name}${i}`;
+    const vector: LanguageElementInfo = {
+        ...item,
+        name,
+        links: [vectorLink, ...(item.links ?? [])],
+        additionalInfo: 'Documentation about the vector elements:',
+    };
+    const constructor: LanguageElementInfo = {
+        ...item,
+        name,
+        type: name,
+        links: [vectorLink, ...(item.links ?? [])],
+        description: undefined,
+    };
+    result.push(getCompletionItem(vector, CompletionItemKind.Class, 'type'));
+    result.push(
+        getCompletionItem(
+            constructor,
+            CompletionItemKind.Function,
+            'constructor'
+        )
+    );
+}
+
+function addMatrixTypes(
+    result: CompletionItem[],
+    item: LanguageElementInfo,
+    i: number,
+    j: number
+): void {
+    const matrixLink =
+        'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-matrix';
+    const name = `${item.name}${i}x${j}`;
+    const matrix: LanguageElementInfo = {
+        ...item,
+        name,
+        links: [matrixLink, ...(item.links ?? [])],
+        additionalInfo: 'Documentation about the matrix elements:',
+    };
+    const constructor: LanguageElementInfo = {
+        ...item,
+        name,
+        type: name,
+        links: [matrixLink, ...(item.links ?? [])],
+        description: undefined,
+    };
+    result.push(getCompletionItem(matrix, CompletionItemKind.Class, 'type'));
+    result.push(
+        getCompletionItem(
+            constructor,
+            CompletionItemKind.Function,
+            'constructor'
+        )
+    );
 }
