@@ -3,17 +3,16 @@ import { MacroArgument } from '../interface/macro/macro-argument';
 import { MacroArguments } from '../interface/macro/macro-arguments';
 
 export class MacroArgumentsProcesor {
-    snapshot: Snapshot;
-    index = -1;
-    character = '';
-    lastCharacterIsEscape = false;
-    roundedBrackets = 0;
-    stringLiteral = false;
-    characterLiteral = false;
-    insideArguments = false;
-    argumentPosition = -1;
-    argumentIdentifierPosition = -1;
-    arguments: MacroArgument[] = [];
+    private snapshot: Snapshot;
+    private index = -1;
+    private character = '';
+    private lastCharacterIsEscape = false;
+    private roundedBrackets = 0;
+    private stringLiteral = false;
+    private characterLiteral = false;
+    private insideArguments = false;
+    private argumentIdentifierPosition = -1;
+    private arguments: MacroArgument[] = [];
 
     public constructor(snapshot: Snapshot) {
         this.snapshot = snapshot;
@@ -33,7 +32,6 @@ export class MacroArgumentsProcesor {
             }
             if (this.isParametersStart()) {
                 this.insideArguments = true;
-                this.argumentPosition = this.index + 1;
             } else if (this.isParametersEnd()) {
                 this.addArgumentIfExists();
                 return {
@@ -106,7 +104,6 @@ export class MacroArgumentsProcesor {
         } else if (!this.stringLiteral && !this.characterLiteral) {
             if (this.isArgumentSeparatorComma()) {
                 this.addArgumentIfExists();
-                this.argumentPosition = this.index + 1;
                 this.argumentIdentifierPosition = -1;
             } else if (this.character === '(') {
                 this.roundedBrackets++;

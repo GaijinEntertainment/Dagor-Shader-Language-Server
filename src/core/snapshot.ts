@@ -1,8 +1,10 @@
 import { DocumentUri, Position, Range } from 'vscode-languageserver';
 
+import { rangeContains } from '../helper/helper';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
+import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { MacroContext } from '../interface/macro/macro-context';
@@ -24,6 +26,7 @@ export class Snapshot {
     public macroContexts: MacroContext[] = [];
     public defineContexts: DefineContext[] = [];
     public stringRanges: ElementRange[] = [];
+    public hlslBlocks: HlslBlock[] = [];
 
     private preprocessingOffsets: PreprocessingOffset[] = [];
 
@@ -143,6 +146,10 @@ export class Snapshot {
         for (const sr of this.stringRanges) {
             sr.startPosition = this.updatePosition(sr.startPosition, newPo);
             sr.endPosition = this.updatePosition(sr.endPosition, newPo);
+        }
+        for (const hb of this.hlslBlocks) {
+            hb.startPosition = this.updatePosition(hb.startPosition, newPo);
+            hb.endPosition = this.updatePosition(hb.endPosition, newPo);
         }
         this.preprocessingOffsets.push(newPo);
     }
@@ -271,6 +278,13 @@ export class Snapshot {
             this.macroStatements.find(
                 (ms) => ms.name === name && ms.position <= position
             ) ?? null
+        );
+    }
+
+    public isInHlslBlock(position: Position): boolean {
+        return this.hlslBlocks.some(
+            (hb) =>
+                !hb.isNotVisible && rangeContains(hb.originalRange, position)
         );
     }
 }

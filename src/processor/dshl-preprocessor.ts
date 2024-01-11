@@ -5,6 +5,7 @@ import { getFileContent } from '../core/file-cache-manager';
 import { Snapshot } from '../core/snapshot';
 import { PerformanceHelper } from '../helper/performance-helper';
 import { getDocuments } from '../helper/server-helper';
+import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeResult } from '../interface/include/include-result';
 import { IncludeStatement } from '../interface/include/include-statement';
@@ -13,6 +14,8 @@ import { MacroArguments } from '../interface/macro/macro-arguments';
 import { MacroContext } from '../interface/macro/macro-context';
 import { MacroStatement } from '../interface/macro/macro-statement';
 import { MacroType } from '../interface/macro/macro-type';
+import { shaderStageKeywordToEnum } from '../interface/shader-stage';
+import { HlslBlockProcesor } from './hlsl-block-processor';
 import { getIncludedDocumentUri } from './include-resolver';
 import { Preprocessor } from './preprocessor';
 
@@ -41,6 +44,9 @@ class DshlPreprocessor {
         this.ph.start('expandMacros');
         this.expandMacros();
         this.ph.end('expandMacros');
+        this.ph.start('findHlslBlocks');
+        this.findHlslBlocks(this.snapshot.text);
+        this.ph.end('findHlslBlocks');
         this.ph.end('preprocess');
         this.ph.log('  DSHL preprocessor', 'preprocess');
         this.ph.log('    expanding includes', 'preprocessIncludes');
@@ -195,6 +201,7 @@ class DshlPreprocessor {
                 position + (regexResult.groups?.beforeContent?.length ?? 0);
             this.addIncludesInMacro(content, contentOffset);
             this.addMacrosInMacro(content, contentOffset);
+            this.findHlslBlocks(content, contentOffset);
             const beforeNameOffset =
                 regexResult.groups?.beforeName?.length ?? 0;
             const nameOriginalRange = this.snapshot.getOriginalRange(
@@ -517,5 +524,35 @@ class DshlPreprocessor {
             currentMc = currentMc.parent;
         }
         return false;
+    }
+
+    private findHlslBlocks(text: string, offset = 0): void {
+        const regex = /\b(?:hlsl\s*(?:\(\s*(?<stage>\w*)\s*\))?)/g;
+        let regexResult: RegExpExecArray | null;
+        while ((regexResult = regex.exec(text))) {
+            const position = offset + regexResult.index;
+            if (Preprocessor.isInString(position, this.snapshot)) {
+                continue;
+            }
+            const match = regexResult[0];
+            const hlslKeywordEndPosition = position + match.length;
+            const ic = this.snapshot.getIncludeContextAt(position);
+            const mc = this.snapshot.getMacroContextAt(position);
+            const hbp = new HlslBlockProcesor(this.snapshot);
+            const hlslRange = hbp.getHlslBlock(hlslKeywordEndPosition);
+            if (hlslRange) {
+                const stage = regexResult.groups?.stage ?? '';
+                const hlslBlock: HlslBlock = {
+                    originalRange: this.snapshot.getOriginalRange(
+                        hlslRange.startPosition,
+                        hlslRange.endPosition
+                    ),
+                    isNotVisible: !!(ic || mc),
+                    stage: shaderStageKeywordToEnum(stage),
+                    ...hlslRange,
+                };
+                this.snapshot.hlslBlocks.push(hlslBlock);
+            }
+        }
     }
 }

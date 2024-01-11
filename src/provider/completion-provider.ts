@@ -9,6 +9,7 @@ import {
 } from 'vscode-languageserver';
 
 import { getCapabilities } from '../core/capability-manager';
+import { getSnapshot } from '../core/document-manager';
 import {
     dshlFunctions,
     dshlKeywords,
@@ -41,8 +42,23 @@ import {
 import { LanguageElementInfo } from '../interface/language-element-info';
 
 export async function completionProvider(
-    _params: CompletionParams
+    params: CompletionParams
 ): Promise<CompletionItem[] | CompletionList | undefined | null> {
+    const snapshot = await getSnapshot(params.textDocument.uri);
+    if (!snapshot) {
+        return null;
+    }
+    const hlsl =
+        params.textDocument.uri.endsWith('.hlsl') ||
+        snapshot.isInHlslBlock(params.position);
+    if (hlsl) {
+        return getHlslItems();
+    } else {
+        return getDshlItems();
+    }
+}
+
+function getHlslItems(): CompletionItem[] {
     const result: CompletionItem[] = [];
     addCompletionItems(
         result,
@@ -141,7 +157,11 @@ export async function completionProvider(
         CompletionItemKind.Function,
         'function'
     );
+    return result;
+}
 
+function getDshlItems(): CompletionItem[] {
+    const result: CompletionItem[] = [];
     addCompletionItems(
         result,
         dshlKeywords,
