@@ -13,6 +13,7 @@ import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
 import {
+    dshlEnumValues,
     dshlFunctions,
     dshlKeywords,
     dshlModifiers,
@@ -20,7 +21,7 @@ import {
     dshlNonPrimitiveTypes,
     dshlPrimitiveShortTypes,
     dshlPrimitiveTypes,
-    dshlVariables,
+    dshlProperties,
 } from '../helper/dshl-info';
 import {
     hlslAttributes,
@@ -84,7 +85,7 @@ function getHlslItems(): CompletionItem[] {
         result,
         hlslDshlPreprocessorDirectives,
         CompletionItemKind.Keyword,
-        'preprocessor directive'
+        'DSHL preprocessor directive'
     );
     addCompletionItems(
         result,
@@ -170,6 +171,12 @@ function getDshlItems(
     );
     addCompletionItems(
         result,
+        dshlEnumValues,
+        CompletionItemKind.Value,
+        'value'
+    );
+    addCompletionItems(
+        result,
         dshlModifiers,
         CompletionItemKind.Keyword,
         'modifier'
@@ -200,9 +207,9 @@ function getDshlItems(
     );
     addCompletionItems(
         result,
-        dshlVariables,
-        CompletionItemKind.Variable,
-        'variable'
+        dshlProperties,
+        CompletionItemKind.Property,
+        'property'
     );
     addCompletionItems(
         result,
