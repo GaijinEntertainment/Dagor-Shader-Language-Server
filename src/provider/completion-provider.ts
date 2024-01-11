@@ -116,7 +116,7 @@ function getHlslItems(): CompletionItem[] {
         CompletionItemKind.Class,
         'type'
     );
-    addCompletionItems(result, hlslEnumTypes, CompletionItemKind.Class, 'type');
+    addCompletionItems(result, hlslEnumTypes, CompletionItemKind.Enum, 'enum');
     addCompletionItems(
         result,
         hlslBufferTypes,
@@ -378,7 +378,7 @@ function addScalarTypes(
     result.push(
         getCompletionItem(
             { ...item, type: item.name, description: undefined },
-            CompletionItemKind.Function,
+            CompletionItemKind.Constructor,
             'constructor'
         )
     );
@@ -409,7 +409,7 @@ function addVectorTypes(
     result.push(
         getCompletionItem(
             constructor,
-            CompletionItemKind.Function,
+            CompletionItemKind.Constructor,
             'constructor'
         )
     );
@@ -441,7 +441,7 @@ function addMatrixTypes(
     result.push(
         getCompletionItem(
             constructor,
-            CompletionItemKind.Function,
+            CompletionItemKind.Constructor,
             'constructor'
         )
     );
