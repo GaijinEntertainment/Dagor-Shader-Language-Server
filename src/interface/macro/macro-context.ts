@@ -1,16 +1,12 @@
 import { Range } from 'vscode-languageserver';
 
-import { MacroArgument } from './macro-argument';
-import { MacroStatement } from './macro-statement';
+import { MacroContextBase } from './macro-context-base';
 
-export interface MacroContext {
-    macroStatement: MacroStatement;
+export interface MacroContext extends MacroContextBase {
     startPosition: number;
     endPosition: number;
     originalRange: Range;
     nameOriginalRange: Range;
     parent: MacroContext | null;
     children: MacroContext[];
-    isNotVisible: boolean;
-    arguments: MacroArgument[];
 }

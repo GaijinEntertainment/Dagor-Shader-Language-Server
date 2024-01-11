@@ -323,7 +323,9 @@ class DshlPreprocessor {
             identifierEndPosition: number,
             ms: MacroStatement,
             ma: MacroArguments,
-            regex: RegExp
+            regex: RegExp,
+            ic: IncludeContext | null,
+            parentMc: MacroContext | null
         ) => string,
         offset = 0
     ): void {
@@ -350,6 +352,16 @@ class DshlPreprocessor {
                 identifierEndPosition,
                 this.snapshot
             );
+            const parentMc = this.snapshot.getMacroContextDeepAt(position);
+            const ic = this.snapshot.getIncludeContextAt(position);
+            if (ma) {
+                this.snapshot.potentialMacroContexts.push({
+                    arguments: ma.arguments,
+                    macroStatement: ms,
+                    parameterListOriginalRange: ma.argumentListOriginalRange,
+                    isNotVisible: !!(ic || parentMc),
+                });
+            }
             if (!ma || ms.parameters.length !== ma.arguments.length) {
                 continue;
             }
@@ -358,7 +370,9 @@ class DshlPreprocessor {
                 identifierEndPosition,
                 ms,
                 ma,
-                regex
+                regex,
+                ic,
+                parentMc
             );
         }
     }
@@ -366,8 +380,14 @@ class DshlPreprocessor {
     private addMacrosInMacro(text: string, offset: number): void {
         this.handleMacros(
             text,
-            (position, identifierEndPosition, ms, ma, regex) => {
-                this.addMacroInMacro(position, identifierEndPosition, ms, ma);
+            (position, identifierEndPosition, ms, ma, regex, ic) => {
+                this.addMacroInMacro(
+                    position,
+                    identifierEndPosition,
+                    ms,
+                    ma,
+                    ic
+                );
                 return text;
             },
             offset
@@ -378,7 +398,8 @@ class DshlPreprocessor {
         position: number,
         identifierEndPosition: number,
         ms: MacroStatement,
-        ma: MacroArguments
+        ma: MacroArguments,
+        ic: IncludeContext | null
     ): void {
         const originalRange = this.snapshot.getOriginalRange(
             position,
@@ -395,6 +416,7 @@ class DshlPreprocessor {
             originalNameRange,
             ms,
             ma,
+            ic,
             null
         );
     }
@@ -402,8 +424,7 @@ class DshlPreprocessor {
     private expandMacros(): void {
         this.handleMacros(
             this.snapshot.text,
-            (position, identifierEndPosition, ms, ma, regex) => {
-                const parentMc = this.snapshot.getMacroContextDeepAt(position);
+            (position, identifierEndPosition, ms, ma, regex, ic, parentMc) => {
                 if (this.isCircularMacroExpansion(parentMc, ms)) {
                     return this.snapshot.text;
                 }
@@ -414,6 +435,7 @@ class DshlPreprocessor {
                     beforeEndPosition,
                     ms,
                     ma,
+                    ic,
                     parentMc
                 );
                 regex.lastIndex = position;
@@ -428,6 +450,7 @@ class DshlPreprocessor {
         beforeEndPosition: number,
         ms: MacroStatement,
         ma: MacroArguments,
+        ic: IncludeContext | null,
         parentMc: MacroContext | null = null
     ): void {
         const pasteText = this.getMacroPasteText(ms, ma);
@@ -454,6 +477,7 @@ class DshlPreprocessor {
             originalNameRange,
             ms,
             ma,
+            ic,
             parentMc
         );
         Preprocessor.addStringRanges(position, afterEndPosition, this.snapshot);
@@ -501,10 +525,10 @@ class DshlPreprocessor {
         originalNameRange: Range,
         ms: MacroStatement,
         ma: MacroArguments,
+        ic: IncludeContext | null,
         parentMc: MacroContext | null
     ): MacroContext {
-        const isNotVisible =
-            !!parentMc || !!this.snapshot.getIncludeContextAt(position);
+        const isNotVisible = !!parentMc || !!ic;
         const mc: MacroContext = {
             macroStatement: ms,
             startPosition: position,
@@ -515,6 +539,7 @@ class DshlPreprocessor {
             children: [],
             isNotVisible,
             arguments: ma.arguments,
+            parameterListOriginalRange: ma.argumentListOriginalRange,
         };
         ms.usages.push(mc);
         this.snapshot.macroContexts.push(mc);

@@ -28,6 +28,7 @@ import { foldingRangesProvider } from './provider/folding-ranges-provider';
 import { hoverProvider } from './provider/hover-provider';
 import { implementationProvider } from './provider/implementation-provider';
 import { inlayHintProvider } from './provider/inlay-hint-provider';
+import { signatureHelpProvider } from './provider/signature-help-provider';
 import { Server } from './server';
 
 export class ServerDesktop extends Server {
@@ -47,6 +48,7 @@ export class ServerDesktop extends Server {
         this.connection.onFoldingRanges(foldingRangesProvider);
         this.connection.onHover(hoverProvider);
         this.connection.onImplementation(implementationProvider);
+        this.connection.onSignatureHelp(signatureHelpProvider);
         this.connection.onRequest(InlayHintRequest.type, inlayHintProvider);
     }
 
@@ -64,6 +66,7 @@ export class ServerDesktop extends Server {
                 hoverProvider: true,
                 implementationProvider: true,
                 inlayHintProvider: { documentSelector: [{ language: 'dshl' }] },
+                signatureHelpProvider: { triggerCharacters: ['(', ','] },
             },
             serverInfo: {
                 name: SERVER_NAME,

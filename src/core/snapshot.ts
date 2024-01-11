@@ -8,6 +8,7 @@ import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { MacroContext } from '../interface/macro/macro-context';
+import { MacroContextBase } from '../interface/macro/macro-context-base';
 import { MacroStatement } from '../interface/macro/macro-statement';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { RangeWithChildren } from '../interface/range-with-children';
@@ -24,6 +25,7 @@ export class Snapshot {
     public defineStatements: DefineStatement[] = [];
     public macroStatements: MacroStatement[] = [];
     public macroContexts: MacroContext[] = [];
+    public potentialMacroContexts: MacroContextBase[] = [];
     public defineContexts: DefineContext[] = [];
     public stringRanges: ElementRange[] = [];
     public hlslBlocks: HlslBlock[] = [];

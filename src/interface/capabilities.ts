@@ -18,4 +18,5 @@ export interface Capabilities {
     hoverFormat: MarkupKind[];
     implementationLink: boolean;
     showMessage: boolean;
+    signatureHelpActiveParameter: boolean;
 }

@@ -16,6 +16,7 @@ const capabilities: Capabilities = {
     hoverFormat: [],
     implementationLink: false,
     showMessage: false,
+    signatureHelpActiveParameter: false,
 };
 
 export function initializeCapabilities(
@@ -50,6 +51,9 @@ export function initializeCapabilities(
     capabilities.implementationLink =
         !!clientCapabilities.textDocument?.implementation?.linkSupport;
     capabilities.showMessage = !!clientCapabilities.window?.showMessage;
+    capabilities.signatureHelpActiveParameter =
+        !!clientCapabilities.textDocument?.signatureHelp?.signatureInformation
+            ?.activeParameterSupport;
 }
 
 export function getCapabilities(): Capabilities {

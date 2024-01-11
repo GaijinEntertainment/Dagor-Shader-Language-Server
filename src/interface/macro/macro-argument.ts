@@ -1,6 +1,7 @@
-import { Position } from 'vscode-languageserver';
+import { Position, Range } from 'vscode-languageserver';
 
 export interface MacroArgument {
     content: string;
-    originalPosition: Position;
+    originalRange: Range;
+    trimmedOriginalStartPosition: Position;
 }

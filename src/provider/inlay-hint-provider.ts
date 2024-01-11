@@ -20,7 +20,7 @@ export async function inlayHintProvider(
             const mp = mc.macroStatement.parameters[i];
             result.push({
                 label: `${mp}:`,
-                position: ma.originalPosition,
+                position: ma.trimmedOriginalStartPosition,
                 kind: InlayHintKind.Parameter,
                 paddingRight: true,
             });
