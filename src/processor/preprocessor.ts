@@ -178,9 +178,12 @@ export class Preprocessor {
             path,
             snapshot
         );
+        const originalEndPosition =
+            snapshot.getOriginalPosition(beforeEndPosition);
         const is: IncludeStatement = {
             path,
             pathOriginalRange,
+            originalEndPosition,
             type,
             includerUri: parentIc?.snapshot?.uri ?? snapshot.uri,
         };
