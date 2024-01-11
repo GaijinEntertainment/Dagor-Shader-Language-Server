@@ -491,7 +491,8 @@ export class HlslPreprocessor {
             afterEndPosition,
             uri,
             parentIc,
-            snapshot
+            snapshot,
+            is
         );
         if (ic) {
             Preprocessor.addStringRanges(position, afterEndPosition, snapshot);
@@ -503,7 +504,8 @@ export class HlslPreprocessor {
         afterEndPosition: number,
         uri: DocumentUri | null,
         parentIc: IncludeContext | null,
-        snapshot: Snapshot
+        snapshot: Snapshot,
+        is: IncludeStatement
     ): IncludeContext | null {
         if (!uri) {
             return null;
@@ -512,6 +514,7 @@ export class HlslPreprocessor {
             startPosition: position,
             localStartPosition: position,
             endPosition: afterEndPosition,
+            includeStatement: is,
             snapshot,
             parent: parentIc,
             children: [],

@@ -1,4 +1,4 @@
-import { DocumentUri, Range } from 'vscode-languageserver';
+import { DocumentUri, Position, Range } from 'vscode-languageserver';
 
 import { MacroContext } from './macro-context';
 import { MacroType } from './macro-type';
@@ -8,6 +8,7 @@ export interface MacroStatement {
     position: number;
     originalRange: Range;
     nameOriginalRange: Range;
+    codeCompletionPosition: Position;
     name: string;
     parameters: string[];
     content: string;

@@ -81,6 +81,7 @@ class DshlPreprocessor {
                 snapshot,
                 position,
                 beforeEndPosition,
+                includeStatement: is,
             });
         }
         this.pasteIncludes(results);
@@ -98,8 +99,11 @@ class DshlPreprocessor {
             path,
             snapshot
         );
+        const originalEndPosition =
+            snapshot.getOriginalPosition(beforeEndPosition);
         const is: IncludeStatement = {
             path,
+            originalEndPosition,
             pathOriginalRange,
             type,
             includerUri: snapshot.uri,
@@ -155,6 +159,7 @@ class DshlPreprocessor {
                 startPosition: result.position,
                 localStartPosition: result.position,
                 endPosition: afterEndPosition,
+                includeStatement: result.includeStatement,
                 snapshot: result.snapshot,
                 parent: null,
             };
@@ -243,6 +248,7 @@ class DshlPreprocessor {
         content: string
     ): MacroStatement {
         const ic = this.snapshot.getIncludeContextDeepAt(position);
+        const rootIc = this.snapshot.getIncludeContextAt(position);
         const type = match.startsWith('macro')
             ? MacroType.MACRO
             : MacroType.MACRO_IF_NOT_DEFINED;
@@ -256,6 +262,9 @@ class DshlPreprocessor {
             position,
             originalRange,
             nameOriginalRange,
+            codeCompletionPosition: rootIc
+                ? rootIc.includeStatement.originalEndPosition
+                : originalRange.end,
             name,
             parameters: parametersArray,
             content,

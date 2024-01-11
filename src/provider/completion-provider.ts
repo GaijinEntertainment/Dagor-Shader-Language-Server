@@ -6,10 +6,12 @@ import {
     CompletionParams,
     MarkupContent,
     MarkupKind,
+    Position,
 } from 'vscode-languageserver';
 
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
+import { Snapshot } from '../core/snapshot';
 import {
     dshlFunctions,
     dshlKeywords,
@@ -54,7 +56,7 @@ export async function completionProvider(
     if (hlsl) {
         return getHlslItems();
     } else {
-        return getDshlItems();
+        return getDshlItems(snapshot, params.position);
     }
 }
 
@@ -160,7 +162,10 @@ function getHlslItems(): CompletionItem[] {
     return result;
 }
 
-function getDshlItems(): CompletionItem[] {
+function getDshlItems(
+    snapshot: Snapshot,
+    position: Position
+): CompletionItem[] {
     const result: CompletionItem[] = [];
     addCompletionItems(
         result,
@@ -210,7 +215,29 @@ function getDshlItems(): CompletionItem[] {
         CompletionItemKind.Function,
         'function'
     );
+    addCompletionItems(
+        result,
+        getMacros(snapshot, position),
+        CompletionItemKind.Constant,
+        'macro'
+    );
     return result;
+}
+
+function getMacros(
+    snapshot: Snapshot,
+    position: Position
+): LanguageElementInfo[] {
+    return snapshot.macroStatements
+        .filter(
+            (ms) =>
+                ms.codeCompletionPosition.line < position.line ||
+                (ms.codeCompletionPosition.line === position.line &&
+                    ms.codeCompletionPosition.character <= position.character)
+        )
+        .map((ms) => ({
+            name: ms.name,
+        }));
 }
 
 function addCompletionItems(
