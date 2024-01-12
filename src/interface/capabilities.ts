@@ -8,6 +8,7 @@ export interface Capabilities {
     completionDocumentationFormat: MarkupKind[];
     completionLabelDetails: boolean;
     completionItemKinds: CompletionItemKind[];
+    completionSnippets: boolean;
     configuration: boolean;
     configurationChange: boolean;
     declarationLink: boolean;

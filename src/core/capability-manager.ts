@@ -6,6 +6,7 @@ const capabilities: Capabilities = {
     completionDocumentationFormat: [],
     completionLabelDetails: false,
     completionItemKinds: [],
+    completionSnippets: false,
     configuration: false,
     configurationChange: false,
     declarationLink: false,
@@ -31,6 +32,9 @@ export function initializeCapabilities(
     capabilities.completionItemKinds =
         clientCapabilities.textDocument?.completion?.completionItemKind
             ?.valueSet ?? [];
+    capabilities.completionSnippets =
+        !!clientCapabilities.textDocument?.completion?.completionItem
+            ?.snippetSupport;
     capabilities.configuration = !!clientCapabilities.workspace?.configuration;
     capabilities.configurationChange =
         !!clientCapabilities.workspace?.didChangeConfiguration;

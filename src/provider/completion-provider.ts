@@ -4,6 +4,7 @@ import {
     CompletionItemLabelDetails,
     CompletionList,
     CompletionParams,
+    InsertTextFormat,
     MarkupContent,
     MarkupKind,
     Position,
@@ -43,6 +44,7 @@ import {
     hlslVectorMatrixStringTypes,
 } from '../helper/hlsl-info';
 import { LanguageElementInfo } from '../interface/language-element-info';
+import { dshlSnippets, hlslSnippets } from '../interface/snippets';
 
 export async function completionProvider(
     params: CompletionParams
@@ -155,6 +157,14 @@ function getHlslItems(): CompletionItem[] {
         CompletionItemKind.Function,
         'function'
     );
+    if (getCapabilities().completionSnippets) {
+        addCompletionItems(
+            result,
+            hlslSnippets,
+            CompletionItemKind.Snippet,
+            'snippet'
+        );
+    }
     return result;
 }
 
@@ -223,6 +233,14 @@ function getDshlItems(
         CompletionItemKind.Constant,
         'macro'
     );
+    if (getCapabilities().completionSnippets) {
+        addCompletionItems(
+            result,
+            dshlSnippets,
+            CompletionItemKind.Snippet,
+            'snippet'
+        );
+    }
     return result;
 }
 
@@ -264,9 +282,12 @@ function getCompletionItem(
         label: item.name,
         kind: getKind(kind),
         detail: getDetail(item, type),
-        sortText: item.sortName ?? item.name,
+        sortText: item.sortName,
+        filterText: item.filterText,
         labelDetails: getLabelDetails(item),
         documentation: getDocumentation(item),
+        insertText: item.insertText,
+        insertTextFormat: item.isSnippet ? InsertTextFormat.Snippet : undefined,
     };
 }
 
