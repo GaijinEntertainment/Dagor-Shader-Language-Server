@@ -1,6 +1,6 @@
 import { DocumentUri, Position, Range } from 'vscode-languageserver';
 
-import { MacroContext } from './macro-context';
+import { MacroContextBase } from './macro-context-base';
 import { MacroType } from './macro-type';
 
 export interface MacroStatement {
@@ -13,7 +13,7 @@ export interface MacroStatement {
     parameters: string[];
     content: string;
     type: MacroType;
-    usages: MacroContext[];
+    usages: MacroContextBase[];
 }
 
 export function toStringMacroStatement(macro: MacroStatement): string {

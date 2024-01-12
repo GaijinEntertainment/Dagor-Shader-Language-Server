@@ -8,7 +8,7 @@ import {
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
-import { MacroContext } from '../interface/macro/macro-context';
+import { MacroContextBase } from '../interface/macro/macro-context-base';
 import { toStringMacroStatement } from '../interface/macro/macro-statement';
 
 export async function hoverProvider(
@@ -18,29 +18,31 @@ export async function hoverProvider(
     if (!snapshot) {
         return null;
     }
-    const mc = snapshot.macroContexts
-        .filter((mc) => !mc.isNotVisible)
-        .find((mc) => rangeContains(mc.nameOriginalRange, params.position));
-    if (!mc) {
+    const pmc = snapshot.potentialMacroContexts.find(
+        (pmc) =>
+            !pmc.isNotVisible &&
+            rangeContains(pmc.nameOriginalRange, params.position)
+    );
+    if (!pmc) {
         return null;
     }
     return {
-        contents: createHoverContent(mc),
-        range: mc.nameOriginalRange,
+        contents: createHoverContent(pmc),
+        range: pmc.nameOriginalRange,
     };
 }
 
-function createHoverContent(mc: MacroContext): MarkupContent {
+function createHoverContent(pmc: MacroContextBase): MarkupContent {
     return {
         kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown)
             ? MarkupKind.Markdown
             : MarkupKind.PlainText,
-        value: getValue(mc),
+        value: getValue(pmc),
     };
 }
 
-function getValue(mc: MacroContext): string {
-    const ms = mc.macroStatement;
+function getValue(pmc: MacroContextBase): string {
+    const ms = pmc.macroStatement;
     const macroHeader = toStringMacroStatement(ms);
     if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
         return `\`\`\`dshl\n${macroHeader}\n\`\`\``;

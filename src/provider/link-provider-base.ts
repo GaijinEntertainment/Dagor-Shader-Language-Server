@@ -17,13 +17,14 @@ export async function linkProviderBase(
     if (!snapshot) {
         return null;
     }
-    const mc = snapshot.macroContexts
-        .filter((mc) => !mc.isNotVisible)
-        .find((mc) => rangeContains(mc.nameOriginalRange, position));
-    if (!mc) {
+    const pmc = snapshot.potentialMacroContexts.find(
+        (pmc) =>
+            !pmc.isNotVisible && rangeContains(pmc.nameOriginalRange, position)
+    );
+    if (!pmc) {
         return null;
     }
-    const ms = mc.macroStatement;
+    const ms = pmc.macroStatement;
     if (linkSupport) {
         const result: LocationLink = {
             targetRange: ms.originalRange,

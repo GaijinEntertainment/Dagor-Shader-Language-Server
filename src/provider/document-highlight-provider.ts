@@ -48,13 +48,13 @@ function getMacroStatement(
     if (ms) {
         return ms;
     }
-    const mc = snapshot.macroContexts.find(
+    const pmc = snapshot.potentialMacroContexts.find(
         (mc) =>
             !mc.isNotVisible &&
             rangeContains(mc.nameOriginalRange, dhp.position)
     );
-    if (mc) {
-        return mc.macroStatement;
+    if (pmc) {
+        return pmc.macroStatement;
     }
     return null;
 }
