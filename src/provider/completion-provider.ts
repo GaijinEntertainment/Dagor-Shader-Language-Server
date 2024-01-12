@@ -24,6 +24,7 @@ import {
     dshlPrimitiveTypes,
     dshlProperties,
 } from '../helper/dshl-info';
+import { rangeContains } from '../helper/helper';
 import {
     hlslAttributes,
     hlslBufferTypes,
@@ -50,7 +51,7 @@ export async function completionProvider(
     params: CompletionParams
 ): Promise<CompletionItem[] | CompletionList | undefined | null> {
     const snapshot = await getSnapshot(params.textDocument.uri);
-    if (!snapshot) {
+    if (!snapshot || isCursorInCommentOrString(snapshot, params.position)) {
         return null;
     }
     const hlsl =
@@ -61,6 +62,15 @@ export async function completionProvider(
     } else {
         return getDshlItems(snapshot, params.position);
     }
+}
+
+function isCursorInCommentOrString(
+    snapshot: Snapshot,
+    position: Position
+): boolean {
+    return snapshot.noCodeCompletionRanges.some((r) =>
+        rangeContains(r, position)
+    );
 }
 
 function getHlslItems(): CompletionItem[] {

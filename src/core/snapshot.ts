@@ -29,6 +29,7 @@ export class Snapshot {
     public defineContexts: DefineContext[] = [];
     public stringRanges: ElementRange[] = [];
     public hlslBlocks: HlslBlock[] = [];
+    public noCodeCompletionRanges: Range[] = [];
 
     private preprocessingOffsets: PreprocessingOffset[] = [];
 

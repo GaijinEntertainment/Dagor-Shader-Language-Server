@@ -76,13 +76,24 @@ export class Preprocessor {
 
     private preprocessComments(): void {
         const regex =
-            /"(?:[^"]|\\")*"|(?<=#[ \t]*include[ \t]*)<[^>]*>|(?<=#[ \t]*error).*|'(?:[^']|\\')*'|\/\/.*|\/\*[\s\S*]*?\*\//g;
+            /"(?:[^"]|\\")*"|(?<=#[ \t]*include[ \t]*)<[^>]*>|(?<error>(?<=#[ \t]*error).*)|'(?:[^']|\\')*'|(?<singleLineComment>\/\/.*)|(?<multiLineComment>\/\*[\s\S*]*?\*\/)/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(this.snapshot.text))) {
             const position = regexResult.index;
             const match = regexResult[0];
             const beforeEndPosition = position + match.length;
-            if (match.startsWith('//') || match.startsWith('/*')) {
+            const isNewLineAtTheEnd =
+                regexResult.groups?.singleLineComment ||
+                regexResult.groups?.error;
+            const originalRange = this.snapshot.getOriginalRange(
+                position + 1,
+                beforeEndPosition - (isNewLineAtTheEnd ? 0 : 1)
+            );
+            this.snapshot.noCodeCompletionRanges.push(originalRange);
+            const isComment =
+                regexResult.groups?.singleLineComment ||
+                regexResult.groups?.multiLineComment;
+            if (isComment) {
                 const pasteText = ' ';
                 const afterEndPosition = position + pasteText.length;
                 Preprocessor.changeTextAndAddOffset(
