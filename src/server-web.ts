@@ -2,13 +2,10 @@ import {
     BrowserMessageReader,
     BrowserMessageWriter,
     Connection,
-    InitializeParams,
-    InitializeResult,
-    TextDocumentSyncKind,
     createConnection,
 } from 'vscode-languageserver/browser';
 
-import { SERVER_NAME, SERVER_VERSION } from './core/constant';
+import { HostDependent } from './interface/host-dependent';
 import { Server } from './server';
 
 export class ServerWeb extends Server {
@@ -18,15 +15,26 @@ export class ServerWeb extends Server {
         return createConnection(messageReader, messageWriter);
     }
 
-    protected override onInitialize(ip: InitializeParams): InitializeResult {
+    protected override createHostDependent(): HostDependent {
         return {
-            capabilities: {
-                textDocumentSync: TextDocumentSyncKind.Incremental,
-                // completionProvider: {},
+            documentLinkErrorMessage:
+                'Include links are not working in VS Code for the Web.',
+            loadFile(file) {
+                return Promise.resolve('');
             },
-            serverInfo: {
-                name: SERVER_NAME,
-                version: SERVER_VERSION,
+            exists(path) {
+                return Promise.resolve(false);
+            },
+            isFile(path) {
+                return Promise.resolve(false);
+            },
+            getFolderContent(path) {
+                return Promise.resolve([]);
+            },
+            watchFile(path, callback) {
+                return {
+                    close() {},
+                };
             },
         };
     }

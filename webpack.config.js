@@ -6,6 +6,7 @@
 
 const path = require('path');
 const child_process = require('child_process');
+const webpack = require('webpack');
 
 /** @type WebpackConfig */
 const serverWebConfig = {
@@ -22,6 +23,10 @@ const serverWebConfig = {
     resolve: {
         mainFields: ['module', 'main'],
         extensions: ['.ts', '.js'],
+        fallback: {
+            path: require.resolve('path-browserify'),
+            assert: require.resolve('assert'),
+        },
     },
     module: {
         rules: [
@@ -36,6 +41,11 @@ const serverWebConfig = {
             },
         ],
     },
+    plugins: [
+        new webpack.ProvidePlugin({
+            process: 'process/browser',
+        }),
+    ],
     externals: {
         vscode: 'commonjs vscode',
     },

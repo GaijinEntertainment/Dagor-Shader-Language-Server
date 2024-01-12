@@ -1,3 +1,4 @@
+import * as path from 'path';
 import { DocumentUri } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 
@@ -7,7 +8,7 @@ import {
 } from '../core/configuration-manager';
 import { LAUNCH_OPTION_CURRENT_CONFIG } from '../core/constant';
 import { log, logDocumentLinkResolveShaderConfig } from '../core/debug';
-import { exists, isFile } from '../helper/fs-helper';
+import { exists, isFile } from '../helper/file-helper';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
 import {
@@ -15,8 +16,6 @@ import {
     includeFolders,
     overrideIncludeFolders,
 } from './include-processor';
-
-import * as path from 'path';
 
 export async function getIncludedDocumentUri(
     is: IncludeStatement | null

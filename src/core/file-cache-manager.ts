@@ -1,6 +1,5 @@
-import * as chokidar from 'chokidar';
-
-import { loadFile, watchFile } from '../helper/fs-helper';
+import { loadFile, watchFile } from '../helper/file-helper';
+import { FileWatcher } from '../interface/file-watcher';
 import {
     collectIncludeFolders,
     collectOverrideIncludeFolders,
@@ -9,7 +8,7 @@ import { getConfiguration } from './configuration-manager';
 import { log, logCachingBehavior } from './debug';
 
 interface FileCache {
-    watcher: chokidar.FSWatcher;
+    watcher: FileWatcher;
     content: string;
     cached: number;
     caching: number;
@@ -48,7 +47,7 @@ export async function getFileContent(path: string): Promise<string> {
 }
 
 async function loadFromFile(path: string): Promise<string> {
-    const watcher = watchFile(path, (_path, _stats) => {
+    const watcher = watchFile(path, (_path) => {
         const cacheEntry = fileCache.get(path);
         if (cacheEntry) {
             cacheEntry.lastModified++;

@@ -1,34 +1,25 @@
 import {
     Connection,
-    InitializeParams,
-    InitializeResult,
     InitializedParams,
-    InlayHintRequest,
     ProposedFeatures,
-    TextDocumentSyncKind,
     createConnection,
 } from 'vscode-languageserver/node';
 
 import { getConfiguration } from './core/configuration-manager';
-import { SERVER_NAME, SERVER_VERSION } from './core/constant';
 import { clearCache } from './core/file-cache-manager';
+import {
+    exists,
+    getFolderContent,
+    isFile,
+    loadFile,
+    watchFile,
+} from './helper/fs-helper';
 import { Configuration } from './interface/configuration';
+import { HostDependent } from './interface/host-dependent';
 import {
     collectIncludeFolders,
     collectOverrideIncludeFolders,
 } from './processor/include-processor';
-import { completionProvider } from './provider/completion-provider';
-import { declarationProvider } from './provider/declaration-provider';
-import { definitionProvider } from './provider/definition-provider';
-import { documentHighlightProvider } from './provider/document-highlight-provider';
-import { documentLinkResolveProvider } from './provider/document-link-resolve-provider';
-import { documentLinksProvider } from './provider/document-links-provider';
-import { documentSymbolProvider } from './provider/document-symbol-provider';
-import { foldingRangesProvider } from './provider/folding-ranges-provider';
-import { hoverProvider } from './provider/hover-provider';
-import { implementationProvider } from './provider/implementation-provider';
-import { inlayHintProvider } from './provider/inlay-hint-provider';
-import { signatureHelpProvider } from './provider/signature-help-provider';
 import { Server } from './server';
 
 export class ServerDesktop extends Server {
@@ -36,42 +27,15 @@ export class ServerDesktop extends Server {
         return createConnection(ProposedFeatures.all);
     }
 
-    protected override addFeatures(): void {
-        super.addFeatures();
-        this.connection.onCompletion(completionProvider);
-        this.connection.onDeclaration(declarationProvider);
-        this.connection.onDefinition(definitionProvider);
-        this.connection.onDocumentHighlight(documentHighlightProvider);
-        this.connection.onDocumentLinks(documentLinksProvider);
-        this.connection.onDocumentLinkResolve(documentLinkResolveProvider);
-        this.connection.onDocumentSymbol(documentSymbolProvider);
-        this.connection.onFoldingRanges(foldingRangesProvider);
-        this.connection.onHover(hoverProvider);
-        this.connection.onImplementation(implementationProvider);
-        this.connection.onSignatureHelp(signatureHelpProvider);
-        this.connection.onRequest(InlayHintRequest.type, inlayHintProvider);
-    }
-
-    protected override onInitialize(ip: InitializeParams): InitializeResult {
+    protected override createHostDependent(): HostDependent {
         return {
-            capabilities: {
-                textDocumentSync: TextDocumentSyncKind.Incremental,
-                completionProvider: {},
-                declarationProvider: true,
-                definitionProvider: true,
-                documentHighlightProvider: true,
-                documentLinkProvider: { resolveProvider: true },
-                documentSymbolProvider: true,
-                foldingRangeProvider: true,
-                hoverProvider: true,
-                implementationProvider: true,
-                inlayHintProvider: { documentSelector: [{ language: 'dshl' }] },
-                signatureHelpProvider: { triggerCharacters: ['(', ','] },
-            },
-            serverInfo: {
-                name: SERVER_NAME,
-                version: SERVER_VERSION,
-            },
+            documentLinkErrorMessage:
+                "Couldn't find the file. Maybe you should change the launch options.",
+            loadFile: loadFile,
+            exists: exists,
+            isFile: isFile,
+            getFolderContent: getFolderContent,
+            watchFile: watchFile,
         };
     }
 
