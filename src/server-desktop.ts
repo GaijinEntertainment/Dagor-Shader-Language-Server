@@ -19,6 +19,7 @@ import { HostDependent } from './interface/host-dependent';
 import {
     collectIncludeFolders,
     collectOverrideIncludeFolders,
+    increaseShaderConfigVersion,
 } from './processor/include-processor';
 import { Server } from './server';
 
@@ -56,13 +57,37 @@ export class ServerDesktop extends Server {
         newConfiguration: Configuration
     ): Promise<void> {
         if (
-            oldConfiguration.shaderConfigOverride !==
-            newConfiguration.shaderConfigOverride
+            this.shaderConfigRelatedConfigurationChanged(
+                oldConfiguration,
+                newConfiguration
+            )
         ) {
-            await this.collectShaderIncludeFolders(
+            increaseShaderConfigVersion();
+            if (
+                oldConfiguration.shaderConfigOverride !==
                 newConfiguration.shaderConfigOverride
-            );
+            ) {
+                await this.collectShaderIncludeFolders(
+                    newConfiguration.shaderConfigOverride
+                );
+            }
         }
+    }
+
+    private shaderConfigRelatedConfigurationChanged(
+        oldConfiguration: Configuration,
+        newConfiguration: Configuration
+    ): boolean {
+        return (
+            oldConfiguration.shaderConfigOverride !==
+                newConfiguration.shaderConfigOverride ||
+            oldConfiguration.launchOptions.buildCommand !==
+                newConfiguration.launchOptions.buildCommand ||
+            oldConfiguration.launchOptions.game !==
+                newConfiguration.launchOptions.game ||
+            oldConfiguration.launchOptions.platform !==
+                newConfiguration.launchOptions.platform
+        );
     }
 
     private async collectShaderIncludeFolders(

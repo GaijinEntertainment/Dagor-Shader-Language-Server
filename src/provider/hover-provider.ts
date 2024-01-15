@@ -20,7 +20,7 @@ export async function hoverProvider(
     }
     const pmc = snapshot.potentialMacroContexts.find(
         (pmc) =>
-            !pmc.isNotVisible &&
+            pmc.isVisible &&
             rangeContains(pmc.nameOriginalRange, params.position)
     );
     if (!pmc) {

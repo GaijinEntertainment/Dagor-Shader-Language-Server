@@ -5,7 +5,11 @@ import { log, logShaderConfigs } from '../core/debug';
 import { getFileContent } from '../core/file-cache-manager';
 import { exists, getFolderContent } from '../helper/file-helper';
 import { PerformanceHelper } from '../helper/performance-helper';
-import { getRootFolder, showWarningMessage } from '../helper/server-helper';
+import {
+    getRootFolder,
+    refreshInlayHints,
+    showWarningMessage,
+} from '../helper/server-helper';
 
 export type GameFolder = string;
 export type ShaderConfig = string;
@@ -14,6 +18,7 @@ export let includeFolders = new Map<GameFolder, Map<ShaderConfig, string[]>>();
 export let overrideIncludeFolders: string[] = [];
 
 let includesCollected = Promise.resolve();
+let shaderConfigVersion = 0;
 
 export async function collectIncludeFolders(): Promise<void> {
     includesCollected = new IncludeProcessor().collectIncludeFolders();
@@ -27,6 +32,15 @@ export async function collectOverrideIncludeFolders(): Promise<void> {
 
 export async function syncIncludeFoldersCollection(): Promise<void> {
     return includesCollected;
+}
+
+export function getShaderConfigVersion(): number {
+    return shaderConfigVersion;
+}
+
+export function increaseShaderConfigVersion(): void {
+    shaderConfigVersion++;
+    refreshInlayHints();
 }
 
 class IncludeProcessor {

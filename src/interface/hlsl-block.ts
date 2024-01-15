@@ -5,6 +5,6 @@ import { ShaderStage } from './shader-stage';
 
 export interface HlslBlock extends ElementRange {
     originalRange: Range;
-    isNotVisible: boolean;
+    isVisible: boolean;
     stage?: ShaderStage | null;
 }

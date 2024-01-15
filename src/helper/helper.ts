@@ -16,13 +16,3 @@ export function rangeContains(r: Range, p: Position): boolean {
             (p.line === r.end.line && p.character <= r.end.character))
     );
 }
-
-export function rangeContainsRange(r: Range, r2: Range): boolean {
-    return (
-        (r2.start.line > r.start.line ||
-            (r2.start.line === r.start.line &&
-                r2.start.character >= r.start.character)) &&
-        (r2.end.line < r.end.line ||
-            (r2.end.line === r.end.line && r2.end.character <= r.end.character))
-    );
-}

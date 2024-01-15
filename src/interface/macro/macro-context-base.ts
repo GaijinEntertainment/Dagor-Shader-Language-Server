@@ -6,6 +6,6 @@ export interface MacroContextBase {
     macroStatement: MacroStatement;
     nameOriginalRange: Range;
     parameterListOriginalRange: Range;
-    isNotVisible: boolean;
+    isVisible: boolean;
     arguments: MacroArgument[];
 }

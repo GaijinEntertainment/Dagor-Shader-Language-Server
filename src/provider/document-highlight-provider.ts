@@ -27,7 +27,7 @@ export async function documentHighlightProvider(
             kind: DocumentHighlightKind.Text,
         });
     }
-    for (const mc of ms.usages.filter((msa) => !msa.isNotVisible)) {
+    for (const mc of ms.usages.filter((msa) => msa.isVisible)) {
         result.push({
             range: mc.nameOriginalRange,
             kind: DocumentHighlightKind.Text,
@@ -50,8 +50,7 @@ function getMacroStatement(
     }
     const pmc = snapshot.potentialMacroContexts.find(
         (mc) =>
-            !mc.isNotVisible &&
-            rangeContains(mc.nameOriginalRange, dhp.position)
+            mc.isVisible && rangeContains(mc.nameOriginalRange, dhp.position)
     );
     if (pmc) {
         return pmc.macroStatement;

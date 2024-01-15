@@ -13,7 +13,7 @@ export async function signatureHelpProvider(
     }
     const pmc = snapshot.potentialMacroContexts.find(
         (pmc) =>
-            !pmc.isNotVisible &&
+            pmc.isVisible &&
             rangeContains(pmc.parameterListOriginalRange, params.position)
     );
     if (!pmc) {

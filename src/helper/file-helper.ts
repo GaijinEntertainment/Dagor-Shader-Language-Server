@@ -1,5 +1,5 @@
-import { FileSystemItemInfo } from '../interface/file-system-item-info';
-import { FileWatcher } from '../interface/file-watcher';
+import { FileSystemItemInfo } from '../interface/file-system/file-system-item-info';
+import { FileWatcher } from '../interface/file-system/file-watcher';
 import { Server } from '../server';
 
 export async function exists(path: string): Promise<boolean> {

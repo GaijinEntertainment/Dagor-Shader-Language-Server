@@ -1,7 +1,7 @@
 import { DocumentUri, Range } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 
-import { getFileContent } from '../core/file-cache-manager';
+import { getFileContent, getFileVersion } from '../core/file-cache-manager';
 import { Snapshot } from '../core/snapshot';
 import { PerformanceHelper } from '../helper/performance-helper';
 import { getDocuments } from '../helper/server-helper';
@@ -16,6 +16,8 @@ import { MacroContextBase } from '../interface/macro/macro-context-base';
 import { MacroStatement } from '../interface/macro/macro-statement';
 import { MacroType } from '../interface/macro/macro-type';
 import { shaderStageKeywordToEnum } from '../interface/shader-stage';
+import { invalidVersion } from '../interface/snapshot-version';
+import { TextEdit } from '../interface/text-edit';
 import { HlslBlockProcesor } from './hlsl-block-processor';
 import { getIncludedDocumentUri } from './include-resolver';
 import { Preprocessor } from './preprocessor';
@@ -122,7 +124,7 @@ class DshlPreprocessor {
     ): Promise<Snapshot> {
         const uri = await getIncludedDocumentUri(is);
         if (!uri || parentUris.includes(uri)) {
-            return new Snapshot(-1, '', '');
+            return new Snapshot(invalidVersion, '', '');
         }
         const snapshot = await this.getSnapshot(uri);
         new Preprocessor(snapshot).clean();
@@ -134,10 +136,19 @@ class DshlPreprocessor {
         // TODO: make it more uniform with the file cache, and support HLSL
         const document = getDocuments().get(uri);
         if (document) {
-            return new Snapshot(-1, uri, document.getText());
+            this.snapshot.version.includedDocumentsVersion.set(uri, {
+                version: document.version,
+                isManaged: true,
+            });
+            return new Snapshot(invalidVersion, uri, document.getText());
         } else {
             const text = await getFileContent(URI.parse(uri).fsPath);
-            return new Snapshot(-1, uri, text);
+            const cachedVersion = getFileVersion(URI.parse(uri).fsPath);
+            this.snapshot.version.includedDocumentsVersion.set(uri, {
+                version: cachedVersion,
+                isManaged: false,
+            });
+            return new Snapshot(invalidVersion, uri, text);
         }
     }
 
@@ -175,6 +186,15 @@ class DshlPreprocessor {
                 ic.children.push(icc);
                 icc.parent = ic;
             }
+            for (const [
+                uri,
+                version,
+            ] of result.snapshot.version.includedDocumentsVersion.entries()) {
+                this.snapshot.version.includedDocumentsVersion.set(
+                    uri,
+                    version
+                );
+            }
             this.offsetChildren(ic, ic.startPosition);
             offset +=
                 result.snapshot.text.length -
@@ -191,6 +211,7 @@ class DshlPreprocessor {
     }
 
     private preprocessMacros(): void {
+        const textEdits: TextEdit[] = [];
         const regex =
             /(?<beforeContent>\b(?<beforeName>(?:macro|define_macro_if_not_defined)\s+)(?<name>[a-zA-Z_]\w*)\s*\(\s*(?<parameters>[a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*\s*(,\s*)?)?\))(?<content>\s*(\r?\n)?(^[^\r\n]*(?:\r?\n))*?(\r?\n)?\s*)endmacro/gm;
         let regexResult: RegExpExecArray | null;
@@ -205,9 +226,13 @@ class DshlPreprocessor {
             const content = regexResult.groups?.content ?? '';
             const contentOffset =
                 position + (regexResult.groups?.beforeContent?.length ?? 0);
-            this.addIncludesInMacro(content, contentOffset);
-            this.addMacrosInMacro(content, contentOffset);
-            this.findHlslBlocks(content, contentOffset);
+            const ic = this.snapshot.getIncludeContextAt(position);
+            const mc = this.snapshot.getMacroContextAt(position);
+            if (!ic && !mc) {
+                this.addIncludesInMacro(content, contentOffset);
+                this.addMacrosInMacro(content, contentOffset);
+                this.findHlslBlocks(content, contentOffset);
+            }
             const beforeNameOffset =
                 regexResult.groups?.beforeName?.length ?? 0;
             const nameOriginalRange = this.snapshot.getOriginalRange(
@@ -218,12 +243,11 @@ class DshlPreprocessor {
                 position,
                 beforeEndPosition
             );
-            Preprocessor.removeTextAndAddOffset(
+            textEdits.push({
                 position,
                 beforeEndPosition,
-                this.snapshot
-            );
-            regex.lastIndex = position;
+                pasteText: '',
+            });
             if (this.snapshot.macroStatements.some((ms) => ms.name === name)) {
                 continue;
             }
@@ -237,6 +261,7 @@ class DshlPreprocessor {
                 content
             );
         }
+        Preprocessor.executeTextEdits(textEdits, this.snapshot);
     }
 
     private createMacroStatement(
@@ -367,7 +392,7 @@ class DshlPreprocessor {
                 macroStatement: ms,
                 nameOriginalRange,
                 parameterListOriginalRange: ma.argumentListOriginalRange,
-                isNotVisible: !!(ic || parentMc),
+                isVisible: !ic && !parentMc,
             };
             this.snapshot.potentialMacroContexts.push(pmc);
             ms.usages.push(pmc);
@@ -482,7 +507,7 @@ class DshlPreprocessor {
         if (!ma.arguments.length) {
             return ms.content;
         }
-        const contentSnapshot = new Snapshot(-1, '', '');
+        const contentSnapshot = new Snapshot(invalidVersion, '', '');
         contentSnapshot.text = ms.content;
         Preprocessor.addStringRanges(
             0,
@@ -523,7 +548,7 @@ class DshlPreprocessor {
         ic: IncludeContext | null,
         parentMc: MacroContext | null
     ): MacroContext {
-        const isNotVisible = !!parentMc || !!ic;
+        const isVisible = !parentMc && !ic;
         const mc: MacroContext = {
             macroStatement: ms,
             startPosition: position,
@@ -532,7 +557,7 @@ class DshlPreprocessor {
             nameOriginalRange: originalNameRange,
             parent: parentMc,
             children: [],
-            isNotVisible,
+            isVisible,
             arguments: ma.arguments,
             parameterListOriginalRange: ma.argumentListOriginalRange,
         };
@@ -575,7 +600,7 @@ class DshlPreprocessor {
                         hlslRange.startPosition,
                         hlslRange.endPosition
                     ),
-                    isNotVisible: !!(ic || mc),
+                    isVisible: !ic && !mc,
                     stage: shaderStageKeywordToEnum(stage),
                     ...hlslRange,
                 };

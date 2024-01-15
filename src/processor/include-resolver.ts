@@ -2,11 +2,7 @@ import * as path from 'path';
 import { DocumentUri } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 
-import {
-    getConfiguration,
-    getExternalConfiguration,
-} from '../core/configuration-manager';
-import { LAUNCH_OPTION_CURRENT_CONFIG } from '../core/constant';
+import { getConfiguration } from '../core/configuration-manager';
 import { log, logDocumentLinkResolveShaderConfig } from '../core/debug';
 import { exists, isFile } from '../helper/file-helper';
 import { IncludeStatement } from '../interface/include/include-statement';
@@ -54,7 +50,7 @@ async function getRelativeDocumentUri(
 async function getDocumentUriInIncludeFolder(
     is: IncludeStatement
 ): Promise<DocumentUri | null> {
-    const includeFolders = await getIncludeFolders();
+    const includeFolders = getIncludeFolders();
     for (const includeFolder of includeFolders) {
         const includedUri = path.join(includeFolder, is.path);
         if ((await exists(includedUri)) && (await isFile(includedUri))) {
@@ -64,18 +60,18 @@ async function getDocumentUriInIncludeFolder(
     return null;
 }
 
-export async function getIncludeFolders(): Promise<string[]> {
+function getIncludeFolders(): string[] {
     if (getConfiguration().shaderConfigOverride) {
         return overrideIncludeFolders;
     }
     if (!includeFolders.size) {
         return [];
     }
-    const game = await getGame();
+    const game = getGame();
     if (!game) {
         return [];
     }
-    const shaderConfig = await getShaderConfig(game);
+    const shaderConfig = getShaderConfig(game);
     if (!shaderConfig) {
         return [];
     }
@@ -83,32 +79,28 @@ export async function getIncludeFolders(): Promise<string[]> {
     return includeFolders.get(game)?.get(shaderConfig) ?? [];
 }
 
-async function getGame(): Promise<string | undefined> {
-    const game = await getExternalConfiguration<string>(
-        `${LAUNCH_OPTION_CURRENT_CONFIG}.Game`
-    );
+function getGame(): string | undefined {
+    const game = getConfiguration().launchOptions.game;
     return game ?? includeFolders.keys()?.next()?.value;
 }
 
-async function getShaderConfig(game: string): Promise<string | undefined> {
+function getShaderConfig(game: string): string | undefined {
     const shaderConfigs = includeFolders.get(game);
-    let shaderConfig = await getShaderConfigBasedOnPlatform(shaderConfigs!);
+    let shaderConfig = getShaderConfigBasedOnPlatform(shaderConfigs!);
     if (shaderConfig) {
         return shaderConfig;
     }
-    shaderConfig = await getShaderConfigBasedOnDriver(shaderConfigs!);
+    shaderConfig = getShaderConfigBasedOnDriver(shaderConfigs!);
     if (shaderConfig) {
         return shaderConfig;
     }
     return shaderConfigs?.keys().next().value;
 }
 
-async function getShaderConfigBasedOnPlatform(
+function getShaderConfigBasedOnPlatform(
     shaderConfigs: Map<ShaderConfig, string[]>
-): Promise<string | null> {
-    const platform = await getExternalConfiguration<string>(
-        `${LAUNCH_OPTION_CURRENT_CONFIG}.Platform`
-    );
+): string | null {
+    const platform = getConfiguration().launchOptions.platform;
     if (platform) {
         for (const shaderConfig of shaderConfigs.keys()) {
             if (shaderConfig.toLowerCase().includes(platform)) {
@@ -119,12 +111,10 @@ async function getShaderConfigBasedOnPlatform(
     return null;
 }
 
-async function getShaderConfigBasedOnDriver(
+function getShaderConfigBasedOnDriver(
     shaderConfigs: Map<ShaderConfig, string[]>
-): Promise<string | null> {
-    const buildCommand = await getExternalConfiguration<string>(
-        `${LAUNCH_OPTION_CURRENT_CONFIG}.Driver.BuildCommand`
-    );
+): string | null {
+    const buildCommand = getConfiguration().launchOptions.buildCommand;
     if (buildCommand) {
         const driver = getDriver(buildCommand);
         if (driver) {

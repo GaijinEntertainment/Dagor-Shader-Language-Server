@@ -161,6 +161,13 @@ export abstract class Server {
         this.connection.onImplementation(implementationProvider);
         this.connection.onSignatureHelp(signatureHelpProvider);
         this.connection.onRequest(InlayHintRequest.type, inlayHintProvider);
+        this.documents.onDidChangeContent((_change) => {
+            this.refreshInlayHints();
+        });
+    }
+
+    public refreshInlayHints(): void {
+        this.connection.languages.inlayHint.refresh();
     }
 
     private listen(): void {

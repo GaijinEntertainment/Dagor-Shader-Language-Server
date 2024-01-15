@@ -16,7 +16,7 @@ export async function inlayHintProvider(
     }
     const pmcs = snapshot.potentialMacroContexts.filter(
         (pmc) =>
-            !pmc.isNotVisible &&
+            pmc.isVisible &&
             (rangeContains(params.range, pmc.nameOriginalRange.start) ||
                 rangeContains(params.range, pmc.nameOriginalRange.end))
     );

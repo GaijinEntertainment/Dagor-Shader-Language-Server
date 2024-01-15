@@ -12,9 +12,10 @@ import { MacroContextBase } from '../interface/macro/macro-context-base';
 import { MacroStatement } from '../interface/macro/macro-statement';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { RangeWithChildren } from '../interface/range-with-children';
+import { SnapshotVersion } from '../interface/snapshot-version';
 
 export class Snapshot {
-    public readonly version: number;
+    public readonly version: SnapshotVersion;
     public readonly uri: DocumentUri;
     public readonly originalText: string;
     public text = '';
@@ -33,7 +34,11 @@ export class Snapshot {
 
     private preprocessingOffsets: PreprocessingOffset[] = [];
 
-    public constructor(version: number, uri: DocumentUri, text: string) {
+    public constructor(
+        version: SnapshotVersion,
+        uri: DocumentUri,
+        text: string
+    ) {
         this.version = version;
         this.uri = uri;
         this.originalText = text;
@@ -181,7 +186,7 @@ export class Snapshot {
         return (
             this.includeContexts.find(
                 (ic) =>
-                    ic.startPosition <= position && position < ic.endPosition
+                    ic.startPosition <= position && position <= ic.endPosition
             ) ?? null
         );
     }
@@ -215,8 +220,8 @@ export class Snapshot {
     public getMacroContextAt(position: number): MacroContext | null {
         return (
             this.macroContexts.find(
-                (ic) =>
-                    ic.startPosition <= position && position < ic.endPosition
+                (mc) =>
+                    mc.startPosition <= position && position < mc.endPosition
             ) ?? null
         );
     }
@@ -286,8 +291,7 @@ export class Snapshot {
 
     public isInHlslBlock(position: Position): boolean {
         return this.hlslBlocks.some(
-            (hb) =>
-                !hb.isNotVisible && rangeContains(hb.originalRange, position)
+            (hb) => hb.isVisible && rangeContains(hb.originalRange, position)
         );
     }
 }

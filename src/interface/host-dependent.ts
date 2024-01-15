@@ -1,5 +1,5 @@
-import { FileSystemItemInfo } from './file-system-item-info';
-import { FileWatcher } from './file-watcher';
+import { FileSystemItemInfo } from './file-system/file-system-item-info';
+import { FileWatcher } from './file-system/file-watcher';
 
 export interface HostDependent {
     documentLinkErrorMessage: string;

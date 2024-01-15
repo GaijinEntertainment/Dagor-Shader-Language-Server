@@ -18,8 +18,7 @@ export async function linkProviderBase(
         return null;
     }
     const pmc = snapshot.potentialMacroContexts.find(
-        (pmc) =>
-            !pmc.isNotVisible && rangeContains(pmc.nameOriginalRange, position)
+        (pmc) => pmc.isVisible && rangeContains(pmc.nameOriginalRange, position)
     );
     if (!pmc) {
         return null;
