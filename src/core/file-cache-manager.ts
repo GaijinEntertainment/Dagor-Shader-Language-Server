@@ -1,21 +1,12 @@
-import * as chokidar from 'chokidar';
-
-import { loadFile, watchFile } from '../helper/fs-helper';
+import { loadFile, watchFile } from '../helper/file-helper';
+import { FileCache } from '../interface/file-system/file-cache';
 import {
     collectIncludeFolders,
     collectOverrideIncludeFolders,
+    increaseShaderConfigVersion,
 } from '../processor/include-processor';
 import { getConfiguration } from './configuration-manager';
 import { log, logCachingBehavior } from './debug';
-
-interface FileCache {
-    watcher: chokidar.FSWatcher;
-    content: string;
-    cached: number;
-    caching: number;
-    cachingPromise?: Promise<string>;
-    lastModified: number;
-}
 
 const fileCache = new Map<string, FileCache>();
 
@@ -47,12 +38,18 @@ export async function getFileContent(path: string): Promise<string> {
     }
 }
 
+export function getFileVersion(path: string): number {
+    const cacheEntry = fileCache.get(path);
+    return cacheEntry ? cacheEntry.lastModified : -1;
+}
+
 async function loadFromFile(path: string): Promise<string> {
-    const watcher = watchFile(path, (_path, _stats) => {
+    const watcher = watchFile(path, (_path) => {
         const cacheEntry = fileCache.get(path);
         if (cacheEntry) {
             cacheEntry.lastModified++;
             if (path.endsWith('.blk')) {
+                increaseShaderConfigVersion();
                 if (getConfiguration().shaderConfigOverride) {
                     collectOverrideIncludeFolders();
                 } else {

@@ -1,14 +1,11 @@
 import { Range } from 'vscode-languageserver';
 
-import { MacroStatement } from './macro-statement';
+import { MacroContextBase } from './macro-context-base';
 
-export interface MacroContext {
-    macro: MacroStatement;
+export interface MacroContext extends MacroContextBase {
     startPosition: number;
     endPosition: number;
     originalRange: Range;
-    originalNameRange: Range;
     parent: MacroContext | null;
     children: MacroContext[];
-    isNotVisible: boolean;
 }

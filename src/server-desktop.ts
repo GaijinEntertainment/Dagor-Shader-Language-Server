@@ -1,24 +1,26 @@
 import {
     Connection,
-    InitializeParams,
-    InitializeResult,
     InitializedParams,
     ProposedFeatures,
-    TextDocumentSyncKind,
     createConnection,
 } from 'vscode-languageserver/node';
 
 import { getConfiguration } from './core/configuration-manager';
-import { SERVER_NAME, SERVER_VERSION } from './core/constant';
 import { clearCache } from './core/file-cache-manager';
+import {
+    exists,
+    getFolderContent,
+    isFile,
+    loadFile,
+    watchFile,
+} from './helper/fs-helper';
 import { Configuration } from './interface/configuration';
+import { HostDependent } from './interface/host-dependent';
 import {
     collectIncludeFolders,
     collectOverrideIncludeFolders,
+    increaseShaderConfigVersion,
 } from './processor/include-processor';
-import { definitionProvider } from './provider/definition-provider';
-import { documentLinkResolveProvider } from './provider/document-link-resolve-provider';
-import { documentLinksProvider } from './provider/document-links-provider';
 import { Server } from './server';
 
 export class ServerDesktop extends Server {
@@ -26,25 +28,15 @@ export class ServerDesktop extends Server {
         return createConnection(ProposedFeatures.all);
     }
 
-    protected override addFeatures(): void {
-        super.addFeatures();
-        this.connection.onDocumentLinks(documentLinksProvider);
-        this.connection.onDocumentLinkResolve(documentLinkResolveProvider);
-        this.connection.onDefinition(definitionProvider);
-    }
-
-    protected override onInitialize(ip: InitializeParams): InitializeResult {
+    protected override createHostDependent(): HostDependent {
         return {
-            capabilities: {
-                textDocumentSync: TextDocumentSyncKind.Incremental,
-                definitionProvider: true,
-                // completionProvider: {},
-                documentLinkProvider: { resolveProvider: true },
-            },
-            serverInfo: {
-                name: SERVER_NAME,
-                version: SERVER_VERSION,
-            },
+            documentLinkErrorMessage:
+                "Couldn't find the file. Maybe you should change the launch options.",
+            loadFile: loadFile,
+            exists: exists,
+            isFile: isFile,
+            getFolderContent: getFolderContent,
+            watchFile: watchFile,
         };
     }
 
@@ -65,13 +57,37 @@ export class ServerDesktop extends Server {
         newConfiguration: Configuration
     ): Promise<void> {
         if (
-            oldConfiguration.shaderConfigOverride !==
-            newConfiguration.shaderConfigOverride
+            this.shaderConfigRelatedConfigurationChanged(
+                oldConfiguration,
+                newConfiguration
+            )
         ) {
-            await this.collectShaderIncludeFolders(
+            increaseShaderConfigVersion();
+            if (
+                oldConfiguration.shaderConfigOverride !==
                 newConfiguration.shaderConfigOverride
-            );
+            ) {
+                await this.collectShaderIncludeFolders(
+                    newConfiguration.shaderConfigOverride
+                );
+            }
         }
+    }
+
+    private shaderConfigRelatedConfigurationChanged(
+        oldConfiguration: Configuration,
+        newConfiguration: Configuration
+    ): boolean {
+        return (
+            oldConfiguration.shaderConfigOverride !==
+                newConfiguration.shaderConfigOverride ||
+            oldConfiguration.launchOptions.buildCommand !==
+                newConfiguration.launchOptions.buildCommand ||
+            oldConfiguration.launchOptions.game !==
+                newConfiguration.launchOptions.game ||
+            oldConfiguration.launchOptions.platform !==
+                newConfiguration.launchOptions.platform
+        );
     }
 
     private async collectShaderIncludeFolders(

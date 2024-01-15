@@ -6,9 +6,10 @@ import { ElementRange } from '../interface/element-range';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
+import { MacroArguments } from '../interface/macro/macro-arguments';
 import { MacroContext } from '../interface/macro/macro-context';
-import { MacroArguments } from '../interface/macro/macro-parameters';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
+import { TextEdit } from '../interface/text-edit';
 import { preprocessDshl } from './dshl-preprocessor';
 import { preprocessHlsl } from './hlsl-preprocessor';
 import { MacroArgumentsProcesor } from './macro-arguments-processor';
@@ -48,7 +49,6 @@ export class Preprocessor {
         if (this.snapshot.uri.endsWith('.dshl')) {
             await preprocessDshl(this.snapshot);
         }
-        // TODO
         await preprocessHlsl(this.snapshot);
         this.snapshot.preprocessedText = this.snapshot.text;
         this.ph.end('preprocess');
@@ -56,44 +56,48 @@ export class Preprocessor {
     }
 
     private preprocessLineContinuations(): void {
+        const textEdits: TextEdit[] = [];
         let regexResult: RegExpExecArray | null;
         const regex = /\\\r?\n/g;
         while ((regexResult = regex.exec(this.snapshot.text))) {
             const position = regexResult.index;
-            const pasteText = '';
             const match = regexResult[0];
             const beforeEndPosition = position + match.length;
-            const afterEndPosition = position + pasteText.length;
-            Preprocessor.changeTextAndAddOffset(
+            textEdits.push({
                 position,
                 beforeEndPosition,
-                afterEndPosition,
-                pasteText,
-                this.snapshot
-            );
-            regex.lastIndex = afterEndPosition;
+                pasteText: '',
+            });
         }
+        Preprocessor.executeTextEdits(textEdits, this.snapshot);
     }
 
     private preprocessComments(): void {
+        const textEdits: TextEdit[] = [];
         const regex =
-            /"(?:[^"]|\\")*"|(?<=#[ \t]*include[ \t]*)<[^>]*>|(?<=#[ \t]*error).*|'(?:[^']|\\')*'|\/\/.*|\/\*[\s\S*]*?\*\//g;
+            /"(?:[^"]|\\")*"|(?<=#[ \t]*include[ \t]*)<[^>]*>|(?<error>(?<=#[ \t]*error).*)|'(?:[^']|\\')*'|(?<singleLineComment>\/\/.*)|(?<multiLineComment>\/\*[\s\S*]*?\*\/)/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(this.snapshot.text))) {
             const position = regexResult.index;
             const match = regexResult[0];
             const beforeEndPosition = position + match.length;
-            if (match.startsWith('//') || match.startsWith('/*')) {
-                const pasteText = ' ';
-                const afterEndPosition = position + pasteText.length;
-                Preprocessor.changeTextAndAddOffset(
+            const isNewLineAtTheEnd =
+                regexResult.groups?.singleLineComment ||
+                regexResult.groups?.error;
+            const originalRange = this.snapshot.getOriginalRange(
+                position + 1,
+                beforeEndPosition - (isNewLineAtTheEnd ? 0 : 1)
+            );
+            this.snapshot.noCodeCompletionRanges.push(originalRange);
+            const isComment =
+                regexResult.groups?.singleLineComment ||
+                regexResult.groups?.multiLineComment;
+            if (isComment) {
+                textEdits.push({
                     position,
                     beforeEndPosition,
-                    afterEndPosition,
-                    pasteText,
-                    this.snapshot
-                );
-                regex.lastIndex = afterEndPosition;
+                    pasteText: ' ',
+                });
             } else {
                 const sr: ElementRange = {
                     startPosition: position,
@@ -102,6 +106,7 @@ export class Preprocessor {
                 this.snapshot.stringRanges.push(sr);
             }
         }
+        Preprocessor.executeTextEdits(textEdits, this.snapshot);
     }
 
     private static addPreprocessingOffset(
@@ -166,6 +171,27 @@ export class Preprocessor {
         );
     }
 
+    public static executeTextEdits(
+        textEdits: TextEdit[],
+        snapshot: Snapshot
+    ): void {
+        let offset = 0;
+        for (const te of textEdits) {
+            te.position += offset;
+            te.beforeEndPosition += offset;
+            const afterEndPosition = te.position + te.pasteText.length;
+            Preprocessor.changeTextAndAddOffset(
+                te.position,
+                te.beforeEndPosition,
+                afterEndPosition,
+                te.pasteText,
+                snapshot
+            );
+            offset +=
+                te.pasteText.length - (te.beforeEndPosition - te.position);
+        }
+    }
+
     public static createIncludeStatement(
         beforeEndPosition: number,
         type: IncludeType,
@@ -179,9 +205,12 @@ export class Preprocessor {
             path,
             snapshot
         );
+        const originalEndPosition =
+            snapshot.getOriginalPosition(beforeEndPosition);
         const is: IncludeStatement = {
             path,
             pathOriginalRange,
+            originalEndPosition,
             type,
             includerUri: parentIc?.snapshot?.uri ?? snapshot.uri,
         };
@@ -209,10 +238,9 @@ export class Preprocessor {
         const regex =
             /"(?:[^"]|\\")*"|(?<=#[ \t]*include[ \t]*)<[^>]*>|(?<=#[ \t]*error).*|'(?:[^']|\\')*'/g;
         let regexResult: RegExpExecArray | null;
-        regex.lastIndex = startPosition;
-        const text = snapshot.text.substring(0, endPosition);
+        const text = snapshot.text.substring(startPosition, endPosition);
         while ((regexResult = regex.exec(text))) {
-            const position = regexResult.index;
+            const position = startPosition + regexResult.index;
             const match = regexResult[0];
             const endPosition = position + match.length;
             const sr: ElementRange = {
@@ -233,7 +261,7 @@ export class Preprocessor {
         identifierEndPosition: number,
         snapshot: Snapshot
     ): MacroArguments | null {
-        const map = new MacroArgumentsProcesor(snapshot.text);
+        const map = new MacroArgumentsProcesor(snapshot);
         return map.getMacroArguments(identifierEndPosition);
     }
 }

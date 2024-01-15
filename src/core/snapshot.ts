@@ -1,17 +1,21 @@
 import { DocumentUri, Position, Range } from 'vscode-languageserver';
 
+import { rangeContains } from '../helper/helper';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
+import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { MacroContext } from '../interface/macro/macro-context';
+import { MacroContextBase } from '../interface/macro/macro-context-base';
 import { MacroStatement } from '../interface/macro/macro-statement';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { RangeWithChildren } from '../interface/range-with-children';
+import { SnapshotVersion } from '../interface/snapshot-version';
 
 export class Snapshot {
-    public readonly version: number;
+    public readonly version: SnapshotVersion;
     public readonly uri: DocumentUri;
     public readonly originalText: string;
     public text = '';
@@ -22,12 +26,19 @@ export class Snapshot {
     public defineStatements: DefineStatement[] = [];
     public macroStatements: MacroStatement[] = [];
     public macroContexts: MacroContext[] = [];
+    public potentialMacroContexts: MacroContextBase[] = [];
     public defineContexts: DefineContext[] = [];
     public stringRanges: ElementRange[] = [];
+    public hlslBlocks: HlslBlock[] = [];
+    public noCodeCompletionRanges: Range[] = [];
 
     private preprocessingOffsets: PreprocessingOffset[] = [];
 
-    public constructor(version: number, uri: DocumentUri, text: string) {
+    public constructor(
+        version: SnapshotVersion,
+        uri: DocumentUri,
+        text: string
+    ) {
         this.version = version;
         this.uri = uri;
         this.originalText = text;
@@ -104,7 +115,7 @@ export class Snapshot {
         let line = 0;
         let character = 0;
         for (; line < lines.length; line++) {
-            if (character + lines[line].length + 1 >= position) {
+            if (character + lines[line].length >= position) {
                 character = position - character;
                 break;
             } else {
@@ -144,6 +155,10 @@ export class Snapshot {
             sr.startPosition = this.updatePosition(sr.startPosition, newPo);
             sr.endPosition = this.updatePosition(sr.endPosition, newPo);
         }
+        for (const hb of this.hlslBlocks) {
+            hb.startPosition = this.updatePosition(hb.startPosition, newPo);
+            hb.endPosition = this.updatePosition(hb.endPosition, newPo);
+        }
         this.preprocessingOffsets.push(newPo);
     }
 
@@ -171,7 +186,7 @@ export class Snapshot {
         return (
             this.includeContexts.find(
                 (ic) =>
-                    ic.startPosition <= position && position < ic.endPosition
+                    ic.startPosition <= position && position <= ic.endPosition
             ) ?? null
         );
     }
@@ -205,8 +220,8 @@ export class Snapshot {
     public getMacroContextAt(position: number): MacroContext | null {
         return (
             this.macroContexts.find(
-                (ic) =>
-                    ic.startPosition <= position && position < ic.endPosition
+                (mc) =>
+                    mc.startPosition <= position && position < mc.endPosition
             ) ?? null
         );
     }
@@ -271,6 +286,12 @@ export class Snapshot {
             this.macroStatements.find(
                 (ms) => ms.name === name && ms.position <= position
             ) ?? null
+        );
+    }
+
+    public isInHlslBlock(position: Position): boolean {
+        return this.hlslBlocks.some(
+            (hb) => hb.isVisible && rangeContains(hb.originalRange, position)
         );
     }
 }

@@ -1,19 +1,23 @@
-import { MacroArguments } from '../interface/macro/macro-parameters';
+import { Snapshot } from '../core/snapshot';
+import { MacroArgument } from '../interface/macro/macro-argument';
+import { MacroArguments } from '../interface/macro/macro-arguments';
 
 export class MacroArgumentsProcesor {
-    text: string;
-    index = -1;
-    character = '';
-    lastCharacterIsEscape = false;
-    roundedBrackets = 0;
-    stringLiteral = false;
-    characterLiteral = false;
-    insideArguments = false;
-    argumentPosition = -1;
-    arguments: string[] = [];
+    private snapshot: Snapshot;
+    private index = -1;
+    private character = '';
+    private lastCharacterIsEscape = false;
+    private roundedBrackets = 0;
+    private stringLiteral = false;
+    private characterLiteral = false;
+    private insideArguments = false;
+    private argumentListStartPosition = -1;
+    private argumentIdentifierPosition = -1;
+    private argumentSeparatorPosition = -1;
+    private arguments: MacroArgument[] = [];
 
-    public constructor(text: string) {
-        this.text = text;
+    public constructor(snapshot: Snapshot) {
+        this.snapshot = snapshot;
     }
 
     public getMacroArguments(
@@ -21,19 +25,24 @@ export class MacroArgumentsProcesor {
     ): MacroArguments | null {
         for (
             this.index = identifierEndPosition;
-            this.index < this.text.length;
+            this.index < this.snapshot.text.length;
             this.index++
         ) {
-            this.setCharacter(this.text);
+            this.setCharacter(this.snapshot.text);
             if (this.isCharacterWhitespace()) {
                 continue;
             }
             if (this.isParametersStart()) {
                 this.insideArguments = true;
-                this.argumentPosition = this.index + 1;
+                this.argumentListStartPosition = this.index + 1;
+                this.argumentSeparatorPosition = this.index + 1;
             } else if (this.isParametersEnd()) {
                 this.addArgumentIfExists();
                 return {
+                    argumentListOriginalRange: this.snapshot.getOriginalRange(
+                        this.argumentListStartPosition,
+                        this.index
+                    ),
                     endPosition: this.index + 1,
                     arguments: this.arguments,
                 };
@@ -77,17 +86,30 @@ export class MacroArgumentsProcesor {
     }
 
     private addArgumentIfExists(): void {
-        if (this.argumentPosition !== -1) {
-            const argument = this.text
-                .substring(this.argumentPosition, this.index)
+        if (this.argumentIdentifierPosition !== -1) {
+            const argument = this.snapshot.text
+                .substring(this.argumentIdentifierPosition, this.index)
                 .trim();
             if (argument) {
-                this.arguments.push(argument);
+                this.arguments.push({
+                    content: argument,
+                    originalRange: this.snapshot.getOriginalRange(
+                        this.argumentSeparatorPosition,
+                        this.index
+                    ),
+                    trimmedOriginalStartPosition:
+                        this.snapshot.getOriginalPosition(
+                            this.argumentIdentifierPosition
+                        ),
+                });
             }
         }
     }
 
     private handleCharacters(): void {
+        if (this.argumentIdentifierPosition === -1) {
+            this.argumentIdentifierPosition = this.index;
+        }
         if (this.character === '"' && !this.lastCharacterIsEscape) {
             this.stringLiteral = !this.stringLiteral;
         } else if (this.character === "'" && !this.lastCharacterIsEscape) {
@@ -95,7 +117,8 @@ export class MacroArgumentsProcesor {
         } else if (!this.stringLiteral && !this.characterLiteral) {
             if (this.isArgumentSeparatorComma()) {
                 this.addArgumentIfExists();
-                this.argumentPosition = this.index + 1;
+                this.argumentIdentifierPosition = -1;
+                this.argumentSeparatorPosition = this.index + 1;
             } else if (this.character === '(') {
                 this.roundedBrackets++;
             } else if (this.character === ')') {

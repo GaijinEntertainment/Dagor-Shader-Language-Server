@@ -6,9 +6,12 @@ import {
 import { Configuration } from '../interface/configuration';
 import { Server } from '../server';
 import { getCapabilities } from './capability-manager';
+import { LAUNCH_OPTION_CURRENT_CONFIG } from './constant';
 
 let configuration: Configuration = {
+    launchOptions: {},
     shaderConfigOverride: '',
+    folding: false,
 };
 let connection: Connection;
 
@@ -32,23 +35,23 @@ export function getConfiguration(): Configuration {
     return configuration;
 }
 
-export async function getExternalConfiguration<T = any>(
-    name: string
-): Promise<T | undefined> {
-    if (!getCapabilities().configuration) {
-        return undefined;
-    }
-    return connection.workspace.getConfiguration(name);
-}
-
 async function refreshConfiguration(initial = false): Promise<void> {
     if (!getCapabilities().configuration) {
         return;
     }
     const oldConfiguration = configuration;
-    const newConfiguration = await connection.workspace.getConfiguration(
-        'dagorShaderLanguageServer'
+    const newConfiguration: Configuration =
+        await connection.workspace.getConfiguration(
+            'dagorShaderLanguageServer'
+        );
+    const newLaunchOptions = await connection.workspace.getConfiguration(
+        LAUNCH_OPTION_CURRENT_CONFIG
     );
+    newConfiguration.launchOptions = {};
+    newConfiguration.launchOptions.buildCommand =
+        newLaunchOptions?.Driver?.BuildCommand;
+    newConfiguration.launchOptions.game = newLaunchOptions?.Game;
+    newConfiguration.launchOptions.platform = newLaunchOptions?.Platform;
     configuration = newConfiguration;
     if (!initial) {
         await Server.getServer().configurationChanged(

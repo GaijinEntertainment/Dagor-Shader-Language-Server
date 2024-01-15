@@ -26,3 +26,7 @@ export function showWarningMessage(message: string): void {
 export function showErrorMessage(message: string): void {
     Server.getServer().showErrorMessage(message);
 }
+
+export function refreshInlayHints(): void {
+    Server.getServer().refreshInlayHints();
+}

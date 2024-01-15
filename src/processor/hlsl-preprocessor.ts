@@ -15,6 +15,7 @@ import { IfState } from '../interface/if-state';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
+import { invalidVersion } from '../interface/snapshot-version';
 import { ConditionVisitor } from './condition-visitor';
 import { getIncludedDocumentUri } from './include-resolver';
 import { Preprocessor } from './preprocessor';
@@ -491,7 +492,8 @@ export class HlslPreprocessor {
             afterEndPosition,
             uri,
             parentIc,
-            snapshot
+            snapshot,
+            is
         );
         if (ic) {
             Preprocessor.addStringRanges(position, afterEndPosition, snapshot);
@@ -503,7 +505,8 @@ export class HlslPreprocessor {
         afterEndPosition: number,
         uri: DocumentUri | null,
         parentIc: IncludeContext | null,
-        snapshot: Snapshot
+        snapshot: Snapshot,
+        is: IncludeStatement
     ): IncludeContext | null {
         if (!uri) {
             return null;
@@ -512,6 +515,7 @@ export class HlslPreprocessor {
             startPosition: position,
             localStartPosition: position,
             endPosition: afterEndPosition,
+            includeStatement: is,
             snapshot,
             parent: parentIc,
             children: [],
@@ -545,7 +549,7 @@ export class HlslPreprocessor {
             return includedSnapshot.cleanedText;
         } else {
             const text = await getFileContent(URI.parse(uri).fsPath);
-            includedSnapshot = new Snapshot(-1, uri, text);
+            includedSnapshot = new Snapshot(invalidVersion, uri, text);
             new Preprocessor(includedSnapshot).clean();
             return includedSnapshot.cleanedText;
         }
@@ -635,7 +639,7 @@ export class HlslPreprocessor {
             if (Preprocessor.isInString(identifierStartPosition, snapshot)) {
                 continue;
             }
-            const macroSnapshot = new Snapshot(-1, '', '');
+            const macroSnapshot = new Snapshot(invalidVersion, '', '');
             macroSnapshot.text = ds.content;
             Preprocessor.addStringRanges(
                 0,
@@ -676,7 +680,7 @@ export class HlslPreprocessor {
                             const argument = ma
                                 ? ma.arguments[
                                       ds.parameters.indexOf(parameterName)
-                                  ]
+                                  ].content
                                 : parameterName;
                             const replacement = stringification
                                 ? HlslPreprocessor.stringify(argument)
@@ -835,7 +839,7 @@ export class HlslPreprocessor {
     }
 
     private static stringify(argument: string): string {
-        const argumentSnapshot = new Snapshot(-1, '', '');
+        const argumentSnapshot = new Snapshot(invalidVersion, '', '');
         argumentSnapshot.text = argument;
         Preprocessor.addStringRanges(0, argument.length, argumentSnapshot);
         const regex = /"|\\/g;

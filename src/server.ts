@@ -1,13 +1,10 @@
 import {
-    CompletionItem,
-    CompletionItemKind,
     Connection,
-    Diagnostic,
-    DiagnosticSeverity,
     InitializeParams,
     InitializeResult,
     InitializedParams,
-    TextDocumentPositionParams,
+    InlayHintRequest,
+    TextDocumentSyncKind,
     TextDocuments,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -18,11 +15,26 @@ import {
     initializeCapabilities,
 } from './core/capability-manager';
 import { initializeConfiguration } from './core/configuration-manager';
+import { SERVER_NAME, SERVER_VERSION } from './core/constant';
 import { initializeDebug } from './core/debug';
 import { Configuration } from './interface/configuration';
+import { HostDependent } from './interface/host-dependent';
+import { completionProvider } from './provider/completion-provider';
+import { declarationProvider } from './provider/declaration-provider';
+import { definitionProvider } from './provider/definition-provider';
+import { documentHighlightProvider } from './provider/document-highlight-provider';
+import { documentLinkResolveProvider } from './provider/document-link-resolve-provider';
+import { documentLinksProvider } from './provider/document-links-provider';
+import { documentSymbolProvider } from './provider/document-symbol-provider';
+import { foldingRangesProvider } from './provider/folding-ranges-provider';
+import { hoverProvider } from './provider/hover-provider';
+import { implementationProvider } from './provider/implementation-provider';
+import { inlayHintProvider } from './provider/inlay-hint-provider';
+import { signatureHelpProvider } from './provider/signature-help-provider';
 
 export abstract class Server {
     private static server: Server;
+    private static hostDependent: HostDependent;
 
     protected connection: Connection;
     protected documents: TextDocuments<TextDocument>;
@@ -33,8 +45,13 @@ export abstract class Server {
         return Server.server;
     }
 
+    public static getHostDependent(): HostDependent {
+        return Server.hostDependent;
+    }
+
     public constructor() {
         Server.server = this;
+        Server.hostDependent = this.createHostDependent();
         this.connection = this.createConnection();
         this.documents = new TextDocuments(TextDocument);
         this.initialize();
@@ -43,6 +60,8 @@ export abstract class Server {
     }
 
     protected abstract createConnection(): Connection;
+
+    protected abstract createHostDependent(): HostDependent;
 
     private initialize(): void {
         initializeDebug(this.connection);
@@ -64,7 +83,28 @@ export abstract class Server {
         });
     }
 
-    protected abstract onInitialize(ip: InitializeParams): InitializeResult;
+    protected onInitialize(ip: InitializeParams): InitializeResult {
+        return {
+            capabilities: {
+                textDocumentSync: TextDocumentSyncKind.Incremental,
+                completionProvider: {},
+                declarationProvider: true,
+                definitionProvider: true,
+                documentHighlightProvider: true,
+                documentLinkProvider: { resolveProvider: true },
+                documentSymbolProvider: true,
+                foldingRangeProvider: true,
+                hoverProvider: true,
+                implementationProvider: true,
+                inlayHintProvider: { documentSelector: [{ language: 'dshl' }] },
+                signatureHelpProvider: { triggerCharacters: ['(', ','] },
+            },
+            serverInfo: {
+                name: SERVER_NAME,
+                version: SERVER_VERSION,
+            },
+        };
+    }
 
     protected async onInitialized(ip: InitializedParams): Promise<void> {}
 
@@ -109,54 +149,25 @@ export abstract class Server {
     }
 
     protected addFeatures(): void {
-        // this.addMockedCodeCompletion();
-        // this.addMockedDiagnostics();
-    }
-
-    private addMockedCodeCompletion(): void {
-        this.connection.onCompletion(
-            async (
-                _tdpp: TextDocumentPositionParams
-            ): Promise<CompletionItem[]> => {
-                return [
-                    {
-                        label: 'Test code completion item 1',
-                        kind: CompletionItemKind.Text,
-                    },
-                    {
-                        label: 'Test code completion item 2',
-                        kind: CompletionItemKind.Class,
-                    },
-                ];
-            }
-        );
-    }
-
-    private addMockedDiagnostics(): void {
-        this.documents.onDidChangeContent((change) => {
-            const textDocument = change.document;
-            const text = textDocument.getText();
-            const pattern = /\b[A-Z]{2,}\b/g;
-            let m: RegExpExecArray | null;
-
-            const diagnostics: Diagnostic[] = [];
-            while ((m = pattern.exec(text))) {
-                const diagnostic: Diagnostic = {
-                    severity: DiagnosticSeverity.Warning,
-                    range: {
-                        start: textDocument.positionAt(m.index),
-                        end: textDocument.positionAt(m.index + m[0].length),
-                    },
-                    message: `${m[0]} is all uppercase.`,
-                };
-                diagnostics.push(diagnostic);
-            }
-
-            this.connection.sendDiagnostics({
-                uri: textDocument.uri,
-                diagnostics,
-            });
+        this.connection.onCompletion(completionProvider);
+        this.connection.onDeclaration(declarationProvider);
+        this.connection.onDefinition(definitionProvider);
+        this.connection.onDocumentHighlight(documentHighlightProvider);
+        this.connection.onDocumentLinks(documentLinksProvider);
+        this.connection.onDocumentLinkResolve(documentLinkResolveProvider);
+        this.connection.onDocumentSymbol(documentSymbolProvider);
+        this.connection.onFoldingRanges(foldingRangesProvider);
+        this.connection.onHover(hoverProvider);
+        this.connection.onImplementation(implementationProvider);
+        this.connection.onSignatureHelp(signatureHelpProvider);
+        this.connection.onRequest(InlayHintRequest.type, inlayHintProvider);
+        this.documents.onDidChangeContent((_change) => {
+            this.refreshInlayHints();
         });
+    }
+
+    public refreshInlayHints(): void {
+        this.connection.languages.inlayHint.refresh();
     }
 
     private listen(): void {
