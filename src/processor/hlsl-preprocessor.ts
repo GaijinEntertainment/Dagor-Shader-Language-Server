@@ -42,7 +42,7 @@ export class HlslPreprocessor {
         this.ph.end('preprocessDirectives');
         this.refreshMacroNames();
         this.ph.start('expandMacros');
-        HlslPreprocessor.expandMacros(0, this.snapshot.text.length, this.snapshot, this.macroNames);
+        //HlslPreprocessor.expandMacros(0, this.snapshot.text.length, this.snapshot, this.macroNames);
         this.ph.end('expandMacros');
         this.ph.end('preprocess');
         this.ph.log('  HLSL preprocessor', 'preprocess');
@@ -58,7 +58,7 @@ export class HlslPreprocessor {
             const match = regexResult[0];
             const beforeEndPosition = position + match.length;
             const nextStartPosition = await this.preprocessDirective(position, beforeEndPosition, match);
-            regex.lastIndex = nextStartPosition;
+            // regex.lastIndex = nextStartPosition;
         }
     }
 
@@ -72,63 +72,63 @@ export class HlslPreprocessor {
             return position;
         }
 
-        const is2 = this.getIfdefStatement(match, position);
-        if (is2) {
-            this.ifStack.push(is2);
-            Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
-            return position;
-        }
-        const is4 = this.getIfStatement(match, position);
-        if (is4) {
-            this.ifStack.push(is4);
-            Preprocessor.removeTextAndAddOffset(position, beforeEndPosition + is4.offset, this.snapshot);
-            return position;
-        }
-        const is5 = this.getElifStatement(match, position);
-        if (is5) {
-            const oldIs = this.ifStack.pop();
-            if (oldIs && !oldIs.condition) {
-                Preprocessor.removeTextAndAddOffset(position, beforeEndPosition + is5.offset, this.snapshot);
-                this.ifStack.push(is5);
-                return oldIs.position;
-            } else {
-                Preprocessor.removeTextAndAddOffset(position, beforeEndPosition + is5.offset, this.snapshot);
-                this.ifStack.push(is5);
-                return position;
-            }
-        }
-        const es = this.getElseStatement(match, position);
-        if (es) {
-            const oldIs = this.ifStack.pop();
-            if (oldIs && !oldIs.condition) {
-                Preprocessor.removeTextAndAddOffset(oldIs.position, beforeEndPosition, this.snapshot);
-                this.ifStack.push(es);
-                return oldIs.position;
-            } else {
-                Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
-                this.ifStack.push(es);
-                return position;
-            }
-        }
-        if (this.isEndifStatement(match)) {
-            const is3 = this.ifStack.pop();
-            if (is3 && !is3.condition) {
-                Preprocessor.removeTextAndAddOffset(is3.position, beforeEndPosition, this.snapshot);
-                return is3.position;
-            } else {
-                Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
-                return position;
-            }
-        }
-        const ds = this.getDefineStatement(match, position);
-        if (ds) {
-            Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
-            return position;
-        }
-        if (this.isUndefStatement(match, position)) {
-            Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
-            return position;
-        }
+        // const is2 = this.getIfdefStatement(match, position);
+        // if (is2) {
+        //     this.ifStack.push(is2);
+        //     Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
+        //     return position;
+        // }
+        // const is4 = this.getIfStatement(match, position);
+        // if (is4) {
+        //     this.ifStack.push(is4);
+        //     Preprocessor.removeTextAndAddOffset(position, beforeEndPosition + is4.offset, this.snapshot);
+        //     return position;
+        // }
+        // const is5 = this.getElifStatement(match, position);
+        // if (is5) {
+        //     const oldIs = this.ifStack.pop();
+        //     if (oldIs && !oldIs.condition) {
+        //         Preprocessor.removeTextAndAddOffset(position, beforeEndPosition + is5.offset, this.snapshot);
+        //         this.ifStack.push(is5);
+        //         return oldIs.position;
+        //     } else {
+        //         Preprocessor.removeTextAndAddOffset(position, beforeEndPosition + is5.offset, this.snapshot);
+        //         this.ifStack.push(is5);
+        //         return position;
+        //     }
+        // }
+        // const es = this.getElseStatement(match, position);
+        // if (es) {
+        //     const oldIs = this.ifStack.pop();
+        //     if (oldIs && !oldIs.condition) {
+        //         Preprocessor.removeTextAndAddOffset(oldIs.position, beforeEndPosition, this.snapshot);
+        //         this.ifStack.push(es);
+        //         return oldIs.position;
+        //     } else {
+        //         Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
+        //         this.ifStack.push(es);
+        //         return position;
+        //     }
+        // }
+        // if (this.isEndifStatement(match)) {
+        //     const is3 = this.ifStack.pop();
+        //     if (is3 && !is3.condition) {
+        //         Preprocessor.removeTextAndAddOffset(is3.position, beforeEndPosition, this.snapshot);
+        //         return is3.position;
+        //     } else {
+        //         Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
+        //         return position;
+        //     }
+        // }
+        // const ds = this.getDefineStatement(match, position);
+        // if (ds) {
+        //     Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
+        //     return position;
+        // }
+        // if (this.isUndefStatement(match, position)) {
+        //     Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
+        //     return position;
+        // }
         return beforeEndPosition;
     }
 
@@ -160,7 +160,7 @@ export class HlslPreprocessor {
             if (this.ifStack.some((is) => !is.condition)) {
                 return;
             }
-            await HlslPreprocessor.includeContent(position, beforeEndPosition, is, parentIc, this.snapshot);
+            //await HlslPreprocessor.includeContent(position, beforeEndPosition, is, parentIc, this.snapshot);
         }
     }
 
