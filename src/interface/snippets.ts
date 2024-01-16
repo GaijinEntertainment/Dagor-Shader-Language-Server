@@ -151,7 +151,7 @@ export const dshlSnippets: LanguageElementInfo[] = [
         isSnippet: true,
     },
     {
-        name: 'shader stage',
+        name: 'preshader',
         insertText:
             '(${1|cs,vs,ps|}) {\n\t${2:variable_name}@${3|f1,f2,f3,f4,f44,i1,i2,i3,i4,tex,tex2d,tex3d,texArray,texCube,texCubeArray,smp2d,smp3d,smpArray,smpCube,smpCubeArray,static,staticCube,staticTexArray,shd,buf,cbuf,uav|} = ${4:other_variable_name};$0\n}',
         isSnippet: true,
