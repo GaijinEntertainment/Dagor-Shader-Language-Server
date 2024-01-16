@@ -95,7 +95,7 @@ class DshlPreprocessor {
         snapshot: Snapshot
     ): IncludeStatement {
         const pathOriginalRange = Preprocessor.getIncludePathOriginalRange(beforeEndPosition, path, snapshot);
-        const originalEndPosition = snapshot.getOriginalPosition(beforeEndPosition);
+        const originalEndPosition = snapshot.getOriginalPosition(beforeEndPosition, false);
         const is: IncludeStatement = {
             path,
             originalEndPosition,

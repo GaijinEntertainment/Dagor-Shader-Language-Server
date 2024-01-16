@@ -81,7 +81,10 @@ export class MacroArgumentsProcesor {
                 this.arguments.push({
                     content: argument,
                     originalRange: this.snapshot.getOriginalRange(this.argumentSeparatorPosition, this.index),
-                    trimmedOriginalStartPosition: this.snapshot.getOriginalPosition(this.argumentIdentifierPosition),
+                    trimmedOriginalStartPosition: this.snapshot.getOriginalPosition(
+                        this.argumentIdentifierPosition,
+                        true
+                    ),
                 });
             }
         }

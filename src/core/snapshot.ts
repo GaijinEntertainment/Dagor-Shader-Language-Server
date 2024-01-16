@@ -41,24 +41,24 @@ export class Snapshot {
     }
 
     public getOriginalRange(startPosition: number, endPosition: number): Range {
-        const originalStartPosition = this.getOriginalPosition(startPosition);
-        const originalEndPosition = this.getOriginalPosition(endPosition);
+        const originalStartPosition = this.getOriginalPosition(startPosition, true);
+        const originalEndPosition = this.getOriginalPosition(endPosition, false);
         return {
             start: originalStartPosition,
             end: originalEndPosition,
         };
     }
 
-    public getOriginalPosition(position: number): Position {
+    public getOriginalPosition(position: number, start: boolean): Position {
         const ic = this.getIncludeContextDeepAt(position);
         const icc = this.getIncludeChain(ic);
         let startPosition = icc.length ? icc[0].startPosition : 0;
-        let offset = this.getOffset(position, startPosition, this.preprocessingOffsets);
+        let offset = this.getOffset(position, start, startPosition, this.preprocessingOffsets);
         position -= offset;
         for (let i = 0; i < icc.length; i++) {
             const c = icc[i];
             startPosition = icc.length > i + 1 ? icc[i + 1].localStartPosition : 0;
-            offset = this.getOffset(position, startPosition, c.snapshot.preprocessingOffsets);
+            offset = this.getOffset(position, start, startPosition, c.snapshot.preprocessingOffsets);
             position -= offset;
         }
         const text = icc.length ? icc[icc.length - 1].snapshot.originalText : this.originalText;
@@ -78,13 +78,21 @@ export class Snapshot {
         return result.reverse();
     }
 
-    private getOffset(position: number, startPosition: number, pofs: PreprocessingOffset[]): number {
+    private getOffset(position: number, start: boolean, startPosition: number, pofs: PreprocessingOffset[]): number {
         return (
             pofs
-                .filter((c) => c.afterEndPosition < position && c.afterEndPosition >= startPosition)
+                .filter((c) => this.isInRange(position, start, startPosition, c))
                 .map((c) => c.offset)
                 .reduce((prev, curr) => prev + curr, 0) + startPosition
         );
+    }
+
+    private isInRange(position: number, start: boolean, startPosition: number, c: PreprocessingOffset): boolean {
+        if (start) {
+            return c.afterEndPosition <= position && c.afterEndPosition >= startPosition;
+        } else {
+            return c.afterEndPosition < position && c.afterEndPosition >= startPosition;
+        }
     }
 
     private positionAt(text: string, position: number): Position {
