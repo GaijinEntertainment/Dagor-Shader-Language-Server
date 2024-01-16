@@ -401,6 +401,10 @@ export const hlslDshlPreprocessorDirectives: LanguageElementInfo[] = [
         name: '##endif',
         sortName: 'endif',
     },
+    {
+        name: '##assert',
+        sortName: 'assert',
+    },
 ];
 
 export const hlslModifiers: LanguageElementInfo[] = [

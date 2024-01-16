@@ -191,7 +191,7 @@
                 {
                     "comment": "DSHL PREPROCESSOR DIRECTIVE",
                     "name": "keyword.control.hlsl",
-                    "match": "##((\\s|/\\*.*?\\*/)*)(elif|else|endif|if)\\b",
+                    "match": "##((\\s|/\\*.*?\\*/)*)(elif|else|endif|if|assert)\\b",
                     "captures": {
                         "1": { "name": "comment.block.hlsl" }
                     }
