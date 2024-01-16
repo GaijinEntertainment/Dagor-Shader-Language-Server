@@ -4,10 +4,7 @@ import { URI } from 'vscode-uri';
 import { getDocuments, syncInitialization } from '../helper/server-helper';
 import { DocumentVersion } from '../interface/document-version';
 import { SnapshotVersion, invalidVersion } from '../interface/snapshot-version';
-import {
-    getShaderConfigVersion,
-    syncIncludeFoldersCollection,
-} from '../processor/include-processor';
+import { getShaderConfigVersion, syncIncludeFoldersCollection } from '../processor/include-processor';
 import { preprocess } from '../processor/preprocessor';
 import { getFileVersion } from './file-cache-manager';
 import { Snapshot } from './snapshot';
@@ -51,24 +48,15 @@ export class DocumentInfo {
         if (getShaderConfigVersion() > version.shaderConfigVersion) {
             return false;
         }
-        for (const [
-            uri,
-            includedDocumentVersion,
-        ] of version.includedDocumentsVersion.entries()) {
+        for (const [uri, includedDocumentVersion] of version.includedDocumentsVersion.entries()) {
             const document = getDocuments().get(uri);
             if (document) {
-                if (
-                    document.version > includedDocumentVersion.version ||
-                    !includedDocumentVersion.isManaged
-                ) {
+                if (document.version > includedDocumentVersion.version || !includedDocumentVersion.isManaged) {
                     return false;
                 }
             } else {
                 const cachedVersion = getFileVersion(URI.parse(uri).fsPath);
-                if (
-                    cachedVersion > includedDocumentVersion.version ||
-                    includedDocumentVersion.isManaged
-                ) {
+                if (cachedVersion > includedDocumentVersion.version || includedDocumentVersion.isManaged) {
                     return false;
                 }
             }
@@ -101,11 +89,7 @@ export class DocumentInfo {
         };
         await syncInitialization();
         await syncIncludeFoldersCollection();
-        const snapshot = new Snapshot(
-            this.analyzationInProgressVersion,
-            this.document.uri,
-            this.document.getText()
-        );
+        const snapshot = new Snapshot(this.analyzationInProgressVersion, this.document.uri, this.document.getText());
         await preprocess(snapshot);
         if (this.analyzedVersion <= snapshot.version) {
             this.analyzedVersion = snapshot.version;

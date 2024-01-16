@@ -20,10 +20,7 @@ export async function getFolderContent(path: string): Promise<fs.Dirent[]> {
     return await fsp.readdir(path, { withFileTypes: true });
 }
 
-export function watchFile(
-    path: string,
-    callback: (path: string, stats?: fs.Stats) => void
-): chokidar.FSWatcher {
+export function watchFile(path: string, callback: (path: string, stats?: fs.Stats) => void): chokidar.FSWatcher {
     return chokidar.watch(path).on('change', callback);
 }
 

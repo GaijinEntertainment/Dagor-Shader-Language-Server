@@ -9,9 +9,7 @@ import { PerformanceHelper } from '../helper/performance-helper';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { getIncludedDocumentUri } from '../processor/include-resolver';
 
-export async function documentLinksProvider(
-    dlp: DocumentLinkParams
-): Promise<DocumentLink[]> {
+export async function documentLinksProvider(dlp: DocumentLinkParams): Promise<DocumentLink[]> {
     const snapshot = await getSnapshot(dlp.textDocument.uri);
     if (!snapshot) {
         return [];
@@ -20,12 +18,7 @@ export async function documentLinksProvider(
     ph.start('documentLinksProvider');
     const links: DocumentLink[] = [];
     for (const is of snapshot.includeStatements) {
-        if (
-            !positionsEqual(
-                is.pathOriginalRange.start,
-                is.pathOriginalRange.end
-            )
-        ) {
+        if (!positionsEqual(is.pathOriginalRange.start, is.pathOriginalRange.end)) {
             const link = await createLink(is);
             links.push(link);
         }
@@ -40,9 +33,7 @@ async function createLink(is: IncludeStatement): Promise<DocumentLink> {
     return { range: is.pathOriginalRange, data: is, tooltip };
 }
 
-async function getDebugTooltip(
-    is: IncludeStatement
-): Promise<string | undefined> {
+async function getDebugTooltip(is: IncludeStatement): Promise<string | undefined> {
     if (!showDocumentLinkDebugLabel || !getCapabilities().documentLinkTooltip) {
         return undefined;
     }

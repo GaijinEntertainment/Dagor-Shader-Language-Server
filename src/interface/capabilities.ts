@@ -1,8 +1,4 @@
-import {
-    CompletionItemKind,
-    FoldingRangeKind,
-    MarkupKind,
-} from 'vscode-languageserver';
+import { CompletionItemKind, FoldingRangeKind, MarkupKind } from 'vscode-languageserver';
 
 export interface Capabilities {
     completionDocumentationFormat: MarkupKind[];

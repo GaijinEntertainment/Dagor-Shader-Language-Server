@@ -81,17 +81,13 @@ export class Preprocessor {
             const position = regexResult.index;
             const match = regexResult[0];
             const beforeEndPosition = position + match.length;
-            const isNewLineAtTheEnd =
-                regexResult.groups?.singleLineComment ||
-                regexResult.groups?.error;
+            const isNewLineAtTheEnd = regexResult.groups?.singleLineComment || regexResult.groups?.error;
             const originalRange = this.snapshot.getOriginalRange(
                 position + 1,
                 beforeEndPosition - (isNewLineAtTheEnd ? 0 : 1)
             );
             this.snapshot.noCodeCompletionRanges.push(originalRange);
-            const isComment =
-                regexResult.groups?.singleLineComment ||
-                regexResult.groups?.multiLineComment;
+            const isComment = regexResult.groups?.singleLineComment || regexResult.groups?.multiLineComment;
             if (isComment) {
                 textEdits.push({
                     position,
@@ -130,10 +126,7 @@ export class Preprocessor {
         pasteText: string,
         snapshot: Snapshot
     ): void {
-        snapshot.text =
-            snapshot.text.substring(0, position) +
-            pasteText +
-            snapshot.text.substring(beforeEndPosition);
+        snapshot.text = snapshot.text.substring(0, position) + pasteText + snapshot.text.substring(beforeEndPosition);
     }
 
     public static changeTextAndAddOffset(
@@ -143,38 +136,15 @@ export class Preprocessor {
         pasteText: string,
         snapshot: Snapshot
     ): void {
-        Preprocessor.addPreprocessingOffset(
-            position,
-            beforeEndPosition,
-            afterEndPosition,
-            snapshot
-        );
-        Preprocessor.changeText(
-            position,
-            beforeEndPosition,
-            pasteText,
-            snapshot
-        );
+        Preprocessor.addPreprocessingOffset(position, beforeEndPosition, afterEndPosition, snapshot);
+        Preprocessor.changeText(position, beforeEndPosition, pasteText, snapshot);
     }
 
-    public static removeTextAndAddOffset(
-        position: number,
-        beforeEndPosition: number,
-        snapshot: Snapshot
-    ): void {
-        Preprocessor.changeTextAndAddOffset(
-            position,
-            beforeEndPosition,
-            position,
-            '',
-            snapshot
-        );
+    public static removeTextAndAddOffset(position: number, beforeEndPosition: number, snapshot: Snapshot): void {
+        Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, position, '', snapshot);
     }
 
-    public static executeTextEdits(
-        textEdits: TextEdit[],
-        snapshot: Snapshot
-    ): void {
+    public static executeTextEdits(textEdits: TextEdit[], snapshot: Snapshot): void {
         let offset = 0;
         for (const te of textEdits) {
             te.position += offset;
@@ -187,8 +157,7 @@ export class Preprocessor {
                 te.pasteText,
                 snapshot
             );
-            offset +=
-                te.pasteText.length - (te.beforeEndPosition - te.position);
+            offset += te.pasteText.length - (te.beforeEndPosition - te.position);
         }
     }
 
@@ -200,13 +169,8 @@ export class Preprocessor {
         parentIc: IncludeContext | null,
         snapshot: Snapshot
     ): IncludeStatement {
-        const pathOriginalRange = Preprocessor.getIncludePathOriginalRange(
-            beforeEndPosition,
-            path,
-            snapshot
-        );
-        const originalEndPosition =
-            snapshot.getOriginalPosition(beforeEndPosition);
+        const pathOriginalRange = Preprocessor.getIncludePathOriginalRange(beforeEndPosition, path, snapshot);
+        const originalEndPosition = snapshot.getOriginalPosition(beforeEndPosition);
         const is: IncludeStatement = {
             path,
             pathOriginalRange,
@@ -220,23 +184,14 @@ export class Preprocessor {
         return is;
     }
 
-    public static getIncludePathOriginalRange(
-        beforeEndPosition: number,
-        path: string,
-        snapshot: Snapshot
-    ): Range {
+    public static getIncludePathOriginalRange(beforeEndPosition: number, path: string, snapshot: Snapshot): Range {
         const pathEndPosition = beforeEndPosition - 1;
         const pathStartPosition = pathEndPosition - path.length;
         return snapshot.getOriginalRange(pathStartPosition, pathEndPosition);
     }
 
-    public static addStringRanges(
-        startPosition: number,
-        endPosition: number,
-        snapshot: Snapshot
-    ): void {
-        const regex =
-            /"(?:[^"]|\\")*"|(?<=#[ \t]*include[ \t]*)<[^>]*>|(?<=#[ \t]*error).*|'(?:[^']|\\')*'/g;
+    public static addStringRanges(startPosition: number, endPosition: number, snapshot: Snapshot): void {
+        const regex = /"(?:[^"]|\\")*"|(?<=#[ \t]*include[ \t]*)<[^>]*>|(?<=#[ \t]*error).*|'(?:[^']|\\')*'/g;
         let regexResult: RegExpExecArray | null;
         const text = snapshot.text.substring(startPosition, endPosition);
         while ((regexResult = regex.exec(text))) {
@@ -252,15 +207,10 @@ export class Preprocessor {
     }
 
     public static isInString(position: number, snapshot: Snapshot): boolean {
-        return snapshot.stringRanges.some(
-            (sr) => sr.startPosition <= position && position < sr.endPosition
-        );
+        return snapshot.stringRanges.some((sr) => sr.startPosition <= position && position < sr.endPosition);
     }
 
-    public static getMacroArguments(
-        identifierEndPosition: number,
-        snapshot: Snapshot
-    ): MacroArguments | null {
+    public static getMacroArguments(identifierEndPosition: number, snapshot: Snapshot): MacroArguments | null {
         const map = new MacroArgumentsProcesor(snapshot);
         return map.getMacroArguments(identifierEndPosition);
     }

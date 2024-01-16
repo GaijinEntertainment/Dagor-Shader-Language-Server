@@ -28,11 +28,7 @@ export class PerformanceHelper {
             return;
         }
         performance.mark(`[${name}] end ${this.id}`);
-        performance.measure(
-            `[${name}] ${this.id}`,
-            `[${name}] start ${this.id}`,
-            `[${name}] end ${this.id}`
-        );
+        performance.measure(`[${name}] ${this.id}`, `[${name}] start ${this.id}`, `[${name}] end ${this.id}`);
     }
 
     public getLast(name: string): number {
@@ -50,9 +46,7 @@ export class PerformanceHelper {
         if (!collectAndLogPerformance) {
             return 0;
         }
-        const entries = performance
-            .getEntriesByType('measure')
-            .filter((e) => e.name.startsWith(`[${name}]`));
+        const entries = performance.getEntriesByType('measure').filter((e) => e.name.startsWith(`[${name}]`));
         if (!entries.length) {
             return 0;
         }
@@ -63,9 +57,7 @@ export class PerformanceHelper {
         if (!collectAndLogPerformance) {
             return 0;
         }
-        const entries = performance
-            .getEntriesByName(`[${name}] ${this.id}`, 'measure')
-            .map((e) => e.duration);
+        const entries = performance.getEntriesByName(`[${name}] ${this.id}`, 'measure').map((e) => e.duration);
         return entries.reduce((prev, curr) => prev + curr, 0) / entries.length;
     }
 
@@ -96,11 +88,9 @@ export class PerformanceHelper {
             return;
         }
         log(
-            `${displayName}: ${this.getLast(name).toFixed(
-                3
-            )} ms (average: ${PerformanceHelper.getGlobalAverage(name).toFixed(
-                3
-            )} ms)          ${this.uri}`
+            `${displayName}: ${this.getLast(name).toFixed(3)} ms (average: ${PerformanceHelper.getGlobalAverage(
+                name
+            ).toFixed(3)} ms)          ${this.uri}`
         );
     }
 

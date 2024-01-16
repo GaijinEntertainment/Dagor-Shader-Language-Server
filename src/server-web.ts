@@ -17,8 +17,7 @@ export class ServerWeb extends Server {
 
     protected override createHostDependent(): HostDependent {
         return {
-            documentLinkErrorMessage:
-                'Include links are not working in VS Code for the Web.',
+            documentLinkErrorMessage: 'Include links are not working in VS Code for the Web.',
             loadFile(file) {
                 return Promise.resolve('');
             },

@@ -5,11 +5,7 @@ import { log, logShaderConfigs } from '../core/debug';
 import { getFileContent } from '../core/file-cache-manager';
 import { exists, getFolderContent } from '../helper/file-helper';
 import { PerformanceHelper } from '../helper/performance-helper';
-import {
-    getRootFolder,
-    refreshInlayHints,
-    showWarningMessage,
-} from '../helper/server-helper';
+import { getRootFolder, refreshInlayHints, showWarningMessage } from '../helper/server-helper';
 
 export type GameFolder = string;
 export type ShaderConfig = string;
@@ -68,15 +64,11 @@ class IncludeProcessor {
 
     public async collectOverrideIncludeFolders(): Promise<void> {
         this.override = true;
-        const shaderConfig = path.resolve(
-            getConfiguration().shaderConfigOverride
-        );
+        const shaderConfig = path.resolve(getConfiguration().shaderConfigOverride);
         if (await exists(shaderConfig)) {
             await this.addIncludeFoldersFromBlk('', shaderConfig, shaderConfig);
         } else {
-            showWarningMessage(
-                `Couldn't find the shader config file: ${shaderConfig}`
-            );
+            showWarningMessage(`Couldn't find the shader config file: ${shaderConfig}`);
         }
         this.logOverrideIncludeFolders();
         if (this.id === IncludeProcessor.lastId) {
@@ -102,21 +94,13 @@ class IncludeProcessor {
     }
 
     private async addIncludeFolders(gameFolder: string): Promise<void> {
-        const shadersFolder = path.resolve(
-            getRootFolder(),
-            gameFolder,
-            'prog/shaders'
-        );
+        const shadersFolder = path.resolve(getRootFolder(), gameFolder, 'prog/shaders');
         if (await exists(shadersFolder)) {
             this.includeFolders.set(gameFolder, new Map());
             const shaderConfigs = await this.getShaderConfigs(shadersFolder);
             for (const shaderConfig of shaderConfigs) {
                 const shaderConfigPath = path.join(shadersFolder, shaderConfig);
-                await this.addIncludeFoldersFromBlk(
-                    gameFolder,
-                    shaderConfigPath,
-                    shaderConfigPath
-                );
+                await this.addIncludeFoldersFromBlk(gameFolder, shaderConfigPath, shaderConfigPath);
             }
         }
     }
@@ -124,31 +108,19 @@ class IncludeProcessor {
     private async getShaderConfigs(shadersFolder: string): Promise<string[]> {
         const filesAndFolders = await getFolderContent(shadersFolder);
         const shaderConfigs = filesAndFolders.filter(
-            (item) =>
-                item.isFile() &&
-                item.name.startsWith('shaders_') &&
-                item.name.endsWith('.blk')
+            (item) => item.isFile() && item.name.startsWith('shaders_') && item.name.endsWith('.blk')
         );
         return shaderConfigs.map((item) => item.name);
     }
 
-    private async addIncludeFoldersFromBlk(
-        gameFolder: string,
-        shaderConfig: string,
-        blkPath: string
-    ): Promise<void> {
+    private async addIncludeFoldersFromBlk(gameFolder: string, shaderConfig: string, blkPath: string): Promise<void> {
         if (!(await exists(blkPath))) {
             return;
         }
         const result = this.getResults(shaderConfig, gameFolder);
         const blkContent = await getFileContent(blkPath);
         this.addIncludeFoldersFromOneBlk(shaderConfig, blkContent, result);
-        await this.followBlkIncludes(
-            gameFolder,
-            shaderConfig,
-            blkPath,
-            blkContent
-        );
+        await this.followBlkIncludes(gameFolder, shaderConfig, blkPath, blkContent);
     }
 
     private getResults(shaderConfig: string, gameFolder: string): string[] {
@@ -164,22 +136,12 @@ class IncludeProcessor {
         }
     }
 
-    private addIncludeFoldersFromOneBlk(
-        shaderConfig: string,
-        blkContent: string,
-        result: string[]
-    ): void {
+    private addIncludeFoldersFromOneBlk(shaderConfig: string, blkContent: string, result: string[]): void {
         const incDirRegex = /(?<=\bincDir\s*:\s*t\s*=\s*")[^"]*(?=")/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = incDirRegex.exec(blkContent))) {
-            const relativePath = blkContent.substring(
-                regexResult.index,
-                regexResult.index + regexResult[0].length
-            );
-            const workspacePath = path.join(
-                path.dirname(shaderConfig),
-                relativePath
-            );
+            const relativePath = blkContent.substring(regexResult.index, regexResult.index + regexResult[0].length);
+            const workspacePath = path.join(path.dirname(shaderConfig), relativePath);
             result.push(workspacePath);
         }
     }
@@ -191,22 +153,11 @@ class IncludeProcessor {
         blkContent: string
     ): Promise<void> {
         let regexResult: RegExpExecArray | null;
-        const includeRegex =
-            /((?<=\binclude\s*")[^"]*(?="))|((?<=\binclude\s+)[^"\s]+?(?=\s))/g;
+        const includeRegex = /((?<=\binclude\s*")[^"]*(?="))|((?<=\binclude\s+)[^"\s]+?(?=\s))/g;
         while ((regexResult = includeRegex.exec(blkContent))) {
-            const relativePath = blkContent.substring(
-                regexResult.index,
-                regexResult.index + regexResult[0].length
-            );
-            const workspacePath = path.join(
-                path.dirname(blkPath),
-                relativePath
-            );
-            await this.addIncludeFoldersFromBlk(
-                gameFolder,
-                shaderConfig,
-                workspacePath
-            );
+            const relativePath = blkContent.substring(regexResult.index, regexResult.index + regexResult[0].length);
+            const workspacePath = path.join(path.dirname(blkPath), relativePath);
+            await this.addIncludeFoldersFromBlk(gameFolder, shaderConfig, workspacePath);
         }
     }
 

@@ -1,9 +1,4 @@
-import {
-    Hover,
-    HoverParams,
-    MarkupContent,
-    MarkupKind,
-} from 'vscode-languageserver';
+import { Hover, HoverParams, MarkupContent, MarkupKind } from 'vscode-languageserver';
 
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
@@ -11,17 +6,13 @@ import { rangeContains } from '../helper/helper';
 import { MacroContextBase } from '../interface/macro/macro-context-base';
 import { toStringMacroStatement } from '../interface/macro/macro-statement';
 
-export async function hoverProvider(
-    params: HoverParams
-): Promise<Hover | undefined | null> {
+export async function hoverProvider(params: HoverParams): Promise<Hover | undefined | null> {
     const snapshot = await getSnapshot(params.textDocument.uri);
     if (!snapshot) {
         return null;
     }
     const pmc = snapshot.potentialMacroContexts.find(
-        (pmc) =>
-            pmc.isVisible &&
-            rangeContains(pmc.nameOriginalRange, params.position)
+        (pmc) => pmc.isVisible && rangeContains(pmc.nameOriginalRange, params.position)
     );
     if (!pmc) {
         return null;
@@ -34,9 +25,7 @@ export async function hoverProvider(
 
 function createHoverContent(pmc: MacroContextBase): MarkupContent {
     return {
-        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown)
-            ? MarkupKind.Markdown
-            : MarkupKind.PlainText,
+        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
         value: getValue(pmc),
     };
 }

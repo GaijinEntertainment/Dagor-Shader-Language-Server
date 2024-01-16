@@ -17,11 +17,7 @@ export class HlslBlockProcesor {
     }
 
     public getHlslBlock(startPosition: number): ElementRange | null {
-        for (
-            this.index = startPosition;
-            this.index < this.snapshot.text.length;
-            this.index++
-        ) {
+        for (this.index = startPosition; this.index < this.snapshot.text.length; this.index++) {
             this.setCharacter(this.snapshot.text);
             if (this.isCharacterWhitespace()) {
                 continue;
@@ -51,12 +47,7 @@ export class HlslBlockProcesor {
     }
 
     private isCharacterWhitespace(): boolean {
-        return (
-            this.character === ' ' ||
-            this.character === '\t' ||
-            this.character === '\n' ||
-            this.character === '\r'
-        );
+        return this.character === ' ' || this.character === '\t' || this.character === '\n' || this.character === '\r';
     }
 
     private isBlockStart(): boolean {

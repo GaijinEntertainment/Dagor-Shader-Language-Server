@@ -34,11 +34,7 @@ export class Snapshot {
 
     private preprocessingOffsets: PreprocessingOffset[] = [];
 
-    public constructor(
-        version: SnapshotVersion,
-        uri: DocumentUri,
-        text: string
-    ) {
+    public constructor(version: SnapshotVersion, uri: DocumentUri, text: string) {
         this.version = version;
         this.uri = uri;
         this.originalText = text;
@@ -57,26 +53,15 @@ export class Snapshot {
         const ic = this.getIncludeContextDeepAt(position);
         const icc = this.getIncludeChain(ic);
         let startPosition = icc.length ? icc[0].startPosition : 0;
-        let offset = this.getOffset(
-            position,
-            startPosition,
-            this.preprocessingOffsets
-        );
+        let offset = this.getOffset(position, startPosition, this.preprocessingOffsets);
         position -= offset;
         for (let i = 0; i < icc.length; i++) {
             const c = icc[i];
-            startPosition =
-                icc.length > i + 1 ? icc[i + 1].localStartPosition : 0;
-            offset = this.getOffset(
-                position,
-                startPosition,
-                c.snapshot.preprocessingOffsets
-            );
+            startPosition = icc.length > i + 1 ? icc[i + 1].localStartPosition : 0;
+            offset = this.getOffset(position, startPosition, c.snapshot.preprocessingOffsets);
             position -= offset;
         }
-        const text = icc.length
-            ? icc[icc.length - 1].snapshot.originalText
-            : this.originalText;
+        const text = icc.length ? icc[icc.length - 1].snapshot.originalText : this.originalText;
         return this.positionAt(text, position);
     }
 
@@ -93,18 +78,10 @@ export class Snapshot {
         return result.reverse();
     }
 
-    private getOffset(
-        position: number,
-        startPosition: number,
-        pofs: PreprocessingOffset[]
-    ): number {
+    private getOffset(position: number, startPosition: number, pofs: PreprocessingOffset[]): number {
         return (
             pofs
-                .filter(
-                    (c) =>
-                        c.afterEndPosition < position &&
-                        c.afterEndPosition >= startPosition
-                )
+                .filter((c) => c.afterEndPosition < position && c.afterEndPosition >= startPosition)
                 .map((c) => c.offset)
                 .reduce((prev, curr) => prev + curr, 0) + startPosition
         );
@@ -127,10 +104,7 @@ export class Snapshot {
 
     public addPreprocessingOffset(newPo: PreprocessingOffset): void {
         for (const po of this.preprocessingOffsets) {
-            po.afterEndPosition = this.updatePosition(
-                po.afterEndPosition,
-                newPo
-            );
+            po.afterEndPosition = this.updatePosition(po.afterEndPosition, newPo);
         }
         for (const ic of this.includeContexts) {
             this.updateOffsetAndChildren(ic, newPo);
@@ -146,10 +120,7 @@ export class Snapshot {
         }
         for (const dc of this.defineContexts) {
             dc.startPosition = this.updatePosition(dc.startPosition, newPo);
-            dc.afterEndPosition = this.updatePosition(
-                dc.afterEndPosition,
-                newPo
-            );
+            dc.afterEndPosition = this.updatePosition(dc.afterEndPosition, newPo);
         }
         for (const sr of this.stringRanges) {
             sr.startPosition = this.updatePosition(sr.startPosition, newPo);
@@ -162,10 +133,7 @@ export class Snapshot {
         this.preprocessingOffsets.push(newPo);
     }
 
-    private updateOffsetAndChildren(
-        rwc: RangeWithChildren,
-        po: PreprocessingOffset
-    ): void {
+    private updateOffsetAndChildren(rwc: RangeWithChildren, po: PreprocessingOffset): void {
         rwc.startPosition = this.updatePosition(rwc.startPosition, po);
         rwc.endPosition = this.updatePosition(rwc.endPosition, po);
         for (const tc of rwc.children) {
@@ -183,12 +151,7 @@ export class Snapshot {
     }
 
     public getIncludeContextAt(position: number): IncludeContext | null {
-        return (
-            this.includeContexts.find(
-                (ic) =>
-                    ic.startPosition <= position && position <= ic.endPosition
-            ) ?? null
-        );
+        return this.includeContexts.find((ic) => ic.startPosition <= position && position <= ic.endPosition) ?? null;
     }
 
     public getIncludeContextDeepAt(position: number): IncludeContext | null {
@@ -201,10 +164,7 @@ export class Snapshot {
         return null;
     }
 
-    private getIncludeContext(
-        ic: IncludeContext,
-        position: number
-    ): IncludeContext | null {
+    private getIncludeContext(ic: IncludeContext, position: number): IncludeContext | null {
         if (ic.startPosition <= position && position <= ic.endPosition) {
             for (const c of ic.children) {
                 const result = this.getIncludeContext(c, position);
@@ -218,12 +178,7 @@ export class Snapshot {
     }
 
     public getMacroContextAt(position: number): MacroContext | null {
-        return (
-            this.macroContexts.find(
-                (mc) =>
-                    mc.startPosition <= position && position < mc.endPosition
-            ) ?? null
-        );
+        return this.macroContexts.find((mc) => mc.startPosition <= position && position < mc.endPosition) ?? null;
     }
 
     public getMacroContextDeepAt(position: number): MacroContext | null {
@@ -236,10 +191,7 @@ export class Snapshot {
         return null;
     }
 
-    private getMacroContext(
-        mc: MacroContext,
-        position: number
-    ): MacroContext | null {
+    private getMacroContext(mc: MacroContext, position: number): MacroContext | null {
         if (mc.startPosition <= position && position < mc.endPosition) {
             for (const c of mc.children) {
                 const result = this.getMacroContext(c, position);
@@ -262,10 +214,7 @@ export class Snapshot {
         return null;
     }
 
-    private getDefineContext(
-        dc: DefineContext,
-        position: number
-    ): DefineContext | null {
+    private getDefineContext(dc: DefineContext, position: number): DefineContext | null {
         if (dc.startPosition <= position && position < dc.afterEndPosition) {
             for (const c of dc.children) {
                 const result = this.getDefineContext(c, position);
@@ -278,20 +227,11 @@ export class Snapshot {
         return null;
     }
 
-    public getMacroStatement(
-        name: string,
-        position: number
-    ): MacroStatement | null {
-        return (
-            this.macroStatements.find(
-                (ms) => ms.name === name && ms.position <= position
-            ) ?? null
-        );
+    public getMacroStatement(name: string, position: number): MacroStatement | null {
+        return this.macroStatements.find((ms) => ms.name === name && ms.position <= position) ?? null;
     }
 
     public isInHlslBlock(position: Position): boolean {
-        return this.hlslBlocks.some(
-            (hb) => hb.isVisible && rangeContains(hb.originalRange, position)
-        );
+        return this.hlslBlocks.some((hb) => hb.isVisible && rangeContains(hb.originalRange, position));
     }
 }

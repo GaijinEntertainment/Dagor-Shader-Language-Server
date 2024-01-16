@@ -1,15 +1,9 @@
-import {
-    InlayHint,
-    InlayHintKind,
-    InlayHintParams,
-} from 'vscode-languageserver';
+import { InlayHint, InlayHintKind, InlayHintParams } from 'vscode-languageserver';
 
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
 
-export async function inlayHintProvider(
-    params: InlayHintParams
-): Promise<InlayHint[] | null> {
+export async function inlayHintProvider(params: InlayHintParams): Promise<InlayHint[] | null> {
     const snapshot = await getSnapshot(params.textDocument.uri);
     if (!snapshot) {
         return null;

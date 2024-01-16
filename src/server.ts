@@ -10,10 +10,7 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 
-import {
-    getCapabilities,
-    initializeCapabilities,
-} from './core/capability-manager';
+import { getCapabilities, initializeCapabilities } from './core/capability-manager';
 import { initializeConfiguration } from './core/configuration-manager';
 import { SERVER_NAME, SERVER_VERSION } from './core/constant';
 import { initializeDebug } from './core/debug';

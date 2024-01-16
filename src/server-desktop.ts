@@ -1,19 +1,8 @@
-import {
-    Connection,
-    InitializedParams,
-    ProposedFeatures,
-    createConnection,
-} from 'vscode-languageserver/node';
+import { Connection, InitializedParams, ProposedFeatures, createConnection } from 'vscode-languageserver/node';
 
 import { getConfiguration } from './core/configuration-manager';
 import { clearCache } from './core/file-cache-manager';
-import {
-    exists,
-    getFolderContent,
-    isFile,
-    loadFile,
-    watchFile,
-} from './helper/fs-helper';
+import { exists, getFolderContent, isFile, loadFile, watchFile } from './helper/fs-helper';
 import { Configuration } from './interface/configuration';
 import { HostDependent } from './interface/host-dependent';
 import {
@@ -30,8 +19,7 @@ export class ServerDesktop extends Server {
 
     protected override createHostDependent(): HostDependent {
         return {
-            documentLinkErrorMessage:
-                "Couldn't find the file. Maybe you should change the launch options.",
+            documentLinkErrorMessage: "Couldn't find the file. Maybe you should change the launch options.",
             loadFile: loadFile,
             exists: exists,
             isFile: isFile,
@@ -40,12 +28,8 @@ export class ServerDesktop extends Server {
         };
     }
 
-    protected override async onInitialized(
-        _ip: InitializedParams
-    ): Promise<void> {
-        await this.collectShaderIncludeFolders(
-            getConfiguration().shaderConfigOverride
-        );
+    protected override async onInitialized(_ip: InitializedParams): Promise<void> {
+        await this.collectShaderIncludeFolders(getConfiguration().shaderConfigOverride);
     }
 
     protected override onShutdown(): void {
@@ -56,20 +40,10 @@ export class ServerDesktop extends Server {
         oldConfiguration: Configuration,
         newConfiguration: Configuration
     ): Promise<void> {
-        if (
-            this.shaderConfigRelatedConfigurationChanged(
-                oldConfiguration,
-                newConfiguration
-            )
-        ) {
+        if (this.shaderConfigRelatedConfigurationChanged(oldConfiguration, newConfiguration)) {
             increaseShaderConfigVersion();
-            if (
-                oldConfiguration.shaderConfigOverride !==
-                newConfiguration.shaderConfigOverride
-            ) {
-                await this.collectShaderIncludeFolders(
-                    newConfiguration.shaderConfigOverride
-                );
+            if (oldConfiguration.shaderConfigOverride !== newConfiguration.shaderConfigOverride) {
+                await this.collectShaderIncludeFolders(newConfiguration.shaderConfigOverride);
             }
         }
     }
@@ -79,20 +53,14 @@ export class ServerDesktop extends Server {
         newConfiguration: Configuration
     ): boolean {
         return (
-            oldConfiguration.shaderConfigOverride !==
-                newConfiguration.shaderConfigOverride ||
-            oldConfiguration.launchOptions.buildCommand !==
-                newConfiguration.launchOptions.buildCommand ||
-            oldConfiguration.launchOptions.game !==
-                newConfiguration.launchOptions.game ||
-            oldConfiguration.launchOptions.platform !==
-                newConfiguration.launchOptions.platform
+            oldConfiguration.shaderConfigOverride !== newConfiguration.shaderConfigOverride ||
+            oldConfiguration.launchOptions.buildCommand !== newConfiguration.launchOptions.buildCommand ||
+            oldConfiguration.launchOptions.game !== newConfiguration.launchOptions.game ||
+            oldConfiguration.launchOptions.platform !== newConfiguration.launchOptions.platform
         );
     }
 
-    private async collectShaderIncludeFolders(
-        shaderConfigOverride: string
-    ): Promise<void> {
+    private async collectShaderIncludeFolders(shaderConfigOverride: string): Promise<void> {
         if (shaderConfigOverride) {
             await collectOverrideIncludeFolders();
         } else {

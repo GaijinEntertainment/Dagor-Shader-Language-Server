@@ -7,15 +7,9 @@ import { log, logDocumentLinkResolveShaderConfig } from '../core/debug';
 import { exists, isFile } from '../helper/file-helper';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
-import {
-    ShaderConfig,
-    includeFolders,
-    overrideIncludeFolders,
-} from './include-processor';
+import { ShaderConfig, includeFolders, overrideIncludeFolders } from './include-processor';
 
-export async function getIncludedDocumentUri(
-    is: IncludeStatement | null
-): Promise<DocumentUri | null> {
+export async function getIncludedDocumentUri(is: IncludeStatement | null): Promise<DocumentUri | null> {
     if (!is) {
         return null;
     }
@@ -32,24 +26,16 @@ export async function getIncludedDocumentUri(
     return null;
 }
 
-async function getRelativeDocumentUri(
-    is: IncludeStatement
-): Promise<DocumentUri | null> {
+async function getRelativeDocumentUri(is: IncludeStatement): Promise<DocumentUri | null> {
     const includerUri = URI.parse(is.includerUri).fsPath;
     const includedUri = path.join(includerUri, '..', is.path);
-    if (
-        includerUri !== includedUri &&
-        (await exists(includedUri)) &&
-        (await isFile(includedUri))
-    ) {
+    if (includerUri !== includedUri && (await exists(includedUri)) && (await isFile(includedUri))) {
         return URI.file(includedUri).toString();
     }
     return null;
 }
 
-async function getDocumentUriInIncludeFolder(
-    is: IncludeStatement
-): Promise<DocumentUri | null> {
+async function getDocumentUriInIncludeFolder(is: IncludeStatement): Promise<DocumentUri | null> {
     const includeFolders = getIncludeFolders();
     for (const includeFolder of includeFolders) {
         const includedUri = path.join(includeFolder, is.path);
@@ -97,9 +83,7 @@ function getShaderConfig(game: string): string | undefined {
     return shaderConfigs?.keys().next().value;
 }
 
-function getShaderConfigBasedOnPlatform(
-    shaderConfigs: Map<ShaderConfig, string[]>
-): string | null {
+function getShaderConfigBasedOnPlatform(shaderConfigs: Map<ShaderConfig, string[]>): string | null {
     const platform = getConfiguration().launchOptions.platform;
     if (platform) {
         for (const shaderConfig of shaderConfigs.keys()) {
@@ -111,9 +95,7 @@ function getShaderConfigBasedOnPlatform(
     return null;
 }
 
-function getShaderConfigBasedOnDriver(
-    shaderConfigs: Map<ShaderConfig, string[]>
-): string | null {
+function getShaderConfigBasedOnDriver(shaderConfigs: Map<ShaderConfig, string[]>): string | null {
     const buildCommand = getConfiguration().launchOptions.buildCommand;
     if (buildCommand) {
         const driver = getDriver(buildCommand);
@@ -129,14 +111,10 @@ function getShaderConfigBasedOnDriver(
 }
 
 function getDriver(buildCommand: string): string | null {
-    const shaderConfigFileRegex =
-        /(?<=\.\/compile(_game)?_shaders_).*?(?=\.bat)/;
+    const shaderConfigFileRegex = /(?<=\.\/compile(_game)?_shaders_).*?(?=\.bat)/;
     const regexResult = shaderConfigFileRegex.exec(buildCommand);
     if (regexResult) {
-        return buildCommand.substring(
-            regexResult.index,
-            regexResult.index + regexResult[0].length
-        );
+        return buildCommand.substring(regexResult.index, regexResult.index + regexResult[0].length);
     }
     return null;
 }
