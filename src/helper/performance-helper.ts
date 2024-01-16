@@ -13,74 +13,80 @@ export class PerformanceHelper {
     }
 
     public static now(): number {
-        return performance.now();
+        // return performance.now();
+        return 0;
     }
 
     public start(name: string): void {
         if (!collectAndLogPerformance) {
             return;
         }
-        performance.mark(`[${name}] start ${this.id}`);
+        // performance.mark(`[${name}] start ${this.id}`);
     }
 
     public end(name: string): void {
         if (!collectAndLogPerformance) {
             return;
         }
-        performance.mark(`[${name}] end ${this.id}`);
-        performance.measure(`[${name}] ${this.id}`, `[${name}] start ${this.id}`, `[${name}] end ${this.id}`);
+        // performance.mark(`[${name}] end ${this.id}`);
+        // performance.measure(`[${name}] ${this.id}`, `[${name}] start ${this.id}`, `[${name}] end ${this.id}`);
     }
 
     public getLast(name: string): number {
         if (!collectAndLogPerformance) {
             return 0;
         }
-        const entries = performance.getEntriesByName(`[${name}] ${this.id}`);
-        if (!entries.length) {
-            return 0;
-        }
-        return entries[entries.length - 1].duration;
+        return 0;
+        // const entries = performance.getEntriesByName(`[${name}] ${this.id}`);
+        // if (!entries.length) {
+        //     return 0;
+        // }
+        // return entries[entries.length - 1].duration;
     }
 
     public static getGlobalLast(name: string): number {
         if (!collectAndLogPerformance) {
             return 0;
         }
-        const entries = performance.getEntriesByType('measure').filter((e) => e.name.startsWith(`[${name}]`));
-        if (!entries.length) {
-            return 0;
-        }
-        return entries[entries.length - 1].duration;
+        return 0;
+        // const entries = performance.getEntriesByType('measure').filter((e) => e.name.startsWith(`[${name}]`));
+        // if (!entries.length) {
+        //     return 0;
+        // }
+        // return entries[entries.length - 1].duration;
     }
 
     public getAverage(name: string): number {
         if (!collectAndLogPerformance) {
             return 0;
         }
-        const entries = performance.getEntriesByName(`[${name}] ${this.id}`, 'measure').map((e) => e.duration);
-        return entries.reduce((prev, curr) => prev + curr, 0) / entries.length;
+        return 0;
+        // const entries = performance.getEntriesByName(`[${name}] ${this.id}`, 'measure').map((e) => e.duration);
+        // return entries.reduce((prev, curr) => prev + curr, 0) / entries.length;
     }
 
     public static getGlobalAverage(name: string): number {
         if (!collectAndLogPerformance) {
             return 0;
         }
-        const entries = performance
-            .getEntriesByType('measure')
-            .filter((e) => e.name.startsWith(`[${name}]`))
-            .map((e) => e.duration);
-        return entries.reduce((prev, curr) => prev + curr, 0) / entries.length;
+        return 0;
+        // const entries = performance
+        //     .getEntriesByType('measure')
+        //     .filter((e) => e.name.startsWith(`[${name}]`))
+        //     .map((e) => e.duration);
+        // return entries.reduce((prev, curr) => prev + curr, 0) / entries.length;
     }
 
     public static getGlobalSum(name: string): number {
         if (!collectAndLogPerformance) {
             return 0;
         }
-        return performance
-            .getEntriesByType('measure')
-            .filter((e) => e.name.startsWith(`[${name}]`))
-            .map((e) => e.duration)
-            .reduce((prev, curr) => prev + curr, 0);
+        return 0;
+        // return performance
+        //     .getEntriesByType('measure')
+        //     .filter((e) => e.name.startsWith(`[${name}]`))
+        //     .map((e) => e.duration)
+        //     .reduce((prev, curr) => prev + curr, 0);
     }
 
     public log(displayName: string, name: string): void {
@@ -98,8 +104,8 @@ export class PerformanceHelper {
         if (!collectAndLogPerformance) {
             return;
         }
-        performance.clearMarks(`[${name}] start ${this.id}`);
-        performance.clearMarks(`[${name}] end ${this.id}`);
-        performance.clearMeasures(`[${name}] ${this.id}`);
+        // performance.clearMarks(`[${name}] start ${this.id}`);
+        // performance.clearMarks(`[${name}] end ${this.id}`);
+        // performance.clearMeasures(`[${name}] ${this.id}`);
     }
 }

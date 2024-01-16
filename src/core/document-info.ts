@@ -87,7 +87,7 @@ export class DocumentInfo {
             }
         }
         this.analyzationInProgressVersion = {
-            timestamp: performance.now(),
+            timestamp: Date.now(),
             documentVersion: this.document.version,
             includedDocumentsVersion,
             shaderConfigVersion: getShaderConfigVersion(),
