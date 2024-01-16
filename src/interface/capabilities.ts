@@ -14,6 +14,7 @@ export interface Capabilities {
     foldingRangeKinds: FoldingRangeKind[];
     hoverFormat: MarkupKind[];
     implementationLink: boolean;
+    inlayHints: boolean;
     showMessage: boolean;
     signatureHelpActiveParameter: boolean;
 }

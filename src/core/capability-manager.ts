@@ -16,6 +16,7 @@ const capabilities: Capabilities = {
     foldingRangeKinds: [],
     hoverFormat: [],
     implementationLink: false,
+    inlayHints: false,
     showMessage: false,
     signatureHelpActiveParameter: false,
 };
@@ -37,6 +38,7 @@ export function initializeCapabilities(clientCapabilities: ClientCapabilities): 
     capabilities.foldingRangeKinds = clientCapabilities.textDocument?.foldingRange?.foldingRangeKind?.valueSet ?? [];
     capabilities.hoverFormat = clientCapabilities.textDocument?.hover?.contentFormat ?? [];
     capabilities.implementationLink = !!clientCapabilities.textDocument?.implementation?.linkSupport;
+    capabilities.inlayHints = !!clientCapabilities.textDocument?.inlayHint;
     capabilities.showMessage = !!clientCapabilities.window?.showMessage;
     capabilities.signatureHelpActiveParameter =
         !!clientCapabilities.textDocument?.signatureHelp?.signatureInformation?.activeParameterSupport;

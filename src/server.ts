@@ -164,7 +164,9 @@ export abstract class Server {
     }
 
     public refreshInlayHints(): void {
-        this.connection.languages.inlayHint.refresh();
+        if (getCapabilities().inlayHints) {
+            this.connection.languages.inlayHint.refresh();
+        }
     }
 
     private listen(): void {
