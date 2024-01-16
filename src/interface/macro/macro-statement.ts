@@ -17,10 +17,7 @@ export interface MacroStatement {
 }
 
 export function toStringMacroStatement(macro: MacroStatement): string {
-    const keyword =
-        macro.type === MacroType.MACRO
-            ? 'macro'
-            : 'define_macro_if_not_defined';
+    const keyword = macro.type === MacroType.MACRO ? 'macro' : 'define_macro_if_not_defined';
     const parameters = macro.parameters.join(', ');
     return `${keyword} ${macro.name}(${parameters})`;
 }

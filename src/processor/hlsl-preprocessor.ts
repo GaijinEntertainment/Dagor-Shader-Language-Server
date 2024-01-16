@@ -42,12 +42,7 @@ export class HlslPreprocessor {
         this.ph.end('preprocessDirectives');
         this.refreshMacroNames();
         this.ph.start('expandMacros');
-        HlslPreprocessor.expandMacros(
-            0,
-            this.snapshot.text.length,
-            this.snapshot,
-            this.macroNames
-        );
+        HlslPreprocessor.expandMacros(0, this.snapshot.text.length, this.snapshot, this.macroNames);
         this.ph.end('expandMacros');
         this.ph.end('preprocess');
         this.ph.log('  HLSL preprocessor', 'preprocess');
@@ -62,27 +57,16 @@ export class HlslPreprocessor {
             const position = regexResult.index;
             const match = regexResult[0];
             const beforeEndPosition = position + match.length;
-            const nextStartPosition = await this.preprocessDirective(
-                position,
-                beforeEndPosition,
-                match
-            );
+            const nextStartPosition = await this.preprocessDirective(position, beforeEndPosition, match);
             regex.lastIndex = nextStartPosition;
         }
     }
 
-    private async preprocessDirective(
-        position: number,
-        beforeEndPosition: number,
-        match: string
-    ): Promise<number> {
+    private async preprocessDirective(position: number, beforeEndPosition: number, match: string): Promise<number> {
         const regexResult = this.getIncludeRegexResult(match);
         if (regexResult) {
             await this.preprocessInclude(regexResult, position);
-            if (
-                this.ifStack.some((is) => !is.condition) ||
-                Preprocessor.isInString(position, this.snapshot)
-            ) {
+            if (this.ifStack.some((is) => !is.condition) || Preprocessor.isInString(position, this.snapshot)) {
                 return beforeEndPosition;
             }
             return position;
@@ -91,40 +75,24 @@ export class HlslPreprocessor {
         const is2 = this.getIfdefStatement(match, position);
         if (is2) {
             this.ifStack.push(is2);
-            Preprocessor.removeTextAndAddOffset(
-                position,
-                beforeEndPosition,
-                this.snapshot
-            );
+            Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
             return position;
         }
         const is4 = this.getIfStatement(match, position);
         if (is4) {
             this.ifStack.push(is4);
-            Preprocessor.removeTextAndAddOffset(
-                position,
-                beforeEndPosition + is4.offset,
-                this.snapshot
-            );
+            Preprocessor.removeTextAndAddOffset(position, beforeEndPosition + is4.offset, this.snapshot);
             return position;
         }
         const is5 = this.getElifStatement(match, position);
         if (is5) {
             const oldIs = this.ifStack.pop();
             if (oldIs && !oldIs.condition) {
-                Preprocessor.removeTextAndAddOffset(
-                    position,
-                    beforeEndPosition + is5.offset,
-                    this.snapshot
-                );
+                Preprocessor.removeTextAndAddOffset(position, beforeEndPosition + is5.offset, this.snapshot);
                 this.ifStack.push(is5);
                 return oldIs.position;
             } else {
-                Preprocessor.removeTextAndAddOffset(
-                    position,
-                    beforeEndPosition + is5.offset,
-                    this.snapshot
-                );
+                Preprocessor.removeTextAndAddOffset(position, beforeEndPosition + is5.offset, this.snapshot);
                 this.ifStack.push(is5);
                 return position;
             }
@@ -133,19 +101,11 @@ export class HlslPreprocessor {
         if (es) {
             const oldIs = this.ifStack.pop();
             if (oldIs && !oldIs.condition) {
-                Preprocessor.removeTextAndAddOffset(
-                    oldIs.position,
-                    beforeEndPosition,
-                    this.snapshot
-                );
+                Preprocessor.removeTextAndAddOffset(oldIs.position, beforeEndPosition, this.snapshot);
                 this.ifStack.push(es);
                 return oldIs.position;
             } else {
-                Preprocessor.removeTextAndAddOffset(
-                    position,
-                    beforeEndPosition,
-                    this.snapshot
-                );
+                Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
                 this.ifStack.push(es);
                 return position;
             }
@@ -153,51 +113,31 @@ export class HlslPreprocessor {
         if (this.isEndifStatement(match)) {
             const is3 = this.ifStack.pop();
             if (is3 && !is3.condition) {
-                Preprocessor.removeTextAndAddOffset(
-                    is3.position,
-                    beforeEndPosition,
-                    this.snapshot
-                );
+                Preprocessor.removeTextAndAddOffset(is3.position, beforeEndPosition, this.snapshot);
                 return is3.position;
             } else {
-                Preprocessor.removeTextAndAddOffset(
-                    position,
-                    beforeEndPosition,
-                    this.snapshot
-                );
+                Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
                 return position;
             }
         }
         const ds = this.getDefineStatement(match, position);
         if (ds) {
-            Preprocessor.removeTextAndAddOffset(
-                position,
-                beforeEndPosition,
-                this.snapshot
-            );
+            Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
             return position;
         }
         if (this.isUndefStatement(match, position)) {
-            Preprocessor.removeTextAndAddOffset(
-                position,
-                beforeEndPosition,
-                this.snapshot
-            );
+            Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
             return position;
         }
         return beforeEndPosition;
     }
 
     private getIncludeRegexResult(text: string): RegExpExecArray | null {
-        const regex =
-            /#[ \t]*include[ \t]*(?:"(?<quotedPath>([^"]|\\")+)"|<(?<angularPath>[^>]+)>)/g;
+        const regex = /#[ \t]*include[ \t]*(?:"(?<quotedPath>([^"]|\\")+)"|<(?<angularPath>[^>]+)>)/g;
         return regex.exec(text);
     }
 
-    private async preprocessInclude(
-        regexResult: RegExpExecArray,
-        offset: number
-    ): Promise<void> {
+    private async preprocessInclude(regexResult: RegExpExecArray, offset: number): Promise<void> {
         const position = offset + regexResult.index;
         if (Preprocessor.isInString(position, this.snapshot)) {
             return;
@@ -205,11 +145,8 @@ export class HlslPreprocessor {
         if (regexResult.groups) {
             const match = regexResult[0];
             const beforeEndPosition = position + match.length;
-            const path =
-                regexResult.groups.quotedPath ?? regexResult.groups.angularPath;
-            const type = regexResult.groups.quotedPath
-                ? IncludeType.HLSL_QUOTED
-                : IncludeType.HLSL_ANGULAR;
+            const path = regexResult.groups.quotedPath ?? regexResult.groups.angularPath;
+            const type = regexResult.groups.quotedPath ? IncludeType.HLSL_QUOTED : IncludeType.HLSL_ANGULAR;
             const parentMc = this.snapshot.getMacroContextAt(position);
             const parentIc = this.snapshot.getIncludeContextDeepAt(position);
             const is = Preprocessor.createIncludeStatement(
@@ -223,21 +160,13 @@ export class HlslPreprocessor {
             if (this.ifStack.some((is) => !is.condition)) {
                 return;
             }
-            await HlslPreprocessor.includeContent(
-                position,
-                beforeEndPosition,
-                is,
-                parentIc,
-                this.snapshot
-            );
+            await HlslPreprocessor.includeContent(position, beforeEndPosition, is, parentIc, this.snapshot);
         }
     }
 
     private getIfStatement(text: string, position: number): IfState | null {
         const regex = /#[ \t]*if\b(?<condition>.*)/;
-        let regexResult = regex.exec(
-            this.snapshot.text.substring(position, position + text.length)
-        );
+        let regexResult = regex.exec(this.snapshot.text.substring(position, position + text.length));
         if (regexResult) {
             this.refreshMacroNames();
             const dcs = HlslPreprocessor.expandMacros(
@@ -249,17 +178,9 @@ export class HlslPreprocessor {
             const offset = dcs
                 .map((dc) => dc.afterEndPosition - dc.beforeEndPosition)
                 .reduce((prev, curr) => prev + curr, 0);
-            regexResult = regex.exec(
-                this.snapshot.text.substring(
-                    position,
-                    position + text.length + offset
-                )
-            );
+            regexResult = regex.exec(this.snapshot.text.substring(position, position + text.length + offset));
             if (regexResult && regexResult.groups) {
-                const condition = this.evaluateCondition(
-                    regexResult.groups.condition,
-                    position
-                );
+                const condition = this.evaluateCondition(regexResult.groups.condition, position);
                 const is: IfState = {
                     position: position,
                     condition,
@@ -274,9 +195,7 @@ export class HlslPreprocessor {
 
     private getElifStatement(text: string, position: number): IfState | null {
         const regex = /#[ \t]*elif\b(?<condition>.*)/;
-        let regexResult = regex.exec(
-            this.snapshot.text.substring(position, position + text.length)
-        );
+        let regexResult = regex.exec(this.snapshot.text.substring(position, position + text.length));
         if (regexResult) {
             this.refreshMacroNames();
             const dcs = HlslPreprocessor.expandMacros(
@@ -288,23 +207,13 @@ export class HlslPreprocessor {
             const offset = dcs
                 .map((dc) => dc.afterEndPosition - dc.beforeEndPosition)
                 .reduce((prev, curr) => prev + curr, 0);
-            regexResult = regex.exec(
-                this.snapshot.text.substring(
-                    position,
-                    position + text.length + offset
-                )
-            );
+            regexResult = regex.exec(this.snapshot.text.substring(position, position + text.length + offset));
             if (regexResult && regexResult.groups) {
                 const last = this.ifStack[this.ifStack.length - 1];
                 const condition =
-                    !(last?.already ?? false) &&
-                    this.evaluateCondition(
-                        regexResult.groups.condition,
-                        position
-                    );
+                    !(last?.already ?? false) && this.evaluateCondition(regexResult.groups.condition, position);
                 const is: IfState = {
-                    position:
-                        last?.condition ?? true ? position : last.position,
+                    position: last?.condition ?? true ? position : last.position,
                     condition,
                     already: last?.already || condition,
                     offset,
@@ -343,11 +252,7 @@ export class HlslPreprocessor {
         if (regexResult && regexResult.groups) {
             const directive = regexResult.groups.directive;
             const condition = regexResult.groups.condition.trim();
-            let defined = HlslPreprocessor.isDefined(
-                condition,
-                regexResult.index + position,
-                this.snapshot
-            );
+            let defined = HlslPreprocessor.isDefined(condition, regexResult.index + position, this.snapshot);
             if (directive === 'ifndef') {
                 defined = !defined;
             }
@@ -362,22 +267,15 @@ export class HlslPreprocessor {
         return null;
     }
 
-    private getDefineStatement(
-        text: string,
-        position: number
-    ): DefineStatement | null {
+    private getDefineStatement(text: string, position: number): DefineStatement | null {
         if (this.ifStack.some((is) => !is.condition)) {
             return null;
         }
-        let regex =
-            /#[ \t]*define[ \t]+?(?<name>[a-zA-Z_]\w*)[ \t]+?(?<content>.*)?/;
+        let regex = /#[ \t]*define[ \t]+?(?<name>[a-zA-Z_]\w*)[ \t]+?(?<content>.*)?/;
         let regexResult = regex.exec(text);
         if (regexResult && regexResult.groups) {
             const name = regexResult.groups.name;
-            const content =
-                regexResult.groups.content
-                    ?.trim()
-                    .replace(/[ \t]*#[ \t]*#[ \t]*/g, '') ?? '';
+            const content = regexResult.groups.content?.trim().replace(/[ \t]*#[ \t]*#[ \t]*/g, '') ?? '';
             const ds: DefineStatement = {
                 objectLike: true,
                 position: regexResult.index + position,
@@ -425,8 +323,7 @@ export class HlslPreprocessor {
                 this.snapshot.defineStatements
                     .filter((ds) => ds.name === name && ds.position <= position)
                     .forEach((ds) => {
-                        if (ds.undefPosition == null)
-                            ds.undefPosition = position;
+                        if (ds.undefPosition == null) ds.undefPosition = position;
                     });
             }
             return true;
@@ -474,27 +371,10 @@ export class HlslPreprocessor {
         snapshot: Snapshot
     ): Promise<void> {
         const uri = await getIncludedDocumentUri(is);
-        const includeText = await HlslPreprocessor.getIncludeText(
-            uri,
-            parentIc,
-            snapshot
-        );
+        const includeText = await HlslPreprocessor.getIncludeText(uri, parentIc, snapshot);
         const afterEndPosition = position + includeText.length;
-        Preprocessor.changeTextAndAddOffset(
-            position,
-            beforeEndPosition,
-            afterEndPosition,
-            includeText,
-            snapshot
-        );
-        const ic = HlslPreprocessor.createIncludeContext(
-            position,
-            afterEndPosition,
-            uri,
-            parentIc,
-            snapshot,
-            is
-        );
+        Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, afterEndPosition, includeText, snapshot);
+        const ic = HlslPreprocessor.createIncludeContext(position, afterEndPosition, uri, parentIc, snapshot, is);
         if (ic) {
             Preprocessor.addStringRanges(position, afterEndPosition, snapshot);
         }
@@ -533,14 +413,8 @@ export class HlslPreprocessor {
         parentIc: IncludeContext | null,
         snapshot: Snapshot
     ): Promise<string> {
-        const circularInclude = HlslPreprocessor.isCircularInclude(
-            parentIc,
-            uri,
-            snapshot
-        );
-        return uri && !circularInclude
-            ? await HlslPreprocessor.getText(uri)
-            : '';
+        const circularInclude = HlslPreprocessor.isCircularInclude(parentIc, uri, snapshot);
+        return uri && !circularInclude ? await HlslPreprocessor.getText(uri) : '';
     }
 
     private static async getText(uri: DocumentUri): Promise<string> {
@@ -555,11 +429,7 @@ export class HlslPreprocessor {
         }
     }
 
-    private static isCircularInclude(
-        ic: IncludeContext | null,
-        uri: DocumentUri | null,
-        snapshot: Snapshot
-    ): boolean {
+    private static isCircularInclude(ic: IncludeContext | null, uri: DocumentUri | null, snapshot: Snapshot): boolean {
         if (snapshot.uri === uri) {
             return true;
         }
@@ -573,16 +443,10 @@ export class HlslPreprocessor {
         return false;
     }
 
-    public static isDefined(
-        text: string,
-        position: number,
-        snapshot: Snapshot
-    ): boolean {
+    public static isDefined(text: string, position: number, snapshot: Snapshot): boolean {
         return !!snapshot.defineStatements.find(
             (ds) =>
-                ds.name === text &&
-                ds.position <= position &&
-                (ds.undefPosition == null || ds.undefPosition > position)
+                ds.name === text && ds.position <= position && (ds.undefPosition == null || ds.undefPosition > position)
         );
     }
 
@@ -600,21 +464,13 @@ export class HlslPreprocessor {
         macroIdentifierRegex.lastIndex = fromPosition;
         let regexResult: RegExpExecArray | null;
         const result: DefineContext[] = [];
-        while (
-            (regexResult = macroIdentifierRegex.exec(
-                snapshot.text.substring(0, toPosition)
-            ))
-        ) {
+        while ((regexResult = macroIdentifierRegex.exec(snapshot.text.substring(0, toPosition)))) {
             const identifierStartPosition = regexResult.index;
             const identifier = regexResult[0];
-            const identifierEndPosition =
-                identifierStartPosition + identifier.length;
+            const identifierEndPosition = identifierStartPosition + identifier.length;
             macroIdentifierRegex.lastIndex = identifierEndPosition;
 
-            const ma = Preprocessor.getMacroArguments(
-                identifierEndPosition,
-                snapshot
-            );
+            const ma = Preprocessor.getMacroArguments(identifierEndPosition, snapshot);
             const objectLike = !ma;
             const ds =
                 snapshot.defineStatements.find(
@@ -623,8 +479,7 @@ export class HlslPreprocessor {
                         ds.position <= identifierStartPosition &&
                         ds.objectLike === objectLike &&
                         ds.parameters.length === (ma?.arguments?.length ?? 0) &&
-                        (ds.undefPosition == null ||
-                            ds.undefPosition > identifierStartPosition)
+                        (ds.undefPosition == null || ds.undefPosition > identifierStartPosition)
                 ) ?? null;
             if (!ds) {
                 continue;
@@ -633,19 +488,13 @@ export class HlslPreprocessor {
             if (HlslPreprocessor.isCircularDefineExpansion(parentDc, ds)) {
                 continue;
             }
-            const beforeEndPosition = ma
-                ? ma.endPosition
-                : identifierEndPosition;
+            const beforeEndPosition = ma ? ma.endPosition : identifierEndPosition;
             if (Preprocessor.isInString(identifierStartPosition, snapshot)) {
                 continue;
             }
             const macroSnapshot = new Snapshot(invalidVersion, '', '');
             macroSnapshot.text = ds.content;
-            Preprocessor.addStringRanges(
-                0,
-                macroSnapshot.text.length,
-                macroSnapshot
-            );
+            Preprocessor.addStringRanges(0, macroSnapshot.text.length, macroSnapshot);
             let parameterReplacements: ElementRange[] = [];
             let dc: DefineContext | null = null;
             if (!ds.objectLike) {
@@ -656,37 +505,21 @@ export class HlslPreprocessor {
                         'g'
                     );
                     let regexResult: RegExpExecArray | null;
-                    while (
-                        (regexResult = macroParameterRegex.exec(
-                            macroSnapshot.text
-                        ))
-                    ) {
+                    while ((regexResult = macroParameterRegex.exec(macroSnapshot.text))) {
                         const parameterStartPosition = regexResult.index;
-                        if (
-                            Preprocessor.isInString(
-                                parameterStartPosition,
-                                macroSnapshot
-                            )
-                        ) {
+                        if (Preprocessor.isInString(parameterStartPosition, macroSnapshot)) {
                             continue;
                         }
                         const parameterMatch = regexResult[0];
-                        const parameterBeforeEndPosition =
-                            parameterStartPosition + parameterMatch.length;
+                        const parameterBeforeEndPosition = parameterStartPosition + parameterMatch.length;
                         if (regexResult.groups) {
                             const parameterName = regexResult.groups.name;
-                            const stringification =
-                                !!regexResult.groups.stringification;
+                            const stringification = !!regexResult.groups.stringification;
                             const argument = ma
-                                ? ma.arguments[
-                                      ds.parameters.indexOf(parameterName)
-                                  ].content
+                                ? ma.arguments[ds.parameters.indexOf(parameterName)].content
                                 : parameterName;
-                            const replacement = stringification
-                                ? HlslPreprocessor.stringify(argument)
-                                : argument;
-                            const parameterAfterEndPosition =
-                                parameterStartPosition + replacement.length;
+                            const replacement = stringification ? HlslPreprocessor.stringify(argument) : argument;
+                            const parameterAfterEndPosition = parameterStartPosition + replacement.length;
                             Preprocessor.changeTextAndAddOffset(
                                 parameterStartPosition,
                                 parameterBeforeEndPosition,
@@ -702,16 +535,11 @@ export class HlslPreprocessor {
 
                             if (!stringification) {
                                 parameterReplacements.push({
-                                    startPosition:
-                                        identifierStartPosition +
-                                        parameterStartPosition,
-                                    endPosition:
-                                        identifierStartPosition +
-                                        parameterAfterEndPosition,
+                                    startPosition: identifierStartPosition + parameterStartPosition,
+                                    endPosition: identifierStartPosition + parameterAfterEndPosition,
                                 });
                             }
-                            macroParameterRegex.lastIndex =
-                                parameterAfterEndPosition;
+                            macroParameterRegex.lastIndex = parameterAfterEndPosition;
                         }
                     }
                 }
@@ -724,13 +552,7 @@ export class HlslPreprocessor {
                     }
                     const match = regexResult[0];
                     const beforeEndPosition = position + match.length;
-                    Preprocessor.changeTextAndAddOffset(
-                        position,
-                        beforeEndPosition,
-                        position,
-                        '',
-                        macroSnapshot
-                    );
+                    Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, position, '', macroSnapshot);
                     regex.lastIndex = position;
                     for (const r of parameterReplacements) {
                         if (position < r.startPosition) {
@@ -743,22 +565,17 @@ export class HlslPreprocessor {
                     for (let j = 0; j < parameterReplacements.length; j++) {
                         if (
                             i !== j &&
-                            parameterReplacements[i].endPosition ===
-                                parameterReplacements[j].startPosition
+                            parameterReplacements[i].endPosition === parameterReplacements[j].startPosition
                         ) {
-                            parameterReplacements[i].endPosition =
-                                parameterReplacements[j].endPosition;
+                            parameterReplacements[i].endPosition = parameterReplacements[j].endPosition;
                             parameterReplacements[j].startPosition = -1;
                             parameterReplacements[j].endPosition = -1;
                         }
                     }
                 }
-                parameterReplacements = parameterReplacements.filter(
-                    (r) => r.startPosition >= 0
-                );
+                parameterReplacements = parameterReplacements.filter((r) => r.startPosition >= 0);
 
-                const afterEndPosition =
-                    identifierStartPosition + macroSnapshot.text.length;
+                const afterEndPosition = identifierStartPosition + macroSnapshot.text.length;
                 dc = {
                     define: ds,
                     startPosition: identifierStartPosition,
@@ -776,11 +593,7 @@ export class HlslPreprocessor {
                     macroSnapshot.text,
                     snapshot
                 );
-                Preprocessor.addStringRanges(
-                    identifierStartPosition,
-                    afterEndPosition,
-                    snapshot
-                );
+                Preprocessor.addStringRanges(identifierStartPosition, afterEndPosition, snapshot);
                 snapshot.defineContexts.push(dc);
                 for (const replacement of parameterReplacements) {
                     const dcs = HlslPreprocessor.expandMacros(
@@ -797,15 +610,9 @@ export class HlslPreprocessor {
                         r.endPosition += offset;
                     }
                 }
-                HlslPreprocessor.expandMacros(
-                    fromPosition,
-                    toPosition,
-                    snapshot,
-                    macroNames
-                );
+                HlslPreprocessor.expandMacros(fromPosition, toPosition, snapshot, macroNames);
             } else {
-                const afterEndPosition =
-                    identifierStartPosition + macroSnapshot.text.length;
+                const afterEndPosition = identifierStartPosition + macroSnapshot.text.length;
                 dc = {
                     define: ds,
                     startPosition: identifierStartPosition,
@@ -823,16 +630,11 @@ export class HlslPreprocessor {
                     macroSnapshot.text,
                     snapshot
                 );
-                Preprocessor.addStringRanges(
-                    identifierStartPosition,
-                    afterEndPosition,
-                    snapshot
-                );
+                Preprocessor.addStringRanges(identifierStartPosition, afterEndPosition, snapshot);
                 snapshot.defineContexts.push(dc);
             }
 
-            macroIdentifierRegex.lastIndex =
-                dc?.afterEndPosition ?? identifierStartPosition;
+            macroIdentifierRegex.lastIndex = dc?.afterEndPosition ?? identifierStartPosition;
             toPosition += dc ? dc.afterEndPosition - dc.beforeEndPosition : 0;
         }
         return result;
@@ -848,23 +650,14 @@ export class HlslPreprocessor {
             const position = regexResult.index;
             const quote = regexResult[0] === '"';
             if (quote || Preprocessor.isInString(position, argumentSnapshot)) {
-                Preprocessor.changeTextAndAddOffset(
-                    position,
-                    position,
-                    position + 2,
-                    '\\',
-                    argumentSnapshot
-                );
+                Preprocessor.changeTextAndAddOffset(position, position, position + 2, '\\', argumentSnapshot);
                 regex.lastIndex = position + 2;
             }
         }
         return `"${argumentSnapshot.text}"`;
     }
 
-    private static isCircularDefineExpansion(
-        dc: DefineContext | null,
-        ds: DefineStatement | null
-    ): boolean {
+    private static isCircularDefineExpansion(dc: DefineContext | null, ds: DefineStatement | null): boolean {
         let currentDc: DefineContext | null = dc;
         while (currentDc) {
             if (currentDc.define === ds) {

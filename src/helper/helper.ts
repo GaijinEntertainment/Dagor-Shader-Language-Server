@@ -10,9 +10,7 @@ export function positionsEqual(p1: Position, p2: Position): boolean {
 
 export function rangeContains(r: Range, p: Position): boolean {
     return (
-        (p.line > r.start.line ||
-            (p.line === r.start.line && p.character >= r.start.character)) &&
-        (p.line < r.end.line ||
-            (p.line === r.end.line && p.character <= r.end.character))
+        (p.line > r.start.line || (p.line === r.start.line && p.character >= r.start.character)) &&
+        (p.line < r.end.line || (p.line === r.end.line && p.character <= r.end.character))
     );
 }

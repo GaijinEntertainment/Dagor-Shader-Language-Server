@@ -38,11 +38,7 @@ export class ConditionVisitor
     }
 
     private isLiteral(ctx: ExpressionContext): boolean {
-        return (
-            !!ctx.BOOL_LITERAL() ||
-            !!ctx.INT_LITERAL() ||
-            !!ctx.CHARACTER_LITERAL()
-        );
+        return !!ctx.BOOL_LITERAL() || !!ctx.INT_LITERAL() || !!ctx.CHARACTER_LITERAL();
     }
 
     private evaluateLiteral(ctx: ExpressionContext): bigint | null {
@@ -53,10 +49,7 @@ export class ConditionVisitor
         const intLiteral = ctx.INT_LITERAL();
         if (intLiteral) {
             try {
-                const intLiteralWithoutSuffix = intLiteral.text.replace(
-                    /[uUlL]/,
-                    ''
-                );
+                const intLiteralWithoutSuffix = intLiteral.text.replace(/[uUlL]/, '');
                 return BigInt(intLiteralWithoutSuffix);
             } catch (error) {
                 return null;
@@ -182,13 +175,7 @@ export class ConditionVisitor
     private evaluateOtherExpression(ctx: ExpressionContext): bigint | null {
         const identifier = ctx.IDENTIFIER();
         if (ctx.DEFINED()) {
-            return HlslPreprocessor.isDefined(
-                identifier?.text ?? '',
-                this.position,
-                this.snapshot
-            )
-                ? 1n
-                : 0n;
+            return HlslPreprocessor.isDefined(identifier?.text ?? '', this.position, this.snapshot) ? 1n : 0n;
         }
         if (identifier) {
             return 0n;

@@ -16,48 +16,32 @@ const capabilities: Capabilities = {
     foldingRangeKinds: [],
     hoverFormat: [],
     implementationLink: false,
+    inlayHints: false,
     showMessage: false,
     signatureHelpActiveParameter: false,
 };
 
-export function initializeCapabilities(
-    clientCapabilities: ClientCapabilities
-): void {
+export function initializeCapabilities(clientCapabilities: ClientCapabilities): void {
     capabilities.completionDocumentationFormat =
-        clientCapabilities.textDocument?.completion?.completionItem
-            ?.documentationFormat ?? [];
+        clientCapabilities.textDocument?.completion?.completionItem?.documentationFormat ?? [];
     capabilities.completionLabelDetails =
-        !!clientCapabilities.textDocument?.completion?.completionItem
-            ?.labelDetailsSupport;
-    capabilities.completionItemKinds =
-        clientCapabilities.textDocument?.completion?.completionItemKind
-            ?.valueSet ?? [];
-    capabilities.completionSnippets =
-        !!clientCapabilities.textDocument?.completion?.completionItem
-            ?.snippetSupport;
+        !!clientCapabilities.textDocument?.completion?.completionItem?.labelDetailsSupport;
+    capabilities.completionItemKinds = clientCapabilities.textDocument?.completion?.completionItemKind?.valueSet ?? [];
+    capabilities.completionSnippets = !!clientCapabilities.textDocument?.completion?.completionItem?.snippetSupport;
     capabilities.configuration = !!clientCapabilities.workspace?.configuration;
-    capabilities.configurationChange =
-        !!clientCapabilities.workspace?.didChangeConfiguration;
-    capabilities.declarationLink =
-        !!clientCapabilities.textDocument?.declaration?.linkSupport;
-    capabilities.definitionLink =
-        !!clientCapabilities.textDocument?.definition?.linkSupport;
-    capabilities.documentLinkTooltip =
-        !!clientCapabilities.textDocument?.documentLink?.tooltipSupport;
+    capabilities.configurationChange = !!clientCapabilities.workspace?.didChangeConfiguration;
+    capabilities.declarationLink = !!clientCapabilities.textDocument?.declaration?.linkSupport;
+    capabilities.definitionLink = !!clientCapabilities.textDocument?.definition?.linkSupport;
+    capabilities.documentLinkTooltip = !!clientCapabilities.textDocument?.documentLink?.tooltipSupport;
     capabilities.documentSymbolHierarchy =
-        !!clientCapabilities.textDocument?.documentSymbol
-            ?.hierarchicalDocumentSymbolSupport;
-    capabilities.foldingRangeKinds =
-        clientCapabilities.textDocument?.foldingRange?.foldingRangeKind
-            ?.valueSet ?? [];
-    capabilities.hoverFormat =
-        clientCapabilities.textDocument?.hover?.contentFormat ?? [];
-    capabilities.implementationLink =
-        !!clientCapabilities.textDocument?.implementation?.linkSupport;
+        !!clientCapabilities.textDocument?.documentSymbol?.hierarchicalDocumentSymbolSupport;
+    capabilities.foldingRangeKinds = clientCapabilities.textDocument?.foldingRange?.foldingRangeKind?.valueSet ?? [];
+    capabilities.hoverFormat = clientCapabilities.textDocument?.hover?.contentFormat ?? [];
+    capabilities.implementationLink = !!clientCapabilities.textDocument?.implementation?.linkSupport;
+    capabilities.inlayHints = !!clientCapabilities.textDocument?.inlayHint;
     capabilities.showMessage = !!clientCapabilities.window?.showMessage;
     capabilities.signatureHelpActiveParameter =
-        !!clientCapabilities.textDocument?.signatureHelp?.signatureInformation
-            ?.activeParameterSupport;
+        !!clientCapabilities.textDocument?.signatureHelp?.signatureInformation?.activeParameterSupport;
 }
 
 export function getCapabilities(): Capabilities {

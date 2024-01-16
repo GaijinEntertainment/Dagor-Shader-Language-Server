@@ -54,9 +54,7 @@ export async function completionProvider(
     if (!snapshot || isCursorInCommentOrString(snapshot, params.position)) {
         return null;
     }
-    const hlsl =
-        params.textDocument.uri.endsWith('.hlsl') ||
-        snapshot.isInHlslBlock(params.position);
+    const hlsl = params.textDocument.uri.endsWith('.hlsl') || snapshot.isInHlslBlock(params.position);
     if (hlsl) {
         return getHlslItems();
     } else {
@@ -64,29 +62,14 @@ export async function completionProvider(
     }
 }
 
-function isCursorInCommentOrString(
-    snapshot: Snapshot,
-    position: Position
-): boolean {
-    return snapshot.noCodeCompletionRanges.some((r) =>
-        rangeContains(r, position)
-    );
+function isCursorInCommentOrString(snapshot: Snapshot, position: Position): boolean {
+    return snapshot.noCodeCompletionRanges.some((r) => rangeContains(r, position));
 }
 
 function getHlslItems(): CompletionItem[] {
     const result: CompletionItem[] = [];
-    addCompletionItems(
-        result,
-        hlslKeywords,
-        CompletionItemKind.Keyword,
-        'keyword'
-    );
-    addCompletionItems(
-        result,
-        hlslPreprocessorDirectives,
-        CompletionItemKind.Keyword,
-        'preprocessor directive'
-    );
+    addCompletionItems(result, hlslKeywords, CompletionItemKind.Keyword, 'keyword');
+    addCompletionItems(result, hlslPreprocessorDirectives, CompletionItemKind.Keyword, 'preprocessor directive');
     addCompletionItems(
         result,
         hlslPreprocessorPragmaDirectives,
@@ -99,165 +82,44 @@ function getHlslItems(): CompletionItem[] {
         CompletionItemKind.Keyword,
         'DSHL preprocessor directive'
     );
-    addCompletionItems(
-        result,
-        hlslModifiers,
-        CompletionItemKind.Keyword,
-        'modifier'
-    );
-    addCompletionItems(
-        result,
-        hlslAttributes,
-        CompletionItemKind.Keyword,
-        'attribute'
-    );
-    addCompletionItems(
-        result,
-        hlslSemantics,
-        CompletionItemKind.Keyword,
-        'semantic'
-    );
-    addCompletionItems(
-        result,
-        hlslSystemValueSemantics,
-        CompletionItemKind.Keyword,
-        'semantic'
-    );
-    addCompletionItems(
-        result,
-        hlslStructTypes,
-        CompletionItemKind.Class,
-        'type'
-    );
+    addCompletionItems(result, hlslModifiers, CompletionItemKind.Keyword, 'modifier');
+    addCompletionItems(result, hlslAttributes, CompletionItemKind.Keyword, 'attribute');
+    addCompletionItems(result, hlslSemantics, CompletionItemKind.Keyword, 'semantic');
+    addCompletionItems(result, hlslSystemValueSemantics, CompletionItemKind.Keyword, 'semantic');
+    addCompletionItems(result, hlslStructTypes, CompletionItemKind.Class, 'type');
     addCompletionItems(result, hlslEnumTypes, CompletionItemKind.Enum, 'enum');
-    addCompletionItems(
-        result,
-        hlslBufferTypes,
-        CompletionItemKind.Class,
-        'type'
-    );
-    addCompletionItems(
-        result,
-        hlslTextureTypes,
-        CompletionItemKind.Class,
-        'type'
-    );
-    addCompletionItems(
-        result,
-        hlslNonPrimitiveTypes,
-        CompletionItemKind.Class,
-        'type'
-    );
-    addCompletionItems(
-        result,
-        hlslVectorMatrixStringTypes,
-        CompletionItemKind.Class,
-        'type'
-    );
+    addCompletionItems(result, hlslBufferTypes, CompletionItemKind.Class, 'type');
+    addCompletionItems(result, hlslTextureTypes, CompletionItemKind.Class, 'type');
+    addCompletionItems(result, hlslNonPrimitiveTypes, CompletionItemKind.Class, 'type');
+    addCompletionItems(result, hlslVectorMatrixStringTypes, CompletionItemKind.Class, 'type');
     addPrimitiveTypes(result, hlslPrimitiveTypes);
-    addCompletionItems(
-        result,
-        hlslVariables,
-        CompletionItemKind.Variable,
-        'variable'
-    );
-    addCompletionItems(
-        result,
-        hlslFunctions,
-        CompletionItemKind.Function,
-        'function'
-    );
+    addCompletionItems(result, hlslVariables, CompletionItemKind.Variable, 'variable');
+    addCompletionItems(result, hlslFunctions, CompletionItemKind.Function, 'function');
     if (getCapabilities().completionSnippets) {
-        addCompletionItems(
-            result,
-            hlslSnippets,
-            CompletionItemKind.Snippet,
-            'snippet'
-        );
+        addCompletionItems(result, hlslSnippets, CompletionItemKind.Snippet, 'snippet');
     }
     return result;
 }
 
-function getDshlItems(
-    snapshot: Snapshot,
-    position: Position
-): CompletionItem[] {
+function getDshlItems(snapshot: Snapshot, position: Position): CompletionItem[] {
     const result: CompletionItem[] = [];
-    addCompletionItems(
-        result,
-        dshlKeywords,
-        CompletionItemKind.Keyword,
-        'keyword'
-    );
-    addCompletionItems(
-        result,
-        dshlEnumValues,
-        CompletionItemKind.Value,
-        'value'
-    );
-    addCompletionItems(
-        result,
-        dshlModifiers,
-        CompletionItemKind.Keyword,
-        'modifier'
-    );
-    addCompletionItems(
-        result,
-        dshlNonPrimitiveTypes,
-        CompletionItemKind.Class,
-        'type'
-    );
-    addCompletionItems(
-        result,
-        dshlPrimitiveTypes,
-        CompletionItemKind.Class,
-        'type'
-    );
-    addCompletionItems(
-        result,
-        dshlNonPrimitiveShortTypes,
-        CompletionItemKind.Class,
-        'type'
-    );
-    addCompletionItems(
-        result,
-        dshlPrimitiveShortTypes,
-        CompletionItemKind.Class,
-        'type'
-    );
-    addCompletionItems(
-        result,
-        dshlProperties,
-        CompletionItemKind.Property,
-        'property'
-    );
-    addCompletionItems(
-        result,
-        dshlFunctions,
-        CompletionItemKind.Function,
-        'function'
-    );
-    addCompletionItems(
-        result,
-        getMacros(snapshot, position),
-        CompletionItemKind.Constant,
-        'macro'
-    );
+    addCompletionItems(result, dshlKeywords, CompletionItemKind.Keyword, 'keyword');
+    addCompletionItems(result, dshlEnumValues, CompletionItemKind.Value, 'value');
+    addCompletionItems(result, dshlModifiers, CompletionItemKind.Keyword, 'modifier');
+    addCompletionItems(result, dshlNonPrimitiveTypes, CompletionItemKind.Class, 'type');
+    addCompletionItems(result, dshlPrimitiveTypes, CompletionItemKind.Class, 'type');
+    addCompletionItems(result, dshlNonPrimitiveShortTypes, CompletionItemKind.Class, 'type');
+    addCompletionItems(result, dshlPrimitiveShortTypes, CompletionItemKind.Class, 'type');
+    addCompletionItems(result, dshlProperties, CompletionItemKind.Property, 'property');
+    addCompletionItems(result, dshlFunctions, CompletionItemKind.Function, 'function');
+    addCompletionItems(result, getMacros(snapshot, position), CompletionItemKind.Constant, 'macro');
     if (getCapabilities().completionSnippets) {
-        addCompletionItems(
-            result,
-            dshlSnippets,
-            CompletionItemKind.Snippet,
-            'snippet'
-        );
+        addCompletionItems(result, dshlSnippets, CompletionItemKind.Snippet, 'snippet');
     }
     return result;
 }
 
-function getMacros(
-    snapshot: Snapshot,
-    position: Position
-): LanguageElementInfo[] {
+function getMacros(snapshot: Snapshot, position: Position): LanguageElementInfo[] {
     return snapshot.macroStatements
         .filter(
             (ms) =>
@@ -276,18 +138,10 @@ function addCompletionItems(
     kind: CompletionItemKind,
     type = ''
 ): void {
-    result.push(
-        ...items.map<CompletionItem>((item) =>
-            getCompletionItem(item, kind, type)
-        )
-    );
+    result.push(...items.map<CompletionItem>((item) => getCompletionItem(item, kind, type)));
 }
 
-function getCompletionItem(
-    item: LanguageElementInfo,
-    kind: CompletionItemKind,
-    type = ''
-): CompletionItem {
+function getCompletionItem(item: LanguageElementInfo, kind: CompletionItemKind, type = ''): CompletionItem {
     return {
         label: item.name,
         kind: getKind(kind),
@@ -302,9 +156,7 @@ function getCompletionItem(
 }
 
 function getKind(kind: CompletionItemKind): CompletionItemKind | undefined {
-    return getCapabilities().completionItemKinds.includes(kind)
-        ? kind
-        : undefined;
+    return getCapabilities().completionItemKinds.includes(kind) ? kind : undefined;
 }
 
 function getDetail(item: LanguageElementInfo, type: string): string {
@@ -312,10 +164,7 @@ function getDetail(item: LanguageElementInfo, type: string): string {
     if (type) {
         header += ` - ${type}`;
     }
-    if (
-        getCapabilities().completionDocumentationFormat.length ||
-        !item.description
-    ) {
+    if (getCapabilities().completionDocumentationFormat.length || !item.description) {
         return header;
     } else {
         const documentation = getDocumentationText(item);
@@ -323,9 +172,7 @@ function getDetail(item: LanguageElementInfo, type: string): string {
     }
 }
 
-function getLabelDetails(
-    item: LanguageElementInfo
-): CompletionItemLabelDetails | undefined {
+function getLabelDetails(item: LanguageElementInfo): CompletionItemLabelDetails | undefined {
     return getCapabilities().completionLabelDetails
         ? {
               description: item.type,
@@ -333,24 +180,14 @@ function getLabelDetails(
         : undefined;
 }
 
-function getDocumentation(
-    item: LanguageElementInfo
-): MarkupContent | undefined {
+function getDocumentation(item: LanguageElementInfo): MarkupContent | undefined {
     const documentationText = getDocumentationText(item);
-    if (
-        getCapabilities().completionDocumentationFormat.includes(
-            MarkupKind.Markdown
-        )
-    ) {
+    if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.Markdown)) {
         return {
             kind: MarkupKind.Markdown,
             value: documentationText + createDocumentationLinks(item.links),
         };
-    } else if (
-        getCapabilities().completionDocumentationFormat.includes(
-            MarkupKind.PlainText
-        )
-    ) {
+    } else if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.PlainText)) {
         return {
             kind: MarkupKind.PlainText,
             value: documentationText,
@@ -385,18 +222,13 @@ function getLinkName(link: string): string {
         linkName = 'Open DirectX Specs documentation';
     } else if (link.startsWith('https://learn.microsoft.com')) {
         linkName = 'Open Microsoft Learn documentation';
-    } else if (
-        link.startsWith('https://github.com/microsoft/DirectXShaderCompiler')
-    ) {
+    } else if (link.startsWith('https://github.com/microsoft/DirectXShaderCompiler')) {
         linkName = 'Open DirectX Shader Compiler documentation';
     }
     return linkName;
 }
 
-function addPrimitiveTypes(
-    result: CompletionItem[],
-    items: LanguageElementInfo[]
-): void {
+function addPrimitiveTypes(result: CompletionItem[], items: LanguageElementInfo[]): void {
     for (const item of items) {
         addScalarTypes(result, item);
         for (let i = 1; i <= 4; i++) {
@@ -408,10 +240,7 @@ function addPrimitiveTypes(
     }
 }
 
-function addScalarTypes(
-    result: CompletionItem[],
-    item: LanguageElementInfo
-): void {
+function addScalarTypes(result: CompletionItem[], item: LanguageElementInfo): void {
     result.push(getCompletionItem(item, CompletionItemKind.Class, 'type'));
     result.push(
         getCompletionItem(
@@ -422,13 +251,8 @@ function addScalarTypes(
     );
 }
 
-function addVectorTypes(
-    result: CompletionItem[],
-    item: LanguageElementInfo,
-    i: number
-): void {
-    const vectorLink =
-        'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-vector';
+function addVectorTypes(result: CompletionItem[], item: LanguageElementInfo, i: number): void {
+    const vectorLink = 'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-vector';
     const name = `${item.name}${i}`;
     const vector: LanguageElementInfo = {
         ...item,
@@ -444,23 +268,11 @@ function addVectorTypes(
         description: undefined,
     };
     result.push(getCompletionItem(vector, CompletionItemKind.Class, 'type'));
-    result.push(
-        getCompletionItem(
-            constructor,
-            CompletionItemKind.Constructor,
-            'constructor'
-        )
-    );
+    result.push(getCompletionItem(constructor, CompletionItemKind.Constructor, 'constructor'));
 }
 
-function addMatrixTypes(
-    result: CompletionItem[],
-    item: LanguageElementInfo,
-    i: number,
-    j: number
-): void {
-    const matrixLink =
-        'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-matrix';
+function addMatrixTypes(result: CompletionItem[], item: LanguageElementInfo, i: number, j: number): void {
+    const matrixLink = 'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-matrix';
     const name = `${item.name}${i}x${j}`;
     const matrix: LanguageElementInfo = {
         ...item,
@@ -476,11 +288,5 @@ function addMatrixTypes(
         description: undefined,
     };
     result.push(getCompletionItem(matrix, CompletionItemKind.Class, 'type'));
-    result.push(
-        getCompletionItem(
-            constructor,
-            CompletionItemKind.Constructor,
-            'constructor'
-        )
-    );
+    result.push(getCompletionItem(constructor, CompletionItemKind.Constructor, 'constructor'));
 }

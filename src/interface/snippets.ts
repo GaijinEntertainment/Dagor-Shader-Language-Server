@@ -67,8 +67,7 @@ export const hlslSnippets: LanguageElementInfo[] = [
     },
     {
         name: 'for',
-        insertText:
-            'for(${1:int} ${2:i} = ${3:0}; ${2:i} < ${4:16}; ${2:i}++) {\n\t$0\n}',
+        insertText: 'for(${1:int} ${2:i} = ${3:0}; ${2:i} < ${4:16}; ${2:i}++) {\n\t$0\n}',
         isSnippet: true,
     },
     {
@@ -88,14 +87,12 @@ export const hlslSnippets: LanguageElementInfo[] = [
     },
     {
         name: 'switch-case',
-        insertText:
-            'switch(${1:name}) {\n\tcase ${2:1}: $3\n\tcase ${4:2}: $5\n\tdefault: $6\n}',
+        insertText: 'switch(${1:name}) {\n\tcase ${2:1}: $3\n\tcase ${4:2}: $5\n\tdefault: $6\n}',
         isSnippet: true,
     },
     {
         name: 'struct',
-        insertText:
-            'struct ${1:TypeName} {\n\t${2:float} ${3:variableName};$0\n};',
+        insertText: 'struct ${1:TypeName} {\n\t${2:float} ${3:variableName};$0\n};',
         isSnippet: true,
     },
 ];
@@ -108,20 +105,17 @@ export const dshlSnippets: LanguageElementInfo[] = [
     },
     {
         name: 'macro',
-        insertText:
-            'macro ${1:${TM_FILENAME_BASE/(.*)/${1:/upcase}/}}($2)\n\t$0\nendmacro',
+        insertText: 'macro ${1:${TM_FILENAME_BASE/(.*)/${1:/upcase}/}}($2)\n\t$0\nendmacro',
         isSnippet: true,
     },
     {
         name: 'define_macro_if_not_defined',
-        insertText:
-            'define_macro_if_not_defined ${1:${TM_FILENAME_BASE/(.*)/${1:/upcase}/}}($2)\n\t$0\nendmacro',
+        insertText: 'define_macro_if_not_defined ${1:${TM_FILENAME_BASE/(.*)/${1:/upcase}/}}($2)\n\t$0\nendmacro',
         isSnippet: true,
     },
     {
         name: 'interval',
-        insertText:
-            'interval ${1:variable_name}: ${2:lower_value} < ${3:1}, ${4:upper_value};',
+        insertText: 'interval ${1:variable_name}: ${2:lower_value} < ${3:1}, ${4:upper_value};',
         isSnippet: true,
     },
     {
@@ -151,7 +145,7 @@ export const dshlSnippets: LanguageElementInfo[] = [
         isSnippet: true,
     },
     {
-        name: 'shader stage',
+        name: 'preshader',
         insertText:
             '(${1|cs,vs,ps|}) {\n\t${2:variable_name}@${3|f1,f2,f3,f4,f44,i1,i2,i3,i4,tex,tex2d,tex3d,texArray,texCube,texCubeArray,smp2d,smp3d,smpArray,smpCube,smpCubeArray,static,staticCube,staticTexArray,shd,buf,cbuf,uav|} = ${4:other_variable_name};$0\n}',
         isSnippet: true,

@@ -1,9 +1,4 @@
-import {
-    DocumentUri,
-    Location,
-    LocationLink,
-    Position,
-} from 'vscode-languageserver';
+import { DocumentUri, Location, LocationLink, Position } from 'vscode-languageserver';
 
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';

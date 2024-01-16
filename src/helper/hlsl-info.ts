@@ -12,142 +12,102 @@ export const hlslKeywords: LanguageElementInfo[] = [
     },
     {
         name: 'register',
-        description:
-            'Optional keyword for assigning a shader variable to a particular register.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-register',
-        ],
+        description: 'Optional keyword for assigning a shader variable to a particular register.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-register'],
     },
     {
         name: 'packoffset',
         description: 'Optional shader constant packing keyword.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-packoffset',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-packoffset'],
     },
     {
         name: 'template',
         description:
             'Functions can be defined with generic type arguments provided those types support all the methods and operators used in the function.',
-        links: [
-            'https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021#template-functions-and-structs',
-        ],
+        links: ['https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021#template-functions-and-structs'],
     },
     {
         name: 'break',
         description: 'Exit the surrounding loop (do, for, while).',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-break',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-break'],
     },
     {
         name: 'continue',
         description:
             'Stop executing the current loop (do, for, while), update the loop conditions, and begin executing from the top of the loop.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-continue',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-continue'],
     },
     {
         name: 'discard',
         description: 'Do not output the result of the current pixel.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-discard',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-discard'],
     },
     {
         name: 'return',
         description: 'A return statement signals the end of a function.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-return',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-return'],
     },
     {
         name: 'for',
         description:
             'Iteratively executes a series of statements, based on the evaluation of the conditional expression.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-for',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-for'],
     },
     {
         name: 'if',
         description:
             'Conditionally execute a series of statements, based on the evaluation of the conditional expression.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-if',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-if'],
     },
     {
         name: 'else',
         description:
             'Conditionally execute a series of statements, based on the evaluation of the conditional expression.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-if',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-if'],
     },
     {
         name: 'switch',
         description:
             'Transfer control to a different statement block within the switch body depending on the value of a selector.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-switch',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-switch'],
     },
     {
         name: 'case',
         description:
             'Transfer control to a different statement block within the switch body depending on the value of a selector.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-switch',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-switch'],
     },
     {
         name: 'default',
         description:
             'Transfer control to a different statement block within the switch body depending on the value of a selector.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-switch',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-switch'],
     },
     {
         name: 'do',
-        description:
-            'Execute a series of statements continuously until the conditional expression fails.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-do',
-        ],
+        description: 'Execute a series of statements continuously until the conditional expression fails.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-do'],
     },
     {
         name: 'while',
-        description:
-            'Executes a statement block until the conditional expression fails.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-while',
-        ],
+        description: 'Executes a statement block until the conditional expression fails.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-while'],
     },
     {
         name: 'compile',
         description: 'Declare a shader variable within an effect pass.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-shader',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-shader'],
     },
     {
         name: 'compile_fragment',
         description:
             'Each Microsoft High Level Shader Language (HLSL) function can be converted into a shader fragment with the addition of a fragment declaration.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/fragment-declaration-syntax',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/fragment-declaration-syntax'],
     },
     {
         name: 'typedef',
-        description:
-            'In addition to the built-in intrinsic data types, HLSL supports user-defined or custom types.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-user-defined',
-        ],
+        description: 'In addition to the built-in intrinsic data types, HLSL supports user-defined or custom types.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-user-defined'],
     },
     {
         name: 'asm',
@@ -159,17 +119,13 @@ export const hlslKeywords: LanguageElementInfo[] = [
         name: 'pixelfragment',
         description:
             'Each Microsoft High Level Shader Language (HLSL) function can be converted into a shader fragment with the addition of a fragment declaration.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/fragment-declaration-syntax',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/fragment-declaration-syntax'],
     },
     {
         name: 'vertexfragment',
         description:
             'Each Microsoft High Level Shader Language (HLSL) function can be converted into a shader fragment with the addition of a fragment declaration.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/fragment-declaration-syntax',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/fragment-declaration-syntax'],
     },
     {
         name: 'stateblock',
@@ -179,34 +135,24 @@ export const hlslKeywords: LanguageElementInfo[] = [
     },
     {
         name: 'technique',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-effect-technique-syntax',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-effect-technique-syntax'],
     },
     {
         name: 'technique10',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-effect-technique-syntax',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-effect-technique-syntax'],
     },
     {
         name: 'technique11',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3d11/d3d11-effect-technique-syntax',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3d11/d3d11-effect-technique-syntax'],
     },
     {
         name: 'pass',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-effect-technique-syntax',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-effect-technique-syntax'],
     },
     {
         name: 'struct',
         description: 'Declares a structure using HLSL.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-struct',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-struct'],
     },
     {
         name: 'enum',
@@ -220,8 +166,7 @@ export const hlslKeywords: LanguageElementInfo[] = [
     },
     {
         name: 'interface',
-        description:
-            'An interface functions in a similar manner to an abstract base class in C++.',
+        description: 'An interface functions in a similar manner to an abstract base class in C++.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/overviews-direct3d-11-hlsl-dynamic-linking-class#declaring-interfaces',
         ],
@@ -233,9 +178,7 @@ export const hlslKeywords: LanguageElementInfo[] = [
         name: 'typename',
         description:
             'Functions can be defined with generic type arguments provided those types support all the methods and operators used in the function.',
-        links: [
-            'https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021#template-functions-and-structs',
-        ],
+        links: ['https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021#template-functions-and-structs'],
     },
 ];
 
@@ -243,118 +186,87 @@ export const hlslPreprocessorDirectives: LanguageElementInfo[] = [
     {
         name: '#define',
         sortName: 'define',
-        description:
-            'Preprocessor directive that defines a constant or a macro.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-define',
-        ],
+        description: 'Preprocessor directive that defines a constant or a macro.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-define'],
     },
     {
         name: '#undef',
         sortName: 'undef',
         description:
             'Preprocessor directive that removes the current definition of a constant or macro that was previously defined using the #define directive.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-undef',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-undef'],
     },
     {
         name: '#ifdef',
         sortName: 'ifdef',
         description:
             'Preprocessor directives that determine whether a specific preprocessor constant or macro is defined.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-ifdef',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-ifdef'],
     },
     {
         name: '#ifndef',
         sortName: 'ifndef',
         description:
             'Preprocessor directives that determine whether a specific preprocessor constant or macro is defined.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-ifdef',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-ifdef'],
     },
     {
         name: '#if',
         sortName: 'if',
-        description:
-            'Preprocessor directives that control compilation of portions of a source file.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-if',
-        ],
+        description: 'Preprocessor directives that control compilation of portions of a source file.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-if'],
     },
     {
         name: '#elif',
         sortName: 'elif',
-        description:
-            'Preprocessor directives that control compilation of portions of a source file.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-if',
-        ],
+        description: 'Preprocessor directives that control compilation of portions of a source file.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-if'],
     },
     {
         name: '#else',
         sortName: 'else',
-        description:
-            'Preprocessor directives that control compilation of portions of a source file.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-if',
-        ],
+        description: 'Preprocessor directives that control compilation of portions of a source file.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-if'],
     },
     {
         name: '#endif',
         sortName: 'endif',
-        description:
-            'Preprocessor directives that control compilation of portions of a source file.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-if',
-        ],
+        description: 'Preprocessor directives that control compilation of portions of a source file.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-if'],
     },
     {
         name: '#error',
         sortName: 'error',
-        description:
-            'Preprocessor directive that produces compiler-time error messages.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-error',
-        ],
+        description: 'Preprocessor directive that produces compiler-time error messages.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-error'],
     },
     {
         name: '#include',
         sortName: 'include',
         description:
             'Preprocessor directive that inserts the contents of the specified file into the source program at the point where the directive appears.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-include',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-include'],
     },
     {
         name: '#line',
         sortName: 'line',
         description:
             "Preprocessor directive that sets the compiler's internally-stored line number and filename to the specified values.",
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-line',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-line'],
     },
     {
         name: '#pragma',
         sortName: 'pragma',
         description:
             'Preprocessor directive that provides machine-specific or operating system-specific features while retaining overall compatibility with the C and C++ languages.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-pragma',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-pragma'],
     },
 ];
 
 export const hlslPreprocessorPragmaDirectives: LanguageElementInfo[] = [
     {
         name: 'def',
-        description:
-            'Pragma directive that manually allocates a floating-point shader register.',
+        description: 'Pragma directive that manually allocates a floating-point shader register.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-pragma-def',
         ],
@@ -362,22 +274,18 @@ export const hlslPreprocessorPragmaDirectives: LanguageElementInfo[] = [
     {
         name: 'message',
         description: 'Pragma directive that produces compiler-time messages.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/message-pragma-directive--directx-hlsl-',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/message-pragma-directive--directx-hlsl-'],
     },
     {
         name: 'pack_matrix',
-        description:
-            'Pragma directive that specifies packing alignment for matrices.',
+        description: 'Pragma directive that specifies packing alignment for matrices.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-pragma-pack-matrix',
         ],
     },
     {
         name: 'warning',
-        description:
-            'Pragma directive that modifies the behavior of compiler warning messages.',
+        description: 'Pragma directive that modifies the behavior of compiler warning messages.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-pre-pragma-warning',
         ],
@@ -401,6 +309,10 @@ export const hlslDshlPreprocessorDirectives: LanguageElementInfo[] = [
         name: '##endif',
         sortName: 'endif',
     },
+    {
+        name: '##assert',
+        sortName: 'assert',
+    },
 ];
 
 export const hlslModifiers: LanguageElementInfo[] = [
@@ -414,8 +326,7 @@ export const hlslModifiers: LanguageElementInfo[] = [
     },
     {
         name: 'column_major',
-        description:
-            'Mark a variable that stores 4 components in a single column to optimize matrix math.',
+        description: 'Mark a variable that stores 4 components in a single column to optimize matrix math.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-syntax#parameters',
         ],
@@ -423,8 +334,7 @@ export const hlslModifiers: LanguageElementInfo[] = [
     { name: 'const' },
     {
         name: 'export',
-        description:
-            'Use export to mark functions that you package into a library.',
+        description: 'Use export to mark functions that you package into a library.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-appendix-keywords#export',
         ],
@@ -439,8 +349,7 @@ export const hlslModifiers: LanguageElementInfo[] = [
     },
     {
         name: 'groupshared',
-        description:
-            'Mark a variable for thread-group-shared memory for compute shaders.',
+        description: 'Mark a variable for thread-group-shared memory for compute shaders.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-syntax#parameters',
         ],
@@ -498,8 +407,7 @@ export const hlslModifiers: LanguageElementInfo[] = [
     },
     {
         name: 'noperspective',
-        description:
-            'Do not perform perspective-correction during interpolation.',
+        description: 'Do not perform perspective-correction during interpolation.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-struct#interpolation-modifiers-introduced-in-shader-model-4',
         ],
@@ -536,30 +444,25 @@ export const hlslModifiers: LanguageElementInfo[] = [
     },
     {
         name: 'sample',
-        description:
-            'Interpolate at sample location rather than at the pixel center.',
+        description: 'Interpolate at sample location rather than at the pixel center.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-struct#interpolation-modifiers-introduced-in-shader-model-4',
         ],
     },
     {
         name: 'shared',
-        description:
-            'Mark a variable for sharing between effects; this is a hint to the compiler.',
+        description: 'Mark a variable for sharing between effects; this is a hint to the compiler.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-syntax#parameters',
         ],
     },
     {
         name: 'snorm',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-scalar',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-scalar'],
     },
     {
         name: 'static',
-        description:
-            'Mark a local variable so that it is initialized one time and persists between function calls.',
+        description: 'Mark a local variable so that it is initialized one time and persists between function calls.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-syntax#parameters',
         ],
@@ -573,8 +476,7 @@ export const hlslModifiers: LanguageElementInfo[] = [
     },
     {
         name: 'triangleadj',
-        description:
-            'Triangle list with adjacency or triangle strip with adjacency.',
+        description: 'Triangle list with adjacency or triangle strip with adjacency.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-geometry-shader#parameters',
         ],
@@ -588,15 +490,12 @@ export const hlslModifiers: LanguageElementInfo[] = [
     },
     {
         name: 'unorm',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-scalar',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-scalar'],
     },
     { name: 'unsigned' },
     {
         name: 'volatile',
-        description:
-            'Mark a variable that changes frequently; this is a hint to the compiler.',
+        description: 'Mark a variable that changes frequently; this is a hint to the compiler.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-syntax#parameters',
         ],
@@ -612,31 +511,22 @@ export const hlslAttributes: LanguageElementInfo[] = [
     {
         name: 'domain',
         description: 'Defines the patch type used in the HS.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-domain',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-domain'],
     },
     {
         name: 'earlydepthstencil',
         description: 'Forces depth-stencil testing before a shader executes.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-earlydepthstencil',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-earlydepthstencil'],
     },
     {
         name: 'instance',
         description: 'Use this attribute to instance a geometry shader.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-instance',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-instance'],
     },
     {
         name: 'maxtessfactor',
-        description:
-            'Indicates the maximum value that the hull shader would return for any tessellation factor.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-maxtessfactor',
-        ],
+        description: 'Indicates the maximum value that the hull shader would return for any tessellation factor.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-maxtessfactor'],
     },
     {
         name: 'numthreads',
@@ -651,9 +541,7 @@ export const hlslAttributes: LanguageElementInfo[] = [
         name: 'outputcontrolpoints',
         description:
             'Defines the number of output control points (per thread) that will be created in the hull shader.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-outputcontrolpoints',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-outputcontrolpoints'],
     },
     {
         name: 'outputtopology',
@@ -665,23 +553,17 @@ export const hlslAttributes: LanguageElementInfo[] = [
     },
     {
         name: 'partitioning',
-        description:
-            'Defines the tesselation scheme to be used in the hull shader.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-partitioning',
-        ],
+        description: 'Defines the tesselation scheme to be used in the hull shader.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-partitioning'],
     },
     {
         name: 'patchconstantfunc',
         description: 'Defines the function for computing patch constant data.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-patchconstantfunc',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-patchconstantfunc'],
     },
     {
         name: 'fastopt',
-        description:
-            'Reduces the compile time but produces less aggressive optimizations.',
+        description: 'Reduces the compile time but produces less aggressive optimizations.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-for#parameters',
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-while#parameters',
@@ -698,8 +580,7 @@ export const hlslAttributes: LanguageElementInfo[] = [
     },
     {
         name: 'loop',
-        description:
-            'Use flow-control statements in the compiled shader; do not unroll the loop.',
+        description: 'Use flow-control statements in the compiled shader; do not unroll the loop.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-for#parameters',
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-while#parameters',
@@ -707,8 +588,7 @@ export const hlslAttributes: LanguageElementInfo[] = [
     },
     {
         name: 'allow_uav_condition',
-        description:
-            'Allows a compute shader loop termination condition to be based off of a UAV read.',
+        description: 'Allows a compute shader loop termination condition to be based off of a UAV read.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-for#parameters',
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-while#parameters',
@@ -716,8 +596,7 @@ export const hlslAttributes: LanguageElementInfo[] = [
     },
     {
         name: 'branch',
-        description:
-            'Evaluate only one side of the if statement depending on the given condition.',
+        description: 'Evaluate only one side of the if statement depending on the given condition.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-if#parameters',
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-switch#parameters',
@@ -725,8 +604,7 @@ export const hlslAttributes: LanguageElementInfo[] = [
     },
     {
         name: 'flatten',
-        description:
-            'Evaluate both sides of the if statement and choose between the two resulting values.',
+        description: 'Evaluate both sides of the if statement and choose between the two resulting values.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-if#parameters',
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-switch#parameters',
@@ -736,24 +614,17 @@ export const hlslAttributes: LanguageElementInfo[] = [
         name: 'call',
         description:
             'The bodies of the individual cases in the switch will be moved into hardware subroutines and the switch will be a series of subroutine calls.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-switch#parameters',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-switch#parameters'],
     },
     {
         name: 'forcecase',
         description: 'Force a switch statement in the hardware.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-switch#parameters',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-switch#parameters'],
     },
     {
         name: 'maxvertexcount',
-        description:
-            'Declaration for the maximum number of vertices to create.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-geometry-shader',
-        ],
+        description: 'Declaration for the maximum number of vertices to create.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-geometry-shader'],
     },
     {
         name: 'ifAll',
@@ -801,17 +672,13 @@ export const hlslAttributes: LanguageElementInfo[] = [
         name: 'WaveSize',
         description:
             'May be specified on compute shader entry points, to indicate that the function is only compatible with a specific wave size.',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_WaveSize.html#hlsl-attribute',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_WaveSize.html#hlsl-attribute'],
     },
     {
         name: 'WaveOpsIncludeHelperLanes',
         description:
             'The attribute indicates that the shader code requires helper lanes to participate in wave intrinsics.',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_7_Wave_Ops_Include_Helper_Lanes.html',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_7_Wave_Ops_Include_Helper_Lanes.html'],
     },
     {
         name: 'shader',
@@ -912,8 +779,7 @@ export const hlslSemantics: LanguageElementInfo[] = [
     },
     {
         name: 'VFACE',
-        description:
-            'Floating-point scalar that indicates a back-facing primitive.',
+        description: 'Floating-point scalar that indicates a back-facing primitive.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics#pixel-shader-semantics',
         ],
@@ -1018,8 +884,7 @@ export const hlslSystemValueSemantics: LanguageElementInfo[] = [
     },
     {
         name: 'SV_Coverage',
-        description:
-            'A mask that can be specified on input, output, or both of a pixel shader.',
+        description: 'A mask that can be specified on input, output, or both of a pixel shader.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics#system-value-semantics',
         ],
@@ -1098,8 +963,7 @@ export const hlslSystemValueSemantics: LanguageElementInfo[] = [
     },
     {
         name: 'SV_GSInstanceID',
-        description:
-            'Defines the instance of the geometry shader. Available as input to the geometry shader.',
+        description: 'Defines the instance of the geometry shader. Available as input to the geometry shader.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sv-gsinstanceid',
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics#system-value-semantics',
@@ -1116,8 +980,7 @@ export const hlslSystemValueSemantics: LanguageElementInfo[] = [
     },
     {
         name: 'SV_StencilRef',
-        description:
-            'SV_StencilRef represents the current pixel shader stencil reference value.',
+        description: 'SV_StencilRef represents the current pixel shader stencil reference value.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sv-stencilref',
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics#system-value-semantics',
@@ -1214,8 +1077,7 @@ export const hlslSystemValueSemantics: LanguageElementInfo[] = [
     },
     {
         name: 'SV_ShadingRate',
-        description:
-            'Variable rate shading is supported as of this shader model. Only one token was added to HLSL.',
+        description: 'Variable rate shading is supported as of this shader model. Only one token was added to HLSL.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics#system-value-semantics',
             'https://github.com/microsoft/DirectXShaderCompiler/wiki/Shader-Model-6.4#support-for-variable-rate-shading',
@@ -1236,25 +1098,20 @@ export const hlslSystemValueSemantics: LanguageElementInfo[] = [
         name: 'SV_Barycentrics',
         description:
             'This is a new system-generated value available in pixel shaders, used for example to perform interpolation over small or unaligned values like a few bits from a 32-bit value.',
-        links: [
-            'https://github.com/microsoft/DirectXShaderCompiler/wiki/SV_Barycentrics',
-        ],
+        links: ['https://github.com/microsoft/DirectXShaderCompiler/wiki/SV_Barycentrics'],
     },
     {
         name: 'SV_CullPrimitive',
         description:
             'This is a per-primitive boolean culling value that indicates whether to cull the primitive for the current view (SV_ViewID).',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/MeshShader.html#sv_cullprimitive',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/MeshShader.html#sv_cullprimitive'],
     },
 ];
 
 export const hlslStructTypes: LanguageElementInfo[] = [
     {
         name: 'RayDesc',
-        description:
-            'Passed to the TraceRay function to define the origin, direction, and extents of the ray.',
+        description: 'Passed to the TraceRay function to define the origin, direction, and extents of the ray.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3d12/raydesc',
             'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#ray-description-structure',
@@ -1271,14 +1128,11 @@ export const hlslStructTypes: LanguageElementInfo[] = [
     },
     {
         name: 'BuiltInTriangleIntersectionAttributes',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#intersection-attributes-structure',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#intersection-attributes-structure'],
     },
     {
         name: 'StateObjectConfig',
-        description:
-            'The StateObjectConfig subobject type corresponds to a D3D12_STATE_OBJECT_CONFIG structure.',
+        description: 'The StateObjectConfig subobject type corresponds to a D3D12_STATE_OBJECT_CONFIG structure.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-state-object#stateobjectconfig',
         ],
@@ -1294,8 +1148,7 @@ export const hlslStructTypes: LanguageElementInfo[] = [
     },
     {
         name: 'LocalRootSignature',
-        description:
-            'A named local root signature that can be associated with shaders.',
+        description: 'A named local root signature that can be associated with shaders.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-state-object#localrootsignature',
             'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#local-root-signature',
@@ -1312,8 +1165,7 @@ export const hlslStructTypes: LanguageElementInfo[] = [
     },
     {
         name: 'RaytracingShaderConfig',
-        description:
-            'Defines the maximum sizes in bytes for the ray payload and intersection attributes.',
+        description: 'Defines the maximum sizes in bytes for the ray payload and intersection attributes.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-state-object#raytracingshaderconfig',
             'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytracing-shader-config',
@@ -1329,11 +1181,8 @@ export const hlslStructTypes: LanguageElementInfo[] = [
     },
     {
         name: 'RaytracingPipelineConfig1',
-        description:
-            'Defines the maximum TraceRay() recursion depth as well as raytracing pipeline flags.',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytracing-pipeline-config1',
-        ],
+        description: 'Defines the maximum TraceRay() recursion depth as well as raytracing pipeline flags.',
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytracing-pipeline-config1'],
     },
     {
         name: 'TriangleHitGroup',
@@ -1358,30 +1207,22 @@ export const hlslEnumTypes: LanguageElementInfo[] = [
         name: 'RAY_FLAG',
         description:
             'Ray flags are passed to TraceRay() or RayQuery::TraceRayInline() to override transparency, culling, and early-out behavior.',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#ray-flags',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#ray-flags'],
     },
     {
         name: 'RAYTRACING_PIPELINE_FLAG',
         description: 'Flags used in Raytracing pipeline config1 subobject.',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytracing-pipeline-flags',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytracing-pipeline-flags'],
     },
     {
         name: 'COMMITTED_STATUS',
         description: 'Return value for RayQuery::CommittedStatus().',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#committed_status',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#committed_status'],
     },
     {
         name: 'CANDIDATE_TYPE',
         description: 'Return value for RayQuery::CandidateType().',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#candidate_type',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#candidate_type'],
     },
 ];
 
@@ -1390,288 +1231,196 @@ export const hlslBufferTypes: LanguageElementInfo[] = [
         name: 'AppendStructuredBuffer',
         description:
             'Output buffer that appears as a stream the shader may append to. Only structured buffers can take T types that are structures.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-appendstructuredbuffer',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-appendstructuredbuffer'],
     },
     {
         name: 'Buffer',
-        description:
-            'Buffer type as it exists in Shader Model 4 plus resource variables and buffer info.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-buffer',
-        ],
+        description: 'Buffer type as it exists in Shader Model 4 plus resource variables and buffer info.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-buffer'],
     },
     {
         name: 'ByteAddressBuffer',
         description: 'A read-only buffer that is indexed in bytes.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-byteaddressbuffer',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-byteaddressbuffer'],
     },
     {
         name: 'ConsumeStructuredBuffer',
         description:
             'An input buffer that appears as a stream the shader may pull values from. Only structured buffers can take T types that are structures.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-consumestructuredbuffer',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-consumestructuredbuffer'],
     },
     {
         name: 'RWBuffer',
         description: 'A read/write buffer.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwbuffer',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwbuffer'],
     },
     {
         name: 'RWByteAddressBuffer',
         description: 'A read/write buffer that indexes in bytes.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwbyteaddressbuffer',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwbyteaddressbuffer'],
     },
     {
         name: 'RWStructuredBuffer',
-        description:
-            'A read/write buffer that can take a T type that is a structure.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwstructuredbuffer',
-        ],
+        description: 'A read/write buffer that can take a T type that is a structure.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwstructuredbuffer'],
     },
     {
         name: 'StructuredBuffer',
-        description:
-            'A read-only buffer, which can take a T type that is a structure.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-structuredbuffer',
-        ],
+        description: 'A read-only buffer, which can take a T type that is a structure.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-structuredbuffer'],
     },
     {
         name: 'cbuffer',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-constants',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-constants'],
     },
     {
         name: 'tbuffer',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-constants',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-constants'],
     },
     {
         name: 'ConstantBuffer',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3d12/resource-binding-in-hlsl#constant-buffers',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3d12/resource-binding-in-hlsl#constant-buffers'],
     },
     {
         name: 'RasterizerOrderedBuffer',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/shader-model-5-1-objects',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/shader-model-5-1-objects'],
     },
     {
         name: 'RasterizerOrderedByteAddressBuffer',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/shader-model-5-1-objects',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/shader-model-5-1-objects'],
     },
     {
         name: 'RasterizerOrderedStructuredBuffer',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/shader-model-5-1-objects',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/shader-model-5-1-objects'],
     },
 ];
 
 export const hlslTextureTypes: LanguageElementInfo[] = [
     {
         name: 'sampler',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler'],
     },
     {
         name: 'sampler1D',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler'],
     },
     {
         name: 'sampler2D',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler'],
     },
     {
         name: 'sampler3D',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler'],
     },
     {
         name: 'samplerCUBE',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler'],
     },
     {
         name: 'texture',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texture',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texture'],
     },
     {
         name: 'texture1D',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texture',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texture'],
     },
     {
         name: 'texture2D',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texture',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texture'],
     },
     {
         name: 'texture3D',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texture',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texture'],
     },
     {
         name: 'textureCUBE',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texture',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texture'],
     },
     {
         name: 'RWTexture1D',
         description: 'A read/write resource.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture1d',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture1d'],
     },
     {
         name: 'RWTexture1D',
         description: 'A read/write resource.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture1d',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture1d'],
     },
     {
         name: 'RWTexture1DArray',
         description: 'A read/write resource.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture1darray',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture1darray'],
     },
     {
         name: 'RWTexture2D',
         description: 'A read/write resource.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture2d',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture2d'],
     },
     {
         name: 'RWTexture2DArray',
         description: 'A read/write resource.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture2darray',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture2darray'],
     },
     {
         name: 'RWTexture3D',
         description: 'A read/write resource.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture3d',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture3d'],
     },
     {
         name: 'Texture1D',
-        description:
-            'A 1D texture type (as it exists in Shader Model 4) plus resource variables.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture1d',
-        ],
+        description: 'A 1D texture type (as it exists in Shader Model 4) plus resource variables.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture1d'],
     },
     {
         name: 'Texture1DArray',
-        description:
-            'Texture1DArray type (as it exists in Shader Model 4) plus resource variables.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture1darray',
-        ],
+        description: 'Texture1DArray type (as it exists in Shader Model 4) plus resource variables.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture1darray'],
     },
     {
         name: 'Texture2D',
-        description:
-            'Texture2D type (as it exists in Shader Model 4) plus resource variables.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture2d',
-        ],
+        description: 'Texture2D type (as it exists in Shader Model 4) plus resource variables.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture2d'],
     },
     {
         name: 'Texture2DArray',
-        description:
-            'Texture2DArray type (as it exists in Shader Model 4) plus resource variables.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture2darray',
-        ],
+        description: 'Texture2DArray type (as it exists in Shader Model 4) plus resource variables.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture2darray'],
     },
     {
         name: 'Texture2DMS',
-        description:
-            'Texture2DMS type (as it exists in Shader Model 4) plus resource variables.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture2dms',
-        ],
+        description: 'Texture2DMS type (as it exists in Shader Model 4) plus resource variables.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture2dms'],
     },
     {
         name: 'Texture2DMSArray',
-        description:
-            'Texture2DMSArray type (as it exists in Shader Model 4) plus resource variables.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture2dmsarray',
-        ],
+        description: 'Texture2DMSArray type (as it exists in Shader Model 4) plus resource variables.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture2dmsarray'],
     },
     {
         name: 'Texture3D',
-        description:
-            'Texture3D type (as it exists in Shader Model 4) plus resource variables.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture3d',
-        ],
+        description: 'Texture3D type (as it exists in Shader Model 4) plus resource variables.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture3d'],
     },
     {
         name: 'TextureCube',
-        description:
-            'TextureCube type (as it exists in Shader Model 4) plus resource variables.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/texturecube',
-        ],
+        description: 'TextureCube type (as it exists in Shader Model 4) plus resource variables.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/texturecube'],
     },
     {
         name: 'TextureCubeArray',
-        description:
-            'TextureCubeArray type (as it exists in Shader Model 4) plus resource variables.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/texturecubearray',
-        ],
+        description: 'TextureCubeArray type (as it exists in Shader Model 4) plus resource variables.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/texturecubearray'],
     },
     {
         name: 'FeedbackTexture2D',
-        description:
-            'For writing to feedback maps using template parameter type.',
+        description: 'For writing to feedback maps using template parameter type.',
         links: [
             'https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html#hlsl-constructs-for-writing-to-feedback-maps-1',
         ],
     },
     {
         name: 'FeedbackTexture2DArray',
-        description:
-            'For writing to feedback maps using template parameter type.',
+        description: 'For writing to feedback maps using template parameter type.',
         links: [
             'https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html#hlsl-constructs-for-writing-to-feedback-maps-1',
         ],
@@ -1720,61 +1469,44 @@ export const hlslNonPrimitiveTypes: LanguageElementInfo[] = [
     },
     {
         name: 'InputPatch',
-        description:
-            'Represents an array of control points that are available to the hull shader as inputs.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-inputpatch',
-        ],
+        description: 'Represents an array of control points that are available to the hull shader as inputs.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-inputpatch'],
     },
     {
         name: 'LineStream',
         description: 'A sequence of line primitives.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-so-type',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-so-type'],
     },
     {
         name: 'OutputPatch',
         description:
             "Represents an array of output control points that are available to the hull shader's patch-constant function as well as the domain shader.",
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-outputpatch',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-outputpatch'],
     },
     {
         name: 'PointStream',
         description: 'A sequence of point primitives.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-so-type',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-so-type'],
     },
     {
         name: 'RasterizerState',
     },
     {
         name: 'SamplerState',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler'],
     },
     {
         name: 'SamplerComparisonState',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler'],
     },
     {
         name: 'TriangleStream',
         description: 'A sequence of triangle primitives.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-so-type',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-so-type'],
     },
     {
         name: 'sampler_state',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sampler'],
     },
     {
         name: 'ComputeShader',
@@ -1806,9 +1538,7 @@ export const hlslNonPrimitiveTypes: LanguageElementInfo[] = [
     {
         name: 'RayQuery',
         description: 'Enables inline access to raytracing operations.',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#rayquery',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#rayquery'],
     },
 ];
 
@@ -1817,25 +1547,19 @@ export const hlslVectorMatrixStringTypes: LanguageElementInfo[] = [
         name: 'vector',
         description:
             'A vector contains between one and four scalar components; every component of a vector must be of the same type.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-vector',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-vector'],
     },
     {
         name: 'matrix',
         description:
             'A matrix is a special data type that contains between one and sixteen components. Every component of a matrix must be of the same type.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-matrix',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-matrix'],
     },
     {
         name: 'string',
         description:
             'HLSL also supports a string type, which is an ASCII string. There are no operations or states that accept strings; but effects can query string parameters and annotations.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-scalar#string-type',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-scalar#string-type'],
     },
 ];
 
@@ -1843,9 +1567,7 @@ export const hlslPrimitiveTypes: LanguageElementInfo[] = [
     {
         name: 'bool',
         description: 'true or false.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-scalar',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-scalar'],
     },
     {
         name: 'int',
@@ -1866,9 +1588,7 @@ export const hlslPrimitiveTypes: LanguageElementInfo[] = [
     {
         name: 'dword',
         description: '32-bit unsigned integer.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-scalar',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-scalar'],
     },
     {
         name: 'half',
@@ -1977,39 +1697,27 @@ export const hlslPrimitiveTypes: LanguageElementInfo[] = [
     },
     {
         name: 'float32_t',
-        links: [
-            'https://github.com/microsoft/DirectXShaderCompiler/wiki/16-Bit-Scalar-Types',
-        ],
+        links: ['https://github.com/microsoft/DirectXShaderCompiler/wiki/16-Bit-Scalar-Types'],
     },
     {
         name: 'float64_t',
-        links: [
-            'https://github.com/microsoft/DirectXShaderCompiler/wiki/16-Bit-Scalar-Types',
-        ],
+        links: ['https://github.com/microsoft/DirectXShaderCompiler/wiki/16-Bit-Scalar-Types'],
     },
     {
         name: 'int32_t',
-        links: [
-            'https://github.com/microsoft/DirectXShaderCompiler/wiki/16-Bit-Scalar-Types',
-        ],
+        links: ['https://github.com/microsoft/DirectXShaderCompiler/wiki/16-Bit-Scalar-Types'],
     },
     {
         name: 'uint32_t',
-        links: [
-            'https://github.com/microsoft/DirectXShaderCompiler/wiki/16-Bit-Scalar-Types',
-        ],
+        links: ['https://github.com/microsoft/DirectXShaderCompiler/wiki/16-Bit-Scalar-Types'],
     },
     {
         name: 'uint8_t4_packed',
-        links: [
-            'https://github.com/microsoft/DirectXShaderCompiler/wiki/16-Bit-Scalar-Types',
-        ],
+        links: ['https://github.com/microsoft/DirectXShaderCompiler/wiki/16-Bit-Scalar-Types'],
     },
     {
         name: 'int8_t4_packed',
-        links: [
-            'https://github.com/microsoft/DirectXShaderCompiler/wiki/16-Bit-Scalar-Types',
-        ],
+        links: ['https://github.com/microsoft/DirectXShaderCompiler/wiki/16-Bit-Scalar-Types'],
     },
 ];
 
@@ -2034,87 +1742,61 @@ export const hlslFunctions: LanguageElementInfo[] = [
         description:
             'Submits an error message to the information queue and terminates the current draw or dispatch call being executed.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/abort',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/abort'],
     },
     {
         name: 'abs',
         description: 'Returns the absolute value of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-abs',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-abs'],
     },
     {
         name: 'acos',
         description: 'Returns the arccosine of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-acos',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-acos'],
     },
     {
         name: 'all',
-        description:
-            'Determines if all components of the specified value are non-zero.',
+        description: 'Determines if all components of the specified value are non-zero.',
         type: 'bool',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-all',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-all'],
     },
     {
         name: 'AllMemoryBarrier',
-        description:
-            'Blocks execution of all threads in a group until all memory accesses have been completed.',
+        description: 'Blocks execution of all threads in a group until all memory accesses have been completed.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/allmemorybarrier',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/allmemorybarrier'],
     },
     {
         name: 'AllMemoryBarrierWithGroupSync',
         description:
             'Blocks execution of all threads in a group until all memory accesses have been completed and all threads in the group have reached this call.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/allmemorybarrierwithgroupsync',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/allmemorybarrierwithgroupsync'],
     },
     {
         name: 'any',
-        description:
-            'Determines if any components of the specified value are non-zero.',
+        description: 'Determines if any components of the specified value are non-zero.',
         type: 'bool',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-any',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-any'],
     },
     {
         name: 'asdouble',
-        description:
-            'Reinterprets a cast value (two 32-bit values) into a double.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/asdouble',
-        ],
+        description: 'Reinterprets a cast value (two 32-bit values) into a double.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/asdouble'],
     },
     {
         name: 'asfloat',
-        description:
-            'Interprets the bit pattern of x as a floating-point number.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-asfloat',
-        ],
+        description: 'Interprets the bit pattern of x as a floating-point number.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-asfloat'],
     },
     {
         name: 'asin',
         description: 'Returns the arcsine of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-asin',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-asin'],
     },
     {
         name: 'asint',
-        description:
-            'Interprets the bit pattern of an input value as an integer.',
+        description: 'Interprets the bit pattern of an input value as an integer.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-asint',
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/asint',
@@ -2122,8 +1804,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'asuint',
-        description:
-            'Reinterprets the bit pattern of a 64-bit value as two unsigned 32-bit integers.',
+        description: 'Reinterprets the bit pattern of a 64-bit value as two unsigned 32-bit integers.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-asuint',
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/asuint',
@@ -2132,90 +1813,62 @@ export const hlslFunctions: LanguageElementInfo[] = [
     {
         name: 'atan',
         description: 'Returns the arctangent of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-atan',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-atan'],
     },
     {
         name: 'atan2',
         description: 'Returns the arctangent of two values (x,y).',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-atan2',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-atan2'],
     },
     {
         name: 'ceil',
-        description:
-            'Returns the smallest integer value that is greater than or equal to the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-ceil',
-        ],
+        description: 'Returns the smallest integer value that is greater than or equal to the specified value.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-ceil'],
     },
     {
         name: 'CheckAccessFullyMapped',
         description:
             'Determines whether all values from a Sample, Gather, or Load operation accessed mapped tiles in a tiled resource.',
         type: 'bool',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/checkaccessfullymapped',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/checkaccessfullymapped'],
     },
     {
         name: 'clamp',
-        description:
-            'Clamps the specified value to the specified minimum and maximum range.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-clamp',
-        ],
+        description: 'Clamps the specified value to the specified minimum and maximum range.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-clamp'],
     },
     {
         name: 'clip',
-        description:
-            'Discards the current pixel if the specified value is less than zero.',
+        description: 'Discards the current pixel if the specified value is less than zero.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-clip',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-clip'],
     },
     {
         name: 'cos',
         description: 'Returns the cosine of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-cos',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-cos'],
     },
     {
         name: 'cosh',
         description: 'Returns the hyperbolic cosine of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-cosh',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-cosh'],
     },
     {
         name: 'countbits',
-        description:
-            'Counts the number of bits (per component) set in the input integer.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/countbits',
-        ],
+        description: 'Counts the number of bits (per component) set in the input integer.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/countbits'],
     },
     {
         name: 'cross',
-        description:
-            'Returns the cross product of two floating-point, 3D vectors.',
+        description: 'Returns the cross product of two floating-point, 3D vectors.',
         type: 'float3',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-cross',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-cross'],
     },
     {
         name: 'D3DCOLORtoUBYTE4',
-        description:
-            'Converts a floating-point, 4D vector set by a D3DCOLOR to a UBYTE4.',
+        description: 'Converts a floating-point, 4D vector set by a D3DCOLOR to a UBYTE4.',
         type: 'int4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-d3dcolortoubyte4',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-d3dcolortoubyte4'],
     },
     {
         name: 'ddx',
@@ -2228,8 +1881,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'ddx_coarse',
-        description:
-            'Computes a low precision partial derivative with respect to the screen-space x-coordinate.',
+        description: 'Computes a low precision partial derivative with respect to the screen-space x-coordinate.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/ddx-coarse',
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Derivatives.html#derivative-functions',
@@ -2237,8 +1889,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'ddx_fine',
-        description:
-            'Computes a high precision partial derivative with respect to the screen-space x-coordinate.',
+        description: 'Computes a high precision partial derivative with respect to the screen-space x-coordinate.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/ddx-fine',
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Derivatives.html#derivative-functions',
@@ -2255,8 +1906,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'ddy_coarse',
-        description:
-            'Computes a low precision partial derivative with respect to the screen-space y-coordinate.',
+        description: 'Computes a low precision partial derivative with respect to the screen-space y-coordinate.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/ddy-coarse',
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Derivatives.html#derivative-functions',
@@ -2264,8 +1914,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'ddy_fine',
-        description:
-            'Computes a high precision partial derivative with respect to the screen-space x-coordinate.',
+        description: 'Computes a high precision partial derivative with respect to the screen-space x-coordinate.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/ddy-fine',
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Derivatives.html#derivative-functions',
@@ -2274,192 +1923,135 @@ export const hlslFunctions: LanguageElementInfo[] = [
     {
         name: 'degrees',
         description: 'Converts the specified value from radians to degrees.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-degrees',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-degrees'],
     },
     {
         name: 'determinant',
-        description:
-            'Returns the determinant of the specified floating-point, square matrix.',
+        description: 'Returns the determinant of the specified floating-point, square matrix.',
         type: 'float',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-determinant',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-determinant'],
     },
     {
         name: 'DeviceMemoryBarrier',
-        description:
-            'Blocks execution of all threads in a group until all device memory accesses have been completed.',
+        description: 'Blocks execution of all threads in a group until all device memory accesses have been completed.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/devicememorybarrier',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/devicememorybarrier'],
     },
     {
         name: 'DeviceMemoryBarrierWithGroupSync',
         description:
             'Blocks execution of all threads in a group until all device memory accesses have been completed and all threads in the group have reached this call.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/devicememorybarrierwithgroupsync',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/devicememorybarrierwithgroupsync'],
     },
     {
         name: 'distance',
         description: 'Returns a distance scalar between two vectors.',
         type: 'float',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-distance',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-distance'],
     },
     {
         name: 'dot',
         description: 'Returns the dot product of two vectors.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-dot',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-dot'],
     },
     {
         name: 'dst',
         description: 'Calculates a distance vector.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dst',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dst'],
     },
     {
         name: 'errorf',
         description: 'Submits an error message to the information queue.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/errorf',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/errorf'],
     },
     {
         name: 'EvaluateAttributeCentroid',
         description: 'Evaluates at the pixel centroid.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/evaluateattributecentroid',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/evaluateattributecentroid'],
     },
     {
         name: 'EvaluateAttributeAtSample',
         description: 'Evaluates at the indexed sample location.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/evaluateattributeatsample',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/evaluateattributeatsample'],
     },
     {
         name: 'EvaluateAttributeSnapped',
         description: 'Evaluates at the pixel centroid with an offset.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/evaluateattributesnapped',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/evaluateattributesnapped'],
     },
     {
         name: 'exp',
-        description:
-            'Returns the base-e exponential, or eⁿ, of the specified value.',
+        description: 'Returns the base-e exponential, or eⁿ, of the specified value.',
         //used e^n, instead of e^x, because there is a superscript unicode character for n, but not for x
         //<sup> doesn't work, because IDEs sanitize HTML
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-exp',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-exp'],
     },
     {
         name: 'exp2',
-        description:
-            'Returns the base 2 exponential, or 2ⁿ, of the specified value.',
+        description: 'Returns the base 2 exponential, or 2ⁿ, of the specified value.',
         //same as exp
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-exp2',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-exp2'],
     },
     {
         name: 'f16tof32',
-        description:
-            'Converts the float16 stored in the low-half of the uint to a float.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/f16tof32',
-        ],
+        description: 'Converts the float16 stored in the low-half of the uint to a float.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/f16tof32'],
     },
     {
         name: 'f32tof16',
         description: 'Converts an input into a float16 type.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/f32tof16',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/f32tof16'],
     },
     {
         name: 'faceforward',
         description:
             'Flips the surface-normal (if needed) to face in a direction opposite to i; returns the result in n.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-faceforward',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-faceforward'],
     },
     {
         name: 'firstbithigh',
         description:
             'Gets the location of the first set bit starting from the highest order bit and working downward, per component.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/firstbithigh',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/firstbithigh'],
     },
     {
         name: 'firstbitlow',
         description:
             'Returns the location of the first set bit starting from the lowest order bit and working upward, per component.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/firstbitlow',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/firstbitlow'],
     },
     {
         name: 'floor',
-        description:
-            'Returns the largest integer that is less than or equal to the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-floor',
-        ],
+        description: 'Returns the largest integer that is less than or equal to the specified value.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-floor'],
     },
     {
         name: 'fma',
-        description:
-            'Returns the double-precision fused multiply-addition of a * b + c.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-fma',
-        ],
+        description: 'Returns the double-precision fused multiply-addition of a * b + c.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-fma'],
     },
     {
         name: 'fmod',
         description: 'Returns the floating-point remainder of x/y.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-fmod',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-fmod'],
     },
     {
         name: 'frac',
         description:
             'Returns the fractional (or decimal) part of x; which is greater than or equal to 0 and less than 1.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-frac',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-frac'],
     },
     {
         name: 'frexp',
-        description:
-            'Returns the mantissa and exponent of the specified floating-point value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-frexp',
-        ],
+        description: 'Returns the mantissa and exponent of the specified floating-point value.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-frexp'],
     },
     {
         name: 'fwidth',
-        description:
-            'Returns the absolute value of the partial derivatives of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-fwidth',
-        ],
+        description: 'Returns the absolute value of the partial derivatives of the specified value.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-fwidth'],
     },
     {
         name: 'GetRenderTargetSampleCount',
@@ -2471,8 +2063,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'GetRenderTargetSamplePosition',
-        description:
-            'Gets the sampling position (x,y) for a given sample index.',
+        description: 'Gets the sampling position (x,y) for a given sample index.',
         type: 'float2',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-getrendertargetsampleposition',
@@ -2480,26 +2071,20 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'GroupMemoryBarrier',
-        description:
-            'Blocks execution of all threads in a group until all group shared accesses have been completed.',
+        description: 'Blocks execution of all threads in a group until all group shared accesses have been completed.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/groupmemorybarrier',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/groupmemorybarrier'],
     },
     {
         name: 'GroupMemoryBarrierWithGroupSync',
         description:
             'Blocks execution of all threads in a group until all group shared accesses have been completed and all threads in the group have reached this call.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/groupmemorybarrierwithgroupsync',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/groupmemorybarrierwithgroupsync'],
     },
     {
         name: 'InterlockedAdd',
-        description:
-            'Performs a guaranteed atomic add of value to the dest resource variable.',
+        description: 'Performs a guaranteed atomic add of value to the dest resource variable.',
         type: 'void',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/interlockedadd',
@@ -2582,376 +2167,256 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'isfinite',
-        description:
-            'Determines if the specified floating-point value is finite.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-isfinite',
-        ],
+        description: 'Determines if the specified floating-point value is finite.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-isfinite'],
     },
     {
         name: 'isinf',
         description: 'Determines if the specified value is infinite.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-isinf',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-isinf'],
     },
     {
         name: 'isnan',
         description: 'Determines if the specified value is NAN or QNAN.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-isnan',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-isnan'],
     },
     {
         name: 'ldexp',
         description:
             'Returns the result of multiplying the specified value by two, raised to the power of the specified exponent.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-ldexp',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-ldexp'],
     },
     {
         name: 'length',
-        description:
-            'Returns the length of the specified floating-point vector.',
+        description: 'Returns the length of the specified floating-point vector.',
         type: 'float',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-length',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-length'],
     },
     {
         name: 'lerp',
         description: 'Performs a linear interpolation.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-lerp',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-lerp'],
     },
     {
         name: 'lit',
         description: 'Returns a lighting coefficient vector.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-lit',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-lit'],
     },
     {
         name: 'log',
         description: 'Returns the base-e logarithm of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-log',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-log'],
     },
     {
         name: 'log10',
         description: 'Returns the base-10 logarithm of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-log10',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-log10'],
     },
     {
         name: 'log2',
         description: 'Returns the base-2 logarithm of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-log2',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-log2'],
     },
     {
         name: 'mad',
-        description:
-            'Performs an arithmetic multiply/add operation on three values.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/mad',
-        ],
+        description: 'Performs an arithmetic multiply/add operation on three values.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/mad'],
     },
     {
         name: 'max',
         description: 'Selects the greater of x and y.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-max',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-max'],
     },
     {
         name: 'min',
         description: 'Selects the lesser of x and y.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-min',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-min'],
     },
     {
         name: 'modf',
-        description:
-            'Splits the value x into fractional and integer parts, each of which has the same sign as x.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-modf',
-        ],
+        description: 'Splits the value x into fractional and integer parts, each of which has the same sign as x.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-modf'],
     },
     {
         name: 'msad4',
         description:
             'Compares a 4-byte reference value and an 8-byte source value and accumulates a vector of 4 sums. Each sum corresponds to the masked sum of absolute differences of a different byte alignment between the reference value and the source value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-msad4',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-msad4'],
     },
     {
         name: 'mul',
-        description:
-            'Multiplies x and y using matrix math. The inner dimension x-columns and y-rows must be equal.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-mul',
-        ],
+        description: 'Multiplies x and y using matrix math. The inner dimension x-columns and y-rows must be equal.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-mul'],
     },
     {
         name: 'noise',
-        description:
-            'Generates a random value using the Perlin-noise algorithm.',
+        description: 'Generates a random value using the Perlin-noise algorithm.',
         type: 'float',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-noise',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-noise'],
     },
     {
         name: 'normalize',
-        description:
-            'Normalizes the specified floating-point vector according to x / length(x).',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-normalize',
-        ],
+        description: 'Normalizes the specified floating-point vector according to x / length(x).',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-normalize'],
     },
     {
         name: 'pow',
-        description:
-            'Returns the specified value raised to the specified power.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-pow',
-        ],
+        description: 'Returns the specified value raised to the specified power.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-pow'],
     },
     {
         name: 'printf',
-        description:
-            'Submits a custom shader message to the information queue.',
+        description: 'Submits a custom shader message to the information queue.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/printf',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/printf'],
     },
     {
         name: 'Process2DQuadTessFactorsAvg',
-        description:
-            'Generates the corrected tessellation factors for a quad patch.',
+        description: 'Generates the corrected tessellation factors for a quad patch.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/process2dquadtessfactorsavg',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/process2dquadtessfactorsavg'],
     },
     {
         name: 'Process2DQuadTessFactorsMax',
-        description:
-            'Generates the corrected tessellation factors for a quad patch.',
+        description: 'Generates the corrected tessellation factors for a quad patch.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/process2dquadtessfactorsmax',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/process2dquadtessfactorsmax'],
     },
     {
         name: 'Process2DQuadTessFactorsMin',
-        description:
-            'Generates the corrected tessellation factors for a quad patch.',
+        description: 'Generates the corrected tessellation factors for a quad patch.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/process2dquadtessfactorsmin',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/process2dquadtessfactorsmin'],
     },
     {
         name: 'ProcessIsolineTessFactors',
-        description:
-            'Generates the rounded tessellation factors for an isoline.',
+        description: 'Generates the rounded tessellation factors for an isoline.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processisolinetessfactors',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processisolinetessfactors'],
     },
     {
         name: 'ProcessQuadTessFactorsAvg',
-        description:
-            'Generates the corrected tessellation factors for a quad patch.',
+        description: 'Generates the corrected tessellation factors for a quad patch.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processquadtessfactorsavg',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processquadtessfactorsavg'],
     },
     {
         name: 'ProcessQuadTessFactorsMax',
-        description:
-            'Generates the corrected tessellation factors for a quad patch.',
+        description: 'Generates the corrected tessellation factors for a quad patch.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processquadtessfactorsmax',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processquadtessfactorsmax'],
     },
     {
         name: 'ProcessQuadTessFactorsMin',
-        description:
-            'Generates the corrected tessellation factors for a quad patch.',
+        description: 'Generates the corrected tessellation factors for a quad patch.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processquadtessfactorsmin',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processquadtessfactorsmin'],
     },
     {
         name: 'ProcessTriTessFactorsAvg',
-        description:
-            'Generates the corrected tessellation factors for a tri patch.',
+        description: 'Generates the corrected tessellation factors for a tri patch.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processtritessfactorsavg',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processtritessfactorsavg'],
     },
     {
         name: 'ProcessTriTessFactorsMax',
-        description:
-            'Generates the corrected tessellation factors for a tri patch.',
+        description: 'Generates the corrected tessellation factors for a tri patch.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processtritessfactorsmax',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processtritessfactorsmax'],
     },
     {
         name: 'ProcessTriTessFactorsMin',
-        description:
-            'Generates the corrected tessellation factors for a tri patch.',
+        description: 'Generates the corrected tessellation factors for a tri patch.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processtritessfactorsmin',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/processtritessfactorsmin'],
     },
     {
         name: 'radians',
         description: 'Converts the specified value from degrees to radians.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-radians',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-radians'],
     },
     {
         name: 'rcp',
-        description:
-            'Calculates a fast, approximate, per-component reciprocal.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/rcp',
-        ],
+        description: 'Calculates a fast, approximate, per-component reciprocal.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/rcp'],
     },
     {
         name: 'reflect',
-        description:
-            'Returns a reflection vector using an incident ray and a surface normal.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-reflect',
-        ],
+        description: 'Returns a reflection vector using an incident ray and a surface normal.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-reflect'],
     },
     {
         name: 'refract',
-        description:
-            'Returns a refraction vector using an entering ray, a surface normal, and a refraction index.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-refract',
-        ],
+        description: 'Returns a refraction vector using an entering ray, a surface normal, and a refraction index.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-refract'],
     },
     {
         name: 'reversebits',
         description: 'Reverses the order of the bits, per component.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/reversebits',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/reversebits'],
     },
     {
         name: 'round',
         description:
             'Rounds the specified value to the nearest integer. Halfway cases are rounded to the nearest even.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-round',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-round'],
     },
     {
         name: 'rsqrt',
-        description:
-            'Returns the reciprocal of the square root of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-rsqrt',
-        ],
+        description: 'Returns the reciprocal of the square root of the specified value.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-rsqrt'],
     },
     {
         name: 'saturate',
         description: 'Clamps the specified value within the range of 0 to 1.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-saturate',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-saturate'],
     },
     {
         name: 'sign',
         description: 'Returns the sign of x.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sign',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sign'],
     },
     {
         name: 'sin',
         description: 'Returns the sine of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sin',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sin'],
     },
     {
         name: 'sincos',
         description: 'Returns the sine and cosine of x.',
         type: 'void',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sincos',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sincos'],
     },
     {
         name: 'sinh',
         description: 'Returns the hyperbolic sine of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sinh',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sinh'],
     },
     {
         name: 'smoothstep',
-        description:
-            'Returns a smooth Hermite interpolation between 0 and 1, if x is in the range [min, max].',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-smoothstep',
-        ],
+        description: 'Returns a smooth Hermite interpolation between 0 and 1, if x is in the range [min, max].',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-smoothstep'],
     },
     {
         name: 'sqrt',
-        description:
-            'Returns the square root of the specified floating-point value, per component.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sqrt',
-        ],
+        description: 'Returns the square root of the specified floating-point value, per component.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-sqrt'],
     },
     {
         name: 'step',
-        description:
-            'Compares two values, returning 0 or 1 based on which value is greater.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-step',
-        ],
+        description: 'Compares two values, returning 0 or 1 based on which value is greater.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-step'],
     },
     {
         name: 'tan',
         description: 'Returns the tangent of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tan',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tan'],
     },
     {
         name: 'tanh',
         description: 'Returns the hyperbolic tangent of the specified value.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tanh',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tanh'],
     },
     {
         name: 'tex1D',
@@ -2966,79 +2431,57 @@ export const hlslFunctions: LanguageElementInfo[] = [
         name: 'tex1Dbias',
         description: 'Samples a 1D texture after biasing the mip level by t.w.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1dbias',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1dbias'],
     },
     {
         name: 'tex1Dgrad',
-        description:
-            'Samples a 1D texture using a gradient to select the mip level.',
+        description: 'Samples a 1D texture using a gradient to select the mip level.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1dgrad',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1dgrad'],
     },
     {
         name: 'tex1Dlod',
-        description:
-            'Samples a 1D texture with mipmaps. The mipmap LOD is specified in t.w.',
+        description: 'Samples a 1D texture with mipmaps. The mipmap LOD is specified in t.w.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1dlod',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1dlod'],
     },
     {
         name: 'tex1Dproj',
         description:
             'Samples a 1D texture using a projective divide; the texture coordinate is divided by t.w before the lookup takes place.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1dproj',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1dproj'],
     },
     {
         name: 'tex2D',
         description: 'Samples a 2D texture.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2d',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2d'],
     },
     {
         name: 'tex2Dbias',
         description: 'Samples a 2D texture after biasing the mip level by t.w.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2dbias',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2dbias'],
     },
     {
         name: 'tex2Dgrad',
-        description:
-            'Samples a 2D texture using a gradient to select the mip level.',
+        description: 'Samples a 2D texture using a gradient to select the mip level.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2dgrad',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2dgrad'],
     },
     {
         name: 'tex2Dlod',
-        description:
-            'Samples a 2D texture with mipmaps. The mipmap LOD is specified in t.w.',
+        description: 'Samples a 2D texture with mipmaps. The mipmap LOD is specified in t.w.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2dlod',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2dlod'],
     },
     {
         name: 'tex2Dproj',
         description:
             'Samples a 2D texture using a projective divide; the texture coordinate is divided by t.w before the lookup takes place.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2dproj',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2dproj'],
     },
     {
         name: 'tex3D',
@@ -3053,36 +2496,26 @@ export const hlslFunctions: LanguageElementInfo[] = [
         name: 'tex3Dbias',
         description: 'Samples a 3D texture after biasing the mip level by t.w.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3dbias',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3dbias'],
     },
     {
         name: 'tex3Dgrad',
-        description:
-            'Samples a 3D texture using a gradient to select the mip level.',
+        description: 'Samples a 3D texture using a gradient to select the mip level.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3dgrad',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3dgrad'],
     },
     {
         name: 'tex3Dlod',
-        description:
-            'Samples a 3D texture with mipmaps. The mipmap LOD is specified in t.w.',
+        description: 'Samples a 3D texture with mipmaps. The mipmap LOD is specified in t.w.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3dlod',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3dlod'],
     },
     {
         name: 'tex3Dproj',
         description:
             'Samples a 3D texture using a projective divide; the texture coordinate is divided by t.w before the lookup takes place.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3dproj',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3dproj'],
     },
     {
         name: 'texCUBE',
@@ -3095,63 +2528,44 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'texCUBEbias',
-        description:
-            'Samples a cube texture after biasing the mip level by t.w.',
+        description: 'Samples a cube texture after biasing the mip level by t.w.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcubebias',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcubebias'],
     },
     {
         name: 'texCUBEgrad',
-        description:
-            'Samples a cube texture using a gradient to select the mip level.',
+        description: 'Samples a cube texture using a gradient to select the mip level.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcubegrad',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcubegrad'],
     },
     {
         name: 'texCUBElod',
-        description:
-            'Samples a cube texture with mipmaps. The mipmap LOD is specified in t.w.',
+        description: 'Samples a cube texture with mipmaps. The mipmap LOD is specified in t.w.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcubelod',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcubelod'],
     },
     {
         name: 'texCUBEproj',
         description:
             'Samples a cube texture using a projective divide; the texture coordinate is divided by t.w before the lookup takes place.',
         type: 'float4',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcubeproj',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcubeproj'],
     },
     {
         name: 'transpose',
         description: 'Transposes the specified input matrix.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-transpose',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-transpose'],
     },
     {
         name: 'trunc',
-        description:
-            'Truncates a floating-point value to the integer component.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-trunc',
-        ],
+        description: 'Truncates a floating-point value to the integer component.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-trunc'],
     },
     // shader model 6
     {
         name: 'QuadReadAcrossDiagonal',
-        description:
-            'Returns the specified local value which is read from the diagonally opposite lane in this quad.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/quadreadacrossdiagonal',
-        ],
+        description: 'Returns the specified local value which is read from the diagonally opposite lane in this quad.',
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/quadreadacrossdiagonal'],
     },
     {
         name: 'QuadReadLaneAt',
@@ -3164,8 +2578,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'QuadReadAcrossX',
-        description:
-            'Returns the specified local value read from the other lane in this quad in the X direction.',
+        description: 'Returns the specified local value read from the other lane in this quad in the X direction.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/quadswapx',
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Derivatives.html#quad-read-functions',
@@ -3173,8 +2586,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'QuadReadAcrossY',
-        description:
-            'Returns the specified source value read from the other lane in this quad in the Y direction.',
+        description: 'Returns the specified source value read from the other lane in this quad in the Y direction.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/quadswapy',
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Derivatives.html#quad-read-functions',
@@ -3264,8 +2676,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'WaveActiveAllTrue',
-        description:
-            'Returns true if the expression is true in all active lanes in the current wave.',
+        description: 'Returns true if the expression is true in all active lanes in the current wave.',
         type: 'bool',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/wavealltrue',
@@ -3274,8 +2685,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'WaveActiveAnyTrue',
-        description:
-            'Returns true if the expression is true in any of the active lanes in the current wave.',
+        description: 'Returns true if the expression is true in any of the active lanes in the current wave.',
         type: 'bool',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveanytrue',
@@ -3294,8 +2704,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'WaveGetLaneCount',
-        description:
-            'Returns the number of lanes in a wave on this architecture.',
+        description: 'Returns the number of lanes in a wave on this architecture.',
         type: 'uint',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/wavegetlanecount',
@@ -3304,8 +2713,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'WaveGetLaneIndex',
-        description:
-            'Returns the index of the current lane within the current wave.',
+        description: 'Returns the index of the current lane within the current wave.',
         type: 'uint',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/wavegetlaneindex',
@@ -3314,8 +2722,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'WaveIsFirstLane',
-        description:
-            'Returns true only for the active lane in the current wave with the smallest index.',
+        description: 'Returns true only for the active lane in the current wave with the smallest index.',
         type: 'bool',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveisfirstlane',
@@ -3343,8 +2750,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'WavePrefixSum',
-        description:
-            'Returns the sum of all of the values in the active lanes with smaller indices than this one.',
+        description: 'Returns the sum of all of the values in the active lanes with smaller indices than this one.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveprefixsum',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#type-waveprefixsum-type-value-',
@@ -3361,8 +2767,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'WaveReadLaneAt',
-        description:
-            'Returns the value of the expression for the given lane index within the specified wave.',
+        description: 'Returns the value of the expression for the given lane index within the specified wave.',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/wavereadlaneat',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#type-wavereadlaneat-type-expr-uint-laneindex',
@@ -3402,59 +2807,45 @@ export const hlslFunctions: LanguageElementInfo[] = [
         description:
             "The WaveMatch() intrinsic compares the value of the expression in the current lane to its value in all other active lanes in the current wave and returns a bitmask representing the set of lanes matching current lane's value.",
         type: 'uint4',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavematch-function',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavematch-function'],
     },
     {
         name: 'WaveMultiPrefixSum',
         description:
             'WaveMultiPrefix*() is a set of functions which implement multi-prefix operations among the set of active lanes in the current wave.',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions'],
     },
 
     {
         name: 'WaveMultiPrefixProduct',
         description:
             'WaveMultiPrefix*() is a set of functions which implement multi-prefix operations among the set of active lanes in the current wave.',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions'],
     },
     {
         name: 'WaveMultiPrefixCountBits',
         description:
             'WaveMultiPrefix*() is a set of functions which implement multi-prefix operations among the set of active lanes in the current wave.',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions'],
         type: 'uint',
     },
     {
         name: 'WaveMultiPrefixAnd',
         description:
             'WaveMultiPrefix*() is a set of functions which implement multi-prefix operations among the set of active lanes in the current wave.',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions'],
     },
     {
         name: 'WaveMultiPrefixOr',
         description:
             'WaveMultiPrefix*() is a set of functions which implement multi-prefix operations among the set of active lanes in the current wave.',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions'],
     },
     {
         name: 'WaveMultiPrefixXor',
         description:
             'WaveMultiPrefix*() is a set of functions which implement multi-prefix operations among the set of active lanes in the current wave.',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions'],
     },
     // shader model 6.6
     {
@@ -3477,12 +2868,9 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'IsHelperLane',
-        description:
-            'Returns true if a given lane in a pixel shader is a helper lane.',
+        description: 'Returns true if a given lane in a pixel shader is a helper lane.',
         type: 'bool',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_6.html#ishelperlane',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_6.html#ishelperlane'],
     },
     {
         name: 'unpack_s8s16',
@@ -3562,17 +2950,13 @@ export const hlslFunctions: LanguageElementInfo[] = [
         description:
             'At the beginning of the shader the implementation internally sets a count of vertices and primitives to be exported from a threadgroup to 0. It means that if a mesh shader returns without calling this function, it will not output any mesh. This function sets the actual number of outputs from the threadgroup.',
         type: 'void',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/MeshShader.html#setmeshoutputcounts',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/MeshShader.html#setmeshoutputcounts'],
     },
     {
         name: 'DispatchMesh',
         description:
             'This function, called from the amplification shader, launches the threadgroups for the mesh shader.',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/MeshShader.html#dispatchmesh-intrinsic',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/MeshShader.html#dispatchmesh-intrinsic'],
     },
     {
         name: 'WriteSamplerFeedback',
@@ -3605,21 +2989,15 @@ export const hlslFunctions: LanguageElementInfo[] = [
     //QuadAny and QuadAll Intrinsics
     {
         name: 'QuadAny',
-        description:
-            'Returns true if <expr> is true in any lane of the current quad.',
+        description: 'Returns true if <expr> is true in any lane of the current quad.',
         type: 'bool',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_7_QuadAny_QuadAll.html#quadall',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_7_QuadAny_QuadAll.html#quadall'],
     },
     {
         name: 'QuadAll',
-        description:
-            'Returns true if <expr> is true in all lanes of the current quad.',
+        description: 'Returns true if <expr> is true in all lanes of the current quad.',
         type: 'bool',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_7_QuadAny_QuadAll.html#quadall',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_7_QuadAny_QuadAll.html#quadall'],
     },
     // raytracing
     {
@@ -3656,14 +3034,11 @@ export const hlslFunctions: LanguageElementInfo[] = [
         description:
             'Retrieves the autogenerated index of the primitive within the geometry inside the bottom-level acceleration structure instance.',
         type: 'uint',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3d12/primitiveindex',
-        ],
+        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3d12/primitiveindex'],
     },
     {
         name: 'ReportHit',
-        description:
-            'Called by an intersection shader to report a ray intersection.',
+        description: 'Called by an intersection shader to report a ray intersection.',
         type: 'bool',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3d12/reporthit-function',
@@ -3672,8 +3047,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
     },
     {
         name: 'TraceRay',
-        description:
-            'Sends a ray into a search for hits in an acceleration structure.',
+        description: 'Sends a ray into a search for hits in an acceleration structure.',
         type: 'void',
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3d12/traceray-function',
@@ -3685,155 +3059,111 @@ export const hlslFunctions: LanguageElementInfo[] = [
         description:
             'The current x and y location within the Width and Height made available through the DispatchRaysDimensions() system value intrinsic.',
         type: 'uint3',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#dispatchraysindex',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#dispatchraysindex'],
     },
     {
         name: 'DispatchRaysDimensions',
         description:
             'The Width, Height and Depth values from the D3D12_DISPATCH_RAYS_DESC structure provided to the originating DispatchRays() call.',
         type: 'uint3',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#dispatchraysdimensions',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#dispatchraysdimensions'],
     },
     {
         name: 'WorldRayOrigin',
         description: 'The world-space origin for the current ray.',
         type: 'float3',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#worldrayorigin',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#worldrayorigin'],
     },
     {
         name: 'WorldRayDirection',
         description: 'The world-space direction for the current ray.',
         type: 'float3',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#worldraydirection',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#worldraydirection'],
     },
     {
         name: 'RayTMin',
-        description:
-            'This is a float representing the parametric starting point for the ray.',
+        description: 'This is a float representing the parametric starting point for the ray.',
         type: 'float',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytmin',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytmin'],
     },
     {
         name: 'RayTCurrent',
-        description:
-            'This is a float representing the current parametric ending point for the ray.',
+        description: 'This is a float representing the current parametric ending point for the ray.',
         type: 'float',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytcurrent',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytcurrent'],
     },
     {
         name: 'RayFlags',
         description: 'This is a uint containing the current ray flags (only).',
         type: 'uint',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#rayflags',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#rayflags'],
     },
     {
         name: 'InstanceIndex',
-        description:
-            'The autogenerated index of the current instance in the top-level structure.',
+        description: 'The autogenerated index of the current instance in the top-level structure.',
         type: 'uint',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#instanceindex',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#instanceindex'],
     },
     {
         name: 'InstanceID',
         description:
             'The user-provided InstanceID on the bottom-level acceleration structure instance within the top-level structure.',
         type: 'uint',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#instanceid',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#instanceid'],
     },
     {
         name: 'GeometryIndex',
-        description:
-            'The autogenerated index of the current geometry in the bottom-level acceleration structure.',
+        description: 'The autogenerated index of the current geometry in the bottom-level acceleration structure.',
         type: 'uint',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#geometryindex',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#geometryindex'],
     },
     {
         name: 'PrimitiveIndex',
         description:
             'The autogenerated index of the primitive within the geometry inside the bottom-level acceleration structure instance.',
         type: 'uint',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#primitiveindex',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#primitiveindex'],
     },
     {
         name: 'ObjectRayOrigin',
         description: 'Object-space origin for the current ray.',
         type: 'uint',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#objectrayorigin',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#objectrayorigin'],
     },
     {
         name: 'ObjectRayDirection',
         description: 'Object-space direction for the current ray.',
         type: 'float3',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#objectraydirection',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#objectraydirection'],
     },
     {
         name: 'ObjectToWorld3x4',
-        description:
-            'Matrix for transforming from object-space to world-space.',
+        description: 'Matrix for transforming from object-space to world-space.',
         type: 'float3x4',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#objecttoworld3x4',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#objecttoworld3x4'],
     },
     {
         name: 'ObjectToWorld4x3',
-        description:
-            'Matrix for transforming from object-space to world-space.',
+        description: 'Matrix for transforming from object-space to world-space.',
         type: 'float4x3',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#objecttoworld4x3',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#objecttoworld4x3'],
     },
     {
         name: 'WorldToObject3x4',
-        description:
-            'Matrix for transforming from world-space to object-space.',
+        description: 'Matrix for transforming from world-space to object-space.',
         type: 'float3x4',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#worldtoobject3x4',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#worldtoobject3x4'],
     },
     {
         name: 'WorldToObject4x3',
-        description:
-            'Matrix for transforming from world-space to object-space.',
+        description: 'Matrix for transforming from world-space to object-space.',
         type: 'float4x3',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#worldtoobject4x3',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#worldtoobject4x3'],
     },
     {
         name: 'HitKind',
         description: 'Returns the value passed as HitKind in ReportHit().',
         type: 'uint',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#hitkind',
-        ],
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#hitkind'],
     },
 ];

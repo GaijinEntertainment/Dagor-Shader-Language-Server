@@ -1,8 +1,4 @@
-import {
-    DocumentHighlight,
-    DocumentHighlightKind,
-    DocumentHighlightParams,
-} from 'vscode-languageserver';
+import { DocumentHighlight, DocumentHighlightKind, DocumentHighlightParams } from 'vscode-languageserver';
 
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
@@ -36,21 +32,15 @@ export async function documentHighlightProvider(
     return result;
 }
 
-function getMacroStatement(
-    snapshot: Snapshot,
-    dhp: DocumentHighlightParams
-): MacroStatement | null {
+function getMacroStatement(snapshot: Snapshot, dhp: DocumentHighlightParams): MacroStatement | null {
     const ms = snapshot.macroStatements.find(
-        (ms) =>
-            ms.uri === dhp.textDocument.uri &&
-            rangeContains(ms.nameOriginalRange, dhp.position)
+        (ms) => ms.uri === dhp.textDocument.uri && rangeContains(ms.nameOriginalRange, dhp.position)
     );
     if (ms) {
         return ms;
     }
     const pmc = snapshot.potentialMacroContexts.find(
-        (mc) =>
-            mc.isVisible && rangeContains(mc.nameOriginalRange, dhp.position)
+        (mc) => mc.isVisible && rangeContains(mc.nameOriginalRange, dhp.position)
     );
     if (pmc) {
         return pmc.macroStatement;

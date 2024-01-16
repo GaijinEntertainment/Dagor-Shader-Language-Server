@@ -20,14 +20,8 @@ export class MacroArgumentsProcesor {
         this.snapshot = snapshot;
     }
 
-    public getMacroArguments(
-        identifierEndPosition: number
-    ): MacroArguments | null {
-        for (
-            this.index = identifierEndPosition;
-            this.index < this.snapshot.text.length;
-            this.index++
-        ) {
+    public getMacroArguments(identifierEndPosition: number): MacroArguments | null {
+        for (this.index = identifierEndPosition; this.index < this.snapshot.text.length; this.index++) {
             this.setCharacter(this.snapshot.text);
             if (this.isCharacterWhitespace()) {
                 continue;
@@ -63,12 +57,7 @@ export class MacroArgumentsProcesor {
     }
 
     private isCharacterWhitespace(): boolean {
-        return (
-            this.character === ' ' ||
-            this.character === '\t' ||
-            this.character === '\n' ||
-            this.character === '\r'
-        );
+        return this.character === ' ' || this.character === '\t' || this.character === '\n' || this.character === '\r';
     }
 
     private isParametersStart(): boolean {
@@ -87,20 +76,15 @@ export class MacroArgumentsProcesor {
 
     private addArgumentIfExists(): void {
         if (this.argumentIdentifierPosition !== -1) {
-            const argument = this.snapshot.text
-                .substring(this.argumentIdentifierPosition, this.index)
-                .trim();
+            const argument = this.snapshot.text.substring(this.argumentIdentifierPosition, this.index).trim();
             if (argument) {
                 this.arguments.push({
                     content: argument,
-                    originalRange: this.snapshot.getOriginalRange(
-                        this.argumentSeparatorPosition,
-                        this.index
+                    originalRange: this.snapshot.getOriginalRange(this.argumentSeparatorPosition, this.index),
+                    trimmedOriginalStartPosition: this.snapshot.getOriginalPosition(
+                        this.argumentIdentifierPosition,
+                        true
                     ),
-                    trimmedOriginalStartPosition:
-                        this.snapshot.getOriginalPosition(
-                            this.argumentIdentifierPosition
-                        ),
                 });
             }
         }

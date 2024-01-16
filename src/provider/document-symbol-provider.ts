@@ -1,9 +1,4 @@
-import {
-    DocumentSymbol,
-    DocumentSymbolParams,
-    SymbolInformation,
-    SymbolKind,
-} from 'vscode-languageserver';
+import { DocumentSymbol, DocumentSymbolParams, SymbolInformation, SymbolKind } from 'vscode-languageserver';
 
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
@@ -16,9 +11,7 @@ export async function documentSymbolProvider(
     if (!snapshot) {
         return null;
     }
-    const mss = snapshot.macroStatements.filter(
-        (ms) => ms.uri === params.textDocument.uri
-    );
+    const mss = snapshot.macroStatements.filter((ms) => ms.uri === params.textDocument.uri);
     if (getCapabilities().documentSymbolHierarchy) {
         const result: DocumentSymbol[] = [];
         for (const ms of mss) {

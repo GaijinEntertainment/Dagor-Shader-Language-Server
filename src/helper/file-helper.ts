@@ -14,16 +14,11 @@ export async function loadFile(file: string): Promise<string> {
     return await Server.getHostDependent().loadFile(file);
 }
 
-export async function getFolderContent(
-    file: string
-): Promise<FileSystemItemInfo[]> {
+export async function getFolderContent(file: string): Promise<FileSystemItemInfo[]> {
     return await Server.getHostDependent().getFolderContent(file);
 }
 
-export function watchFile(
-    path: string,
-    callback: (path: string) => void
-): FileWatcher {
+export function watchFile(path: string, callback: (path: string) => void): FileWatcher {
     return Server.getHostDependent().watchFile(path, callback);
 }
 
