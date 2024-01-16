@@ -51,12 +51,17 @@ export class DocumentInfo {
         for (const [uri, includedDocumentVersion] of version.includedDocumentsVersion.entries()) {
             const document = getDocuments().get(uri);
             if (document) {
-                if (document.version > includedDocumentVersion.version || !includedDocumentVersion.isManaged) {
+                if (
+                    document.version > includedDocumentVersion.version ||
+                    (!includedDocumentVersion.isManaged &&
+                        (document.version !== 1 ||
+                            includedDocumentVersion.version !== getFileVersion(URI.parse(uri).fsPath)))
+                ) {
                     return false;
                 }
             } else {
                 const cachedVersion = getFileVersion(URI.parse(uri).fsPath);
-                if (cachedVersion > includedDocumentVersion.version || includedDocumentVersion.isManaged) {
+                if (cachedVersion > includedDocumentVersion.version) {
                     return false;
                 }
             }
