@@ -8,7 +8,6 @@ import { LAUNCH_OPTION_CURRENT_CONFIG } from './constant';
 let configuration: Configuration = {
     launchOptions: {},
     shaderConfigOverride: '',
-    folding: false,
 };
 let connection: Connection;
 

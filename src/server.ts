@@ -90,7 +90,7 @@ export abstract class Server {
                 documentHighlightProvider: true,
                 documentLinkProvider: { resolveProvider: true },
                 documentSymbolProvider: true,
-                foldingRangeProvider: true,
+                // foldingRangeProvider: true, TODO: disabled, because only works with DSHL macros, re-enable when the provider finds all ranges
                 hoverProvider: true,
                 implementationProvider: true,
                 inlayHintProvider: { documentSelector: [{ language: 'dshl' }] },

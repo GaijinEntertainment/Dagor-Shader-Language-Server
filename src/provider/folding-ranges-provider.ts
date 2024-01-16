@@ -1,13 +1,9 @@
 import { FoldingRange, FoldingRangeKind, FoldingRangeParams } from 'vscode-languageserver';
 
 import { getCapabilities } from '../core/capability-manager';
-import { getConfiguration } from '../core/configuration-manager';
 import { getSnapshot } from '../core/document-manager';
 
 export async function foldingRangesProvider(params: FoldingRangeParams): Promise<FoldingRange[] | undefined | null> {
-    if (!getConfiguration().folding) {
-        return null;
-    }
     const snapshot = await getSnapshot(params.textDocument.uri);
     if (!snapshot) {
         return null;
