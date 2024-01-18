@@ -54,7 +54,8 @@ export async function completionProvider(
     if (!snapshot || isCursorInCommentOrString(snapshot, params.position)) {
         return null;
     }
-    const hlsl = params.textDocument.uri.endsWith('.hlsl') || snapshot.isInHlslBlock(params.position);
+    const uri = params.textDocument.uri;
+    const hlsl = uri.endsWith('.hlsl') || uri.endsWith('.hlsli') || snapshot.isInHlslBlock(params.position);
     if (hlsl) {
         return getHlslItems();
     } else {
