@@ -18,6 +18,7 @@ export class Snapshot {
     public readonly version: SnapshotVersion;
     public readonly uri: DocumentUri;
     public readonly originalText: string;
+    private originalTextOffsets: ElementRange[] = [];
     public text = '';
     public cleanedText = '';
     public preprocessedText = '';
@@ -38,6 +39,19 @@ export class Snapshot {
         this.version = version;
         this.uri = uri;
         this.originalText = text;
+        this.computeOriginalTextOffsets();
+    }
+
+    private computeOriginalTextOffsets(): void {
+        const lines = this.originalText.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            let linesBefore = 0;
+            if (i !== 0) {
+                linesBefore = this.originalTextOffsets[i - 1].endPosition + 1;
+            }
+            this.originalTextOffsets.push({ startPosition: linesBefore, endPosition: linesBefore + line.length });
+        }
     }
 
     public getOriginalRange(startPosition: number, endPosition: number): Range {
@@ -61,8 +75,10 @@ export class Snapshot {
             offset = this.getOffset(position, start, startPosition, c.snapshot.preprocessingOffsets);
             position -= offset;
         }
-        const text = icc.length ? icc[icc.length - 1].snapshot.originalText : this.originalText;
-        return this.positionAt(text, position);
+        const originalTextOffsets = icc.length
+            ? icc[icc.length - 1].snapshot.originalTextOffsets
+            : this.originalTextOffsets;
+        return this.positionAt(originalTextOffsets, position);
     }
 
     private getIncludeChain(ic: IncludeContext | null): IncludeContext[] {
@@ -95,19 +111,25 @@ export class Snapshot {
         }
     }
 
-    private positionAt(text: string, position: number): Position {
-        const lines = text.split('\n');
-        let line = 0;
-        let character = 0;
-        for (; line < lines.length; line++) {
-            if (character + lines[line].length >= position) {
-                character = position - character;
-                break;
+    private positionAt(originalTextOffsets: ElementRange[], position: number): Position {
+        let lowerIndex = 0;
+        let upperIndex = originalTextOffsets.length - 1;
+        let currentIndex: number;
+        while (lowerIndex <= upperIndex) {
+            currentIndex = Math.floor((lowerIndex + upperIndex) / 2);
+            if (
+                position >= originalTextOffsets[currentIndex].startPosition &&
+                position <= originalTextOffsets[currentIndex].endPosition
+            ) {
+                return { line: currentIndex, character: position - originalTextOffsets[currentIndex].startPosition };
+            }
+            if (position < originalTextOffsets[currentIndex].startPosition) {
+                upperIndex = currentIndex - 1;
             } else {
-                character += lines[line].length + 1;
+                lowerIndex = currentIndex + 1;
             }
         }
-        return { line, character };
+        return { line: 0, character: 0 };
     }
 
     public addPreprocessingOffset(newPo: PreprocessingOffset): void {
