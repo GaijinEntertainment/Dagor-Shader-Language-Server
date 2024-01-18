@@ -4,7 +4,6 @@ import { getConfiguration } from '../core/configuration-manager';
 import { log, logShaderConfigs } from '../core/debug';
 import { getFileContent } from '../core/file-cache-manager';
 import { exists, getFolderContent } from '../helper/file-helper';
-import { PerformanceHelper } from '../helper/performance-helper';
 import { getRootFolder, refreshInlayHints, showWarningMessage } from '../helper/server-helper';
 
 export type GameFolder = string;
@@ -48,8 +47,6 @@ class IncludeProcessor {
     private override = false;
 
     public async collectIncludeFolders(): Promise<void> {
-        const ph = new PerformanceHelper();
-        ph.start('collectIncludeFolders');
         const gameFolders = await this.getGameFolders();
         for (const gameFolder of gameFolders) {
             await this.addIncludeFolders(gameFolder);
@@ -58,8 +55,6 @@ class IncludeProcessor {
         if (this.id === IncludeProcessor.lastId) {
             includeFolders = this.includeFolders;
         }
-        ph.end('collectIncludeFolders');
-        ph.log('collecting include folders', 'collectIncludeFolders');
     }
 
     public async collectOverrideIncludeFolders(): Promise<void> {

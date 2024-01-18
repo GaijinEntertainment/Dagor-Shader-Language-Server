@@ -3,7 +3,6 @@ import { URI } from 'vscode-uri';
 
 import { getFileContent, getFileVersion } from '../core/file-cache-manager';
 import { Snapshot } from '../core/snapshot';
-import { PerformanceHelper } from '../helper/performance-helper';
 import { getDocuments } from '../helper/server-helper';
 import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
@@ -28,33 +27,16 @@ export async function preprocessDshl(snapshot: Snapshot): Promise<void> {
 
 class DshlPreprocessor {
     private snapshot: Snapshot;
-    private ph: PerformanceHelper;
-    public static sph = new PerformanceHelper();
 
     public constructor(snapshot: Snapshot) {
         this.snapshot = snapshot;
-        this.ph = new PerformanceHelper(this.snapshot.uri);
     }
 
     public async preprocess(): Promise<void> {
-        this.ph.start('preprocess');
-        this.ph.start('preprocessIncludes');
         await this.preprocessIncludes([]);
-        this.ph.end('preprocessIncludes');
-        this.ph.start('preprocessMacros');
         this.preprocessMacros();
-        this.ph.end('preprocessMacros');
-        this.ph.start('expandMacros');
         this.expandMacros();
-        this.ph.end('expandMacros');
-        this.ph.start('findHlslBlocks');
         this.findHlslBlocks(this.snapshot.text);
-        this.ph.end('findHlslBlocks');
-        this.ph.end('preprocess');
-        this.ph.log('  DSHL preprocessor', 'preprocess');
-        this.ph.log('    expanding includes', 'preprocessIncludes');
-        this.ph.log('    finding macros', 'preprocessMacros');
-        this.ph.log('    expanding macros', 'expandMacros');
     }
 
     private async preprocessIncludes(parentUris: DocumentUri[]): Promise<void> {

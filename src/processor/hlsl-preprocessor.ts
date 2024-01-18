@@ -7,7 +7,6 @@ import { ConditionParser } from '../_generated/ConditionParser';
 import { getSnapshot } from '../core/document-manager';
 import { getFileContent } from '../core/file-cache-manager';
 import { Snapshot } from '../core/snapshot';
-import { PerformanceHelper } from '../helper/performance-helper';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
@@ -28,26 +27,15 @@ export class HlslPreprocessor {
     private snapshot: Snapshot;
     private ifStack: IfState[] = [];
     private macroNames = '';
-    private ph: PerformanceHelper;
 
     public constructor(snapshot: Snapshot) {
         this.snapshot = snapshot;
-        this.ph = new PerformanceHelper(this.snapshot.uri);
     }
 
     public async preprocess(): Promise<void> {
-        this.ph.start('preprocess');
-        this.ph.start('preprocessDirectives');
         await this.preprocessDirectives();
-        this.ph.end('preprocessDirectives');
         this.refreshMacroNames();
-        this.ph.start('expandMacros');
         //HlslPreprocessor.expandMacros(0, this.snapshot.text.length, this.snapshot, this.macroNames);
-        this.ph.end('expandMacros');
-        this.ph.end('preprocess');
-        this.ph.log('  HLSL preprocessor', 'preprocess');
-        this.ph.log('    processing directives', 'preprocessDirectives');
-        this.ph.log('    expanding macros', 'expandMacros');
     }
 
     private async preprocessDirectives(): Promise<void> {
