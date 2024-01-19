@@ -100,9 +100,15 @@ export class ConditionVisitor
             return exp0 * exp1;
         }
         if (ctx.DIVIDE()) {
+            if (exp1 === 0n) {
+                return null;
+            }
             return exp0 / exp1;
         }
         if (ctx.MODULO()) {
+            if (exp1 === 0n) {
+                return null;
+            }
             return exp0 % exp1;
         }
         if (ctx.ADD()) {
