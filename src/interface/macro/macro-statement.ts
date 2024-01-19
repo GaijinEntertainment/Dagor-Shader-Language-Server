@@ -1,5 +1,6 @@
 import { DocumentUri, Position, Range } from 'vscode-languageserver';
 
+import { Snapshot } from '../../core/snapshot';
 import { MacroContextBase } from './macro-context-base';
 import { MacroType } from './macro-type';
 
@@ -9,9 +10,10 @@ export interface MacroStatement {
     originalRange: Range;
     nameOriginalRange: Range;
     codeCompletionPosition: Position;
+    contentOriginalPosition: Position;
+    contentSnapshot: Snapshot;
     name: string;
     parameters: string[];
-    content: string;
     type: MacroType;
     usages: MacroContextBase[];
 }

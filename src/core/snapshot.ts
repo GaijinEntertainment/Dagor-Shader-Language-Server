@@ -1,6 +1,6 @@
 import { DocumentUri, Position, Range } from 'vscode-languageserver';
 
-import { rangeContains } from '../helper/helper';
+import { defaultPosition, rangeContains } from '../helper/helper';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
@@ -32,8 +32,7 @@ export class Snapshot {
     public stringRanges: ElementRange[] = [];
     public hlslBlocks: HlslBlock[] = [];
     public noCodeCompletionRanges: Range[] = [];
-
-    private preprocessingOffsets: PreprocessingOffset[] = [];
+    public preprocessingOffsets: PreprocessingOffset[] = [];
 
     public constructor(version: SnapshotVersion, uri: DocumentUri, text: string) {
         this.version = version;
@@ -66,6 +65,20 @@ export class Snapshot {
     public getOriginalPosition(position: number, start: boolean): Position {
         const ic = this.getIncludeContextDeepAt(position);
         const icc = this.getIncludeChain(ic);
+        position = this.getOriginalOffset(position, start);
+        const originalTextOffsets = icc.length
+            ? icc[icc.length - 1].snapshot.originalTextOffsets
+            : this.originalTextOffsets;
+        return this.positionAt(originalTextOffsets, position);
+    }
+
+    public getOriginalOffset(position: number, start: boolean): number {
+        const ic = this.getIncludeContextDeepAt(position);
+        const icc = this.getIncludeChain(ic);
+        return this.getOriginalOffsetWithIncludeContext(position, start, icc);
+    }
+
+    private getOriginalOffsetWithIncludeContext(position: number, start: boolean, icc: IncludeContext[]): number {
         let startPosition = icc.length ? icc[0].startPosition : 0;
         let offset = this.getOffset(position, start, startPosition, this.preprocessingOffsets);
         position -= offset;
@@ -75,10 +88,7 @@ export class Snapshot {
             offset = this.getOffset(position, start, startPosition, c.snapshot.preprocessingOffsets);
             position -= offset;
         }
-        const originalTextOffsets = icc.length
-            ? icc[icc.length - 1].snapshot.originalTextOffsets
-            : this.originalTextOffsets;
-        return this.positionAt(originalTextOffsets, position);
+        return position;
     }
 
     private getIncludeChain(ic: IncludeContext | null): IncludeContext[] {
@@ -129,7 +139,7 @@ export class Snapshot {
                 lowerIndex = currentIndex + 1;
             }
         }
-        return { line: 0, character: 0 };
+        return defaultPosition;
     }
 
     public addPreprocessingOffset(newPo: PreprocessingOffset): void {
