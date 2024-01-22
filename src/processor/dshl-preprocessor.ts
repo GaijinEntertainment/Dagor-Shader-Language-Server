@@ -170,9 +170,11 @@ class DshlPreprocessor {
                 this.snapshot.version.includedDocumentsVersion.set(uri, version);
             }
             for (const ms of result.snapshot.macroStatements) {
-                ms.codeCompletionPosition = ic.includeStatement.originalEndPosition;
-                ms.position += offset;
-                this.snapshot.macroStatements.push(ms);
+                if (!this.snapshot.macroStatements.some((ms2) => ms2.name === ms.name)) {
+                    ms.codeCompletionPosition = ic.includeStatement.originalEndPosition;
+                    ms.position += offset;
+                    this.snapshot.macroStatements.push(ms);
+                }
             }
             for (const mc of result.snapshot.macroContexts) {
                 mc.startPosition += offset;
