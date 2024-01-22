@@ -16,7 +16,7 @@ export async function inlayHintProvider(params: InlayHintParams): Promise<InlayH
     );
     const result: InlayHint[] = [];
     for (const pmc of pmcs) {
-        for (let i = 0; i < pmc.arguments.length; i++) {
+        for (let i = 0; i < pmc.arguments.length && i < pmc.macroStatement.parameters.length; i++) {
             const ma = pmc.arguments[i];
             const mp = pmc.macroStatement.parameters[i];
             result.push({
