@@ -190,6 +190,14 @@ export class Snapshot {
         return position;
     }
 
+    public getIncludeStatementAtPath(position: Position): IncludeStatement | null {
+        return (
+            this.includeStatements.find(
+                (is) => is.includerUri === this.uri && rangeContains(is.pathOriginalRange, position)
+            ) ?? null
+        );
+    }
+
     public getIncludeContextAt(position: number): IncludeContext | null {
         return this.includeContexts.find((ic) => ic.startPosition <= position && position <= ic.endPosition) ?? null;
     }

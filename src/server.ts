@@ -84,7 +84,12 @@ export abstract class Server {
         return {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
-                completionProvider: {},
+                completionProvider: {
+                    triggerCharacters: ['"', '<', '/', '\\'],
+                    completionItem: {
+                        labelDetailsSupport: true,
+                    },
+                },
                 declarationProvider: true,
                 definitionProvider: true,
                 documentHighlightProvider: true,

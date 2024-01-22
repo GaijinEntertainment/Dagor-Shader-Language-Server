@@ -46,12 +46,26 @@ import {
 } from '../helper/hlsl-info';
 import { LanguageElementInfo } from '../interface/language-element-info';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
+import { getIncludeCompletionInfos } from '../processor/include-resolver';
 
 export async function completionProvider(
     params: CompletionParams
 ): Promise<CompletionItem[] | CompletionList | undefined | null> {
     const snapshot = await getSnapshot(params.textDocument.uri);
-    if (!snapshot || isCursorInCommentOrString(snapshot, params.position)) {
+    if (!snapshot) {
+        return null;
+    }
+    const is = snapshot.getIncludeStatementAtPath(params.position);
+    if (is) {
+        const result = await getIncludeCompletionInfos(is, params.position);
+        return result.map<CompletionItem>((fsii) => ({
+            label: fsii.name,
+            kind: fsii.isFile() ? CompletionItemKind.File : CompletionItemKind.Folder,
+        }));
+    }
+    const includeTriggerCharacters = ['"', '<', '/', '\\'];
+    const triggerCharacter = params.context?.triggerCharacter ?? '';
+    if (isCursorInCommentOrString(snapshot, params.position) || includeTriggerCharacters.includes(triggerCharacter)) {
         return null;
     }
     const uri = params.textDocument.uri;
