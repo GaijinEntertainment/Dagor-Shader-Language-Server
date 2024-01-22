@@ -2,7 +2,11 @@ import { DocumentSymbol, DocumentSymbolParams, SymbolInformation, SymbolKind } f
 
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
-import { MacroStatement } from '../interface/macro/macro-statement';
+import {
+    MacroStatement,
+    toStringMacroStatementHeader,
+    toStringMacroStatementParameterList,
+} from '../interface/macro/macro-statement';
 
 export async function documentSymbolProvider(
     params: DocumentSymbolParams
@@ -35,12 +39,12 @@ function getDocumentSymbol(ms: MacroStatement): DocumentSymbol {
         kind: SymbolKind.Constant,
         range: ms.originalRange,
         selectionRange: ms.nameOriginalRange,
-        detail: `(${ms.parameters.join(', ')})`,
+        detail: toStringMacroStatementParameterList(ms),
     };
 }
 
 function getSymbolInformation(ms: MacroStatement): SymbolInformation {
-    const macroHeader = `${ms.name}(${ms.parameters.join(', ')})`;
+    const macroHeader = toStringMacroStatementHeader(ms);
     return {
         name: macroHeader,
         kind: SymbolKind.Constant,

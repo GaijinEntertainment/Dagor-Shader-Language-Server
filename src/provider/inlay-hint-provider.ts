@@ -20,7 +20,7 @@ export async function inlayHintProvider(params: InlayHintParams): Promise<InlayH
             const ma = pmc.arguments[i];
             const mp = pmc.macroStatement.parameters[i];
             result.push({
-                label: `${mp}:`,
+                label: `${mp.name}:`,
                 position: ma.trimmedOriginalStartPosition,
                 kind: InlayHintKind.Parameter,
                 paddingRight: true,

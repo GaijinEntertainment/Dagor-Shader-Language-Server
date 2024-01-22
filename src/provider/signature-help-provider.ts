@@ -24,7 +24,7 @@ export async function signatureHelpProvider(params: SignatureHelpParams): Promis
             {
                 label: toStringMacroStatement(pmc.macroStatement),
                 parameters: pmc.macroStatement.parameters.map((mp) => ({
-                    label: mp,
+                    label: mp.name,
                 })),
             },
         ],

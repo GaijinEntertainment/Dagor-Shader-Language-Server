@@ -14,6 +14,7 @@ import { IncludeType } from '../interface/include/include-type';
 import { MacroArguments } from '../interface/macro/macro-arguments';
 import { MacroContext } from '../interface/macro/macro-context';
 import { MacroContextBase } from '../interface/macro/macro-context-base';
+import { MacroParameter } from '../interface/macro/macro-parameter';
 import { MacroStatement } from '../interface/macro/macro-statement';
 import { MacroType } from '../interface/macro/macro-type';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
@@ -196,7 +197,7 @@ class DshlPreprocessor {
     private preprocessMacros(): void {
         const textEdits: TextEdit[] = [];
         const regex =
-            /(?<beforeContent>\b(?<beforeName>(?:macro|define_macro_if_not_defined)\s+)(?<name>[a-zA-Z_]\w*)\s*\(\s*(?<parameters>[a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*\s*(,\s*)?)?\))(?<content>\s*(\r?\n)?(^[^\r\n]*(?:\r?\n))*?(\r?\n)?\s*)endmacro/gm;
+            /(?<beforeContent>(?<beforeParameters>\b(?<beforeName>(?:macro|define_macro_if_not_defined)\s+)(?<name>[a-zA-Z_]\w*)\s*\(\s*)(?<parameters>[a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*\s*(,\s*)?)?\))(?<content>(?:[^\r\n]*(?:\r?\n))?(?:^[^\r\n]*(?:\r?\n))*?[^\r\n]*?)\b(?:endmacro)\b/gm;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(this.snapshot.text))) {
             const position = regexResult.index;
@@ -228,6 +229,10 @@ class DshlPreprocessor {
             if (this.snapshot.macroStatements.some((ms) => ms.name === name)) {
                 continue;
             }
+            const parameters = regexResult.groups?.parameters ?? '';
+            const parametersOffset = position + (regexResult.groups?.beforeParameters?.length ?? 0);
+            const macroParameters = this.getParameters(parameters, parametersOffset);
+            this.addParameterUsages(macroParameters, content, contentOffset);
             this.createMacroStatement(
                 position,
                 originalRange,
@@ -235,11 +240,55 @@ class DshlPreprocessor {
                 contentOffset,
                 match,
                 name,
-                regexResult.groups?.parameters ?? '',
+                macroParameters,
                 content
             );
         }
         Preprocessor.executeTextEdits(textEdits, this.snapshot);
+    }
+
+    private getParameters(parameters: string, offset: number): MacroParameter[] {
+        const result: MacroParameter[] = [];
+        const regex = /\b(?:[a-zA-Z_]\w*)\b/g;
+        let regexResult: RegExpExecArray | null;
+        while ((regexResult = regex.exec(parameters))) {
+            const position = offset + regexResult.index;
+            const match = regexResult[0];
+            const endPosition = position + match.length;
+            const originalRange = this.snapshot.getOriginalRange(position, endPosition);
+            result.push({
+                name: match,
+                originalRange,
+                usages: [],
+            });
+        }
+        return result;
+    }
+
+    private addParameterUsages(mps: MacroParameter[], content: string, offset: number): void {
+        if (!mps.length) {
+            return;
+        }
+        const macroParameterNames = mps.map((mp) => mp.name).join('|');
+        const regex = new RegExp(`\\b(${macroParameterNames})\\b`, 'g');
+        let regexResult: RegExpExecArray | null;
+        while ((regexResult = regex.exec(content))) {
+            const position = offset + regexResult.index;
+            if (Preprocessor.isInString(position, this.snapshot)) {
+                continue;
+            }
+            const match = regexResult[0];
+            const endPosition = position + match.length;
+            const originalRange = this.snapshot.getOriginalRange(position, endPosition);
+            const mp = mps.find((mp) => mp.name === match);
+            if (mp) {
+                mp.usages.push({
+                    name: match,
+                    originalRange,
+                    macroParameter: mp,
+                });
+            }
+        }
     }
 
     private createMacroStatement(
@@ -249,28 +298,23 @@ class DshlPreprocessor {
         contentPosition: number,
         match: string,
         name: string,
-        parameters: string,
+        parameters: MacroParameter[],
         content: string
     ): MacroStatement {
         const ic = this.snapshot.getIncludeContextDeepAt(position);
         const rootIc = this.snapshot.getIncludeContextAt(position);
         const type = match.startsWith('macro') ? MacroType.MACRO : MacroType.MACRO_IF_NOT_DEFINED;
-        const parametersArray =
-            parameters
-                ?.replace(/\s/g, '')
-                .split(',')
-                .filter((p) => p.length) ?? [];
-        const contentOriginalPosition = this.snapshot.getOriginalPosition(contentPosition, true);
+        const contentOriginalRange = this.snapshot.getOriginalRange(contentPosition, contentPosition + content.length);
         const contentSnapshot = this.createContentSnapshot(content, contentPosition, ic);
         const ms: MacroStatement = {
             uri: ic?.snapshot?.uri ?? this.snapshot.uri,
             position,
             originalRange,
             nameOriginalRange,
-            contentOriginalPosition,
+            contentOriginalRange,
             codeCompletionPosition: rootIc ? rootIc.includeStatement.originalEndPosition : originalRange.end,
             name,
-            parameters: parametersArray,
+            parameters,
             contentSnapshot,
             type,
             usages: [],
@@ -396,14 +440,15 @@ class DshlPreprocessor {
     }
 
     private offsetPositions(nameOriginalRange: Range, containerMs: MacroStatement, ma: MacroArguments): void {
-        this.offsetPosition(nameOriginalRange.start, containerMs.contentOriginalPosition);
-        this.offsetPosition(nameOriginalRange.end, containerMs.contentOriginalPosition);
-        this.offsetPosition(ma.argumentListOriginalRange.start, containerMs.contentOriginalPosition);
-        this.offsetPosition(ma.argumentListOriginalRange.end, containerMs.contentOriginalPosition);
+        const contentStartPosition = containerMs.contentOriginalRange.start;
+        this.offsetPosition(nameOriginalRange.start, contentStartPosition);
+        this.offsetPosition(nameOriginalRange.end, contentStartPosition);
+        this.offsetPosition(ma.argumentListOriginalRange.start, contentStartPosition);
+        this.offsetPosition(ma.argumentListOriginalRange.end, contentStartPosition);
         for (const maa of ma.arguments) {
-            this.offsetPosition(maa.originalRange.start, containerMs.contentOriginalPosition);
-            this.offsetPosition(maa.originalRange.end, containerMs.contentOriginalPosition);
-            this.offsetPosition(maa.trimmedOriginalStartPosition, containerMs.contentOriginalPosition);
+            this.offsetPosition(maa.originalRange.start, contentStartPosition);
+            this.offsetPosition(maa.originalRange.end, contentStartPosition);
+            this.offsetPosition(maa.trimmedOriginalStartPosition, contentStartPosition);
         }
     }
 
@@ -486,13 +531,13 @@ class DshlPreprocessor {
         const contentSnapshot = new Snapshot(invalidVersion, '', '');
         contentSnapshot.text = ms.contentSnapshot.originalText;
         Preprocessor.addStringRanges(0, contentSnapshot.text.length, contentSnapshot);
-        const parameterNames = ms.parameters.join('|');
-        const regex = new RegExp(`\\b(${parameterNames})\\b`, 'g');
+        const parameterNames = ms.parameters.map((mp) => mp.name);
+        const regex = new RegExp(`\\b(${parameterNames.join('|')})\\b`, 'g');
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(contentSnapshot.text))) {
             const position = regexResult.index;
             const match = regexResult[0];
-            const argument = ma.arguments[ms.parameters.indexOf(match)].content;
+            const argument = ma.arguments[parameterNames.indexOf(match)].content;
             const beforeEndPosition = position + match.length;
             const afterEndPosition = position + argument.length;
             if (Preprocessor.isInString(position, contentSnapshot)) {

@@ -128,6 +128,7 @@ function getDshlItems(snapshot: Snapshot, position: Position): CompletionItem[] 
     addCompletionItems(result, dshlProperties, CompletionItemKind.Property, 'property');
     addCompletionItems(result, dshlFunctions, CompletionItemKind.Function, 'function');
     addCompletionItems(result, getMacros(snapshot, position), CompletionItemKind.Constant, 'macro');
+    addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, dshlSnippets, CompletionItemKind.Snippet, 'snippet');
     }
@@ -144,6 +145,15 @@ function getMacros(snapshot: Snapshot, position: Position): LanguageElementInfo[
         )
         .map((ms) => ({
             name: ms.name,
+        }));
+}
+
+function getMacroParameters(snapshot: Snapshot, position: Position): LanguageElementInfo[] {
+    return snapshot.macroStatements
+        .filter((ms) => rangeContains(ms.contentOriginalRange, position))
+        .flatMap((ms) => ms.parameters)
+        .map((parameter) => ({
+            name: parameter.name,
         }));
 }
 
