@@ -3,6 +3,7 @@ import { DocumentUri, Location, LocationLink, Position } from 'vscode-languagese
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
 import { Macro } from '../interface/macro/macro';
+import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroParameter } from '../interface/macro/macro-parameter';
 
 export async function linkProviderBase(
@@ -15,6 +16,10 @@ export async function linkProviderBase(
     if (!snapshot) {
         return null;
     }
+    let md = snapshot.macroDeclarations.find((md) => md.uri === uri && rangeContains(md.nameOriginalRange, position));
+    if (md) {
+        return getDeclarationLocation(md.macro, linkSupport, md);
+    }
     const mu = snapshot.macroUsages.find((mu) => mu.isVisible && rangeContains(mu.nameOriginalRange, position));
     if (mu) {
         return getDeclarationLocation(mu.macro, linkSupport);
@@ -22,9 +27,13 @@ export async function linkProviderBase(
     if (implementation) {
         return null;
     }
-    const md = snapshot.macroDeclarations.find((md) => md.uri === uri && rangeContains(md.originalRange, position));
+    md = snapshot.macroDeclarations.find((md) => md.uri === uri && rangeContains(md.originalRange, position));
     if (md) {
-        const mp = md.parameters.find((mp) => mp.usages.some((mpu) => rangeContains(mpu.originalRange, position)));
+        const mp = md.parameters.find((mp) =>
+            mp.usages.some(
+                (mpu) => rangeContains(mp.originalRange, position) || rangeContains(mpu.originalRange, position)
+            )
+        );
         if (mp) {
             return getParameterLocation(mp, md.uri, linkSupport);
         }
@@ -32,7 +41,11 @@ export async function linkProviderBase(
     return null;
 }
 
-function getDeclarationLocation(macro: Macro, linkSupport: boolean): LocationLink[] | Location {
+function getDeclarationLocation(
+    macro: Macro,
+    linkSupport: boolean,
+    sourceMd?: MacroDeclaration
+): LocationLink[] | Location {
     if (linkSupport) {
         return macro.declarations.map((md) => ({
             targetRange: md.originalRange,
@@ -40,7 +53,7 @@ function getDeclarationLocation(macro: Macro, linkSupport: boolean): LocationLin
             targetUri: md.uri,
         }));
     } else {
-        const md = macro.declarations[0];
+        const md = sourceMd ?? macro.declarations[0];
         return {
             range: md.nameOriginalRange,
             uri: md.uri,

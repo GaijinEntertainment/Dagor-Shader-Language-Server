@@ -23,7 +23,15 @@ export async function inlayHintProvider(params: InlayHintParams): Promise<InlayH
                 const ma = mu.arguments[i];
                 const mp = md.parameters[i];
                 result.push({
-                    label: `${mp.name}:`,
+                    label: [
+                        {
+                            value: `${mp.name}:`,
+                            location: {
+                                range: mp.originalRange,
+                                uri: md.uri,
+                            },
+                        },
+                    ],
                     position: ma.trimmedOriginalStartPosition,
                     kind: InlayHintKind.Parameter,
                     paddingRight: true,
