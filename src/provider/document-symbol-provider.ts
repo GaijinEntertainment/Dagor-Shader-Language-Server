@@ -3,10 +3,10 @@ import { DocumentSymbol, DocumentSymbolParams, SymbolInformation, SymbolKind } f
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import {
-    MacroStatement,
-    toStringMacroStatementHeader,
-    toStringMacroStatementParameterList,
-} from '../interface/macro/macro-statement';
+    MacroDeclaration,
+    toStringMacroDeclarationHeader,
+    toStringMacroDeclarationParameterList,
+} from '../interface/macro/macro-declaration';
 
 export async function documentSymbolProvider(
     params: DocumentSymbolParams
@@ -15,43 +15,43 @@ export async function documentSymbolProvider(
     if (!snapshot) {
         return null;
     }
-    const mss = snapshot.macroStatements.filter((ms) => ms.uri === params.textDocument.uri);
+    const mds = snapshot.macroDeclarations.filter((md) => md.uri === params.textDocument.uri);
     if (getCapabilities().documentSymbolHierarchy) {
         const result: DocumentSymbol[] = [];
-        for (const ms of mss) {
-            const ds = getDocumentSymbol(ms);
+        for (const md of mds) {
+            const ds = getDocumentSymbol(md);
             result.push(ds);
         }
         return result;
     } else {
         const result: SymbolInformation[] = [];
-        for (const ms of mss) {
-            const si = getSymbolInformation(ms);
+        for (const md of mds) {
+            const si = getSymbolInformation(md);
             result.push(si);
         }
         return result;
     }
 }
 
-function getDocumentSymbol(ms: MacroStatement): DocumentSymbol {
+function getDocumentSymbol(md: MacroDeclaration): DocumentSymbol {
     return {
-        name: ms.name,
+        name: md.name,
         kind: SymbolKind.Constant,
-        range: ms.originalRange,
-        selectionRange: ms.nameOriginalRange,
-        detail: toStringMacroStatementParameterList(ms),
+        range: md.originalRange,
+        selectionRange: md.nameOriginalRange,
+        detail: toStringMacroDeclarationParameterList(md),
     };
 }
 
-function getSymbolInformation(ms: MacroStatement): SymbolInformation {
-    const macroHeader = toStringMacroStatementHeader(ms);
+function getSymbolInformation(md: MacroDeclaration): SymbolInformation {
+    const macroHeader = toStringMacroDeclarationHeader(md);
     return {
         name: macroHeader,
         kind: SymbolKind.Constant,
         containerName: macroHeader,
         location: {
-            range: ms.nameOriginalRange,
-            uri: ms.uri,
+            range: md.nameOriginalRange,
+            uri: md.uri,
         },
     };
 }

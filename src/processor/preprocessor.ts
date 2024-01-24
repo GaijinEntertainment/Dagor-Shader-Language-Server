@@ -6,7 +6,6 @@ import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
 import { MacroArguments } from '../interface/macro/macro-arguments';
-import { MacroContext } from '../interface/macro/macro-context';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { TextEdit } from '../interface/text-edit';
 import { preprocessDshl } from './dshl-preprocessor';
@@ -150,7 +149,7 @@ export class Preprocessor {
         beforeEndPosition: number,
         type: IncludeType,
         path: string,
-        parentMc: MacroContext | null,
+        mc: boolean,
         parentIc: IncludeContext | null,
         snapshot: Snapshot
     ): IncludeStatement {
@@ -163,7 +162,7 @@ export class Preprocessor {
             type,
             includerUri: parentIc?.snapshot?.uri ?? snapshot.uri,
         };
-        if (!parentMc && !parentIc) {
+        if (!mc && !parentIc) {
             snapshot.includeStatements.push(is);
         }
         return is;

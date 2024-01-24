@@ -11,12 +11,13 @@ import { IncludeContext } from '../interface/include/include-context';
 import { IncludeResult } from '../interface/include/include-result';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
+import { getMacroDeclaration, hasMacroDeclarationBefore, isDeclarationAlreadyAdded } from '../interface/macro/macro';
 import { MacroArguments } from '../interface/macro/macro-arguments';
 import { MacroContext } from '../interface/macro/macro-context';
-import { MacroContextBase } from '../interface/macro/macro-context-base';
+import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroParameter } from '../interface/macro/macro-parameter';
-import { MacroStatement } from '../interface/macro/macro-statement';
 import { MacroType } from '../interface/macro/macro-type';
+import { MacroUsage } from '../interface/macro/macro-usage';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { shaderStageKeywordToEnum } from '../interface/shader-stage';
 import { invalidVersion } from '../interface/snapshot-version';
@@ -156,35 +157,55 @@ class DshlPreprocessor {
                 snapshot: result.snapshot,
                 parent: null,
             };
-            this.snapshot.includeContexts.push(ic);
             for (const sr of result.snapshot.stringRanges) {
                 sr.startPosition += offset;
                 sr.endPosition += offset;
                 this.snapshot.stringRanges.push(sr);
             }
-            for (const icc of result.snapshot.includeContexts) {
-                ic.children.push(icc);
-                icc.parent = ic;
-            }
             for (const [uri, version] of result.snapshot.version.includedDocumentsVersion.entries()) {
                 this.snapshot.version.includedDocumentsVersion.set(uri, version);
             }
-            for (const ms of result.snapshot.macroStatements) {
-                if (!this.snapshot.macroStatements.some((ms2) => ms2.name === ms.name)) {
-                    ms.codeCompletionPosition = ic.includeStatement.originalEndPosition;
-                    ms.position += offset;
-                    this.snapshot.macroStatements.push(ms);
-                }
-            }
-            for (const mc of result.snapshot.macroContexts) {
-                mc.startPosition += offset;
-                mc.endPosition += offset;
-                mc.isVisible = false;
-                this.offsetChildren(mc, ic.startPosition);
-                this.snapshot.macroContexts.push(mc);
-            }
+            this.updateIncludes(result, ic);
+            this.updateMacros(result, ic, offset);
             this.offsetChildren(ic, ic.startPosition);
             offset += result.snapshot.text.length - (result.beforeEndPosition - result.position);
+        }
+    }
+
+    private updateIncludes(result: IncludeResult, ic: IncludeContext): void {
+        this.snapshot.includeContexts.push(ic);
+        for (const icc of result.snapshot.includeContexts) {
+            ic.children.push(icc);
+            icc.parent = ic;
+        }
+    }
+
+    private updateMacros(result: IncludeResult, ic: IncludeContext, offset: number): void {
+        for (const md of result.snapshot.macroDeclarations) {
+            md.codeCompletionPosition = ic.includeStatement.originalEndPosition;
+            md.position += offset;
+            this.snapshot.macroDeclarations.push(md);
+        }
+        for (const mc of result.snapshot.macroContexts) {
+            mc.startPosition += offset;
+            mc.endPosition += offset;
+            this.offsetChildren(mc, ic.startPosition);
+            this.snapshot.macroContexts.push(mc);
+        }
+        for (const macro of result.snapshot.macros) {
+            const m = this.snapshot.macros.find((m) => m.name === macro.name);
+            if (m) {
+                m.declarations.push(...macro.declarations.filter((md) => !isDeclarationAlreadyAdded(m, md)));
+                m.usages.push(...macro.usages);
+                for (const md of m.declarations) {
+                    md.macro = m;
+                }
+                for (const mu of m.usages) {
+                    mu.macro = m;
+                }
+            } else {
+                this.snapshot.macros.push(macro);
+            }
         }
     }
 
@@ -211,12 +232,6 @@ class DshlPreprocessor {
             const name = regexResult.groups?.name ?? '';
             const content = regexResult.groups?.content ?? '';
             const contentOffset = position + (regexResult.groups?.beforeContent?.length ?? 0);
-            const ic = this.snapshot.getIncludeContextAt(position);
-            const mc = this.snapshot.getMacroContextAt(position);
-            if (!ic && !mc) {
-                this.addIncludesInMacro(content, contentOffset);
-                this.findHlslBlocks(content, contentOffset);
-            }
             const beforeNameOffset = regexResult.groups?.beforeName?.length ?? 0;
             const nameOriginalRange = this.snapshot.getOriginalRange(
                 beforeNameOffset + position,
@@ -228,14 +243,15 @@ class DshlPreprocessor {
                 beforeEndPosition,
                 pasteText: '',
             });
-            if (this.snapshot.macroStatements.some((ms) => ms.name === name)) {
-                continue;
-            }
             const parameters = regexResult.groups?.parameters ?? '';
             const parametersOffset = position + (regexResult.groups?.beforeParameters?.length ?? 0);
             const macroParameters = this.getParameters(parameters, parametersOffset);
-            this.addParameterUsages(macroParameters, content, contentOffset);
-            this.createMacroStatement(
+            if (!this.snapshot.isInIncludeContext(position) && !this.snapshot.isInMacroContext(position)) {
+                this.addIncludesInMacro(content, contentOffset);
+                this.findHlslBlocks(content, contentOffset);
+                this.addParameterUsages(macroParameters, content, contentOffset);
+            }
+            this.createMacroDeclaration(
                 position,
                 originalRange,
                 nameOriginalRange,
@@ -293,7 +309,7 @@ class DshlPreprocessor {
         }
     }
 
-    private createMacroStatement(
+    private createMacroDeclaration(
         position: number,
         originalRange: Range,
         nameOriginalRange: Range,
@@ -302,13 +318,14 @@ class DshlPreprocessor {
         name: string,
         parameters: MacroParameter[],
         content: string
-    ): MacroStatement {
+    ): MacroDeclaration {
         const ic = this.snapshot.getIncludeContextDeepAt(position);
         const rootIc = this.snapshot.getIncludeContextAt(position);
         const type = match.startsWith('macro') ? MacroType.MACRO : MacroType.MACRO_IF_NOT_DEFINED;
         const contentOriginalRange = this.snapshot.getOriginalRange(contentPosition, contentPosition + content.length);
         const contentSnapshot = this.createContentSnapshot(content, contentPosition, ic);
-        const ms: MacroStatement = {
+        const macro = this.snapshot.getMacro(name);
+        const md: MacroDeclaration = {
             uri: ic?.snapshot?.uri ?? this.snapshot.uri,
             position,
             originalRange,
@@ -319,10 +336,13 @@ class DshlPreprocessor {
             parameters,
             contentSnapshot,
             type,
-            usages: [],
+            macro,
         };
-        this.snapshot.macroStatements.push(ms);
-        return ms;
+        if (!isDeclarationAlreadyAdded(macro, md)) {
+            macro.declarations.push(md);
+        }
+        this.snapshot.macroDeclarations.push(md);
+        return md;
     }
 
     private createContentSnapshot(content: string, contentPosition: number, ic: IncludeContext | null): Snapshot {
@@ -396,21 +416,21 @@ class DshlPreprocessor {
 
     private addIncludeInMacro(position: number, beforeEndPosition: number, type: IncludeType, path: string): void {
         const parentIc = this.snapshot.getIncludeContextDeepAt(position);
-        const parentMc = this.snapshot.getMacroContextAt(position);
-        Preprocessor.createIncludeStatement(beforeEndPosition, type, path, parentMc, parentIc, this.snapshot);
+        const mc = this.snapshot.isInMacroContext(position);
+        Preprocessor.createIncludeStatement(beforeEndPosition, type, path, mc, parentIc, this.snapshot);
     }
 
     private processMacroContents(): void {
-        const mss = this.snapshot.macroStatements.filter((ms) => ms.uri === this.snapshot.uri);
-        const macroNames = this.snapshot.macroStatements.map((ms) => ms.name).join('|');
+        const mds = this.snapshot.macroDeclarations.filter((md) => md.uri === this.snapshot.uri);
+        const macroNames = this.snapshot.macroDeclarations.map((md) => md.name).join('|');
         const regex = new RegExp(`\\b(${macroNames})\\b`, 'g');
-        for (const ms of mss) {
-            this.addMacrosInMacro(ms, regex);
+        for (const md of mds) {
+            this.addMacrosInMacro(md, regex);
         }
     }
 
-    private addMacrosInMacro(containerMs: MacroStatement, regex: RegExp): void {
-        const snapshot = containerMs.contentSnapshot;
+    private addMacrosInMacro(containerMd: MacroDeclaration, regex: RegExp): void {
+        const snapshot = containerMd.contentSnapshot;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(snapshot.text))) {
             const position = regexResult.index;
@@ -419,8 +439,8 @@ class DshlPreprocessor {
             if (Preprocessor.isInString(position, snapshot)) {
                 continue;
             }
-            const ms = this.snapshot.getMacroStatement(match, containerMs.position);
-            if (!ms) {
+            const macro = this.snapshot.getMacro(match);
+            if (!hasMacroDeclarationBefore(macro, containerMd.position)) {
                 continue;
             }
             const ma = Preprocessor.getMacroArguments(identifierEndPosition, snapshot);
@@ -428,21 +448,22 @@ class DshlPreprocessor {
                 continue;
             }
             const nameOriginalRange = snapshot.getOriginalRange(position, identifierEndPosition);
-            this.offsetPositions(nameOriginalRange, containerMs, ma);
-            const pmc: MacroContextBase = {
+            this.offsetPositions(nameOriginalRange, containerMd, ma);
+            const mu: MacroUsage = {
                 arguments: ma.arguments,
-                macroStatement: ms,
                 nameOriginalRange,
                 parameterListOriginalRange: ma.argumentListOriginalRange,
                 isVisible: true,
+                macro,
+                macroDeclaration: getMacroDeclaration(macro, ma.arguments.length, position),
             };
-            this.snapshot.potentialMacroContexts.push(pmc);
-            ms.usages.push(pmc);
+            this.snapshot.macroUsages.push(mu);
+            macro.usages.push(mu);
         }
     }
 
-    private offsetPositions(nameOriginalRange: Range, containerMs: MacroStatement, ma: MacroArguments): void {
-        const contentStartPosition = containerMs.contentOriginalRange.start;
+    private offsetPositions(nameOriginalRange: Range, md: MacroDeclaration, ma: MacroArguments): void {
+        const contentStartPosition = md.contentOriginalRange.start;
         this.offsetPosition(nameOriginalRange.start, contentStartPosition);
         this.offsetPosition(nameOriginalRange.end, contentStartPosition);
         this.offsetPosition(ma.argumentListOriginalRange.start, contentStartPosition);
@@ -464,10 +485,10 @@ class DshlPreprocessor {
     }
 
     private expandMacros(): void {
-        if (!this.snapshot.macroStatements.length) {
+        if (!this.snapshot.macroDeclarations.length) {
             return;
         }
-        const macroNames = this.snapshot.macroStatements.map((ms) => ms.name).join('|');
+        const macroNames = this.snapshot.macroDeclarations.map((md) => md.name).join('|');
         const regex = new RegExp(`\\b(${macroNames})\\b`, 'g');
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(this.snapshot.text))) {
@@ -477,34 +498,36 @@ class DshlPreprocessor {
             if (Preprocessor.isInString(position, this.snapshot)) {
                 continue;
             }
-            const ms = this.snapshot.getMacroStatement(match, position);
-            if (!ms) {
+            const macro = this.snapshot.getMacro(match);
+            if (!hasMacroDeclarationBefore(macro, position)) {
                 continue;
             }
             const ma = Preprocessor.getMacroArguments(identifierEndPosition, this.snapshot);
-            const mc = this.snapshot.getMacroContextAt(position);
+            const mc = this.snapshot.getMacroContextDeepAt(position);
             const ic = this.snapshot.getIncludeContextAt(position);
             if (!ma) {
                 continue;
             }
+            const md = getMacroDeclaration(macro, ma.arguments.length, position);
             const nameOriginalRange = this.snapshot.getOriginalRange(position, identifierEndPosition);
-            const pmc: MacroContextBase = {
+            const mu: MacroUsage = {
                 arguments: ma.arguments,
-                macroStatement: ms,
                 nameOriginalRange,
                 parameterListOriginalRange: ma.argumentListOriginalRange,
                 isVisible: !ic && !mc,
+                macro,
+                macroDeclaration: md,
             };
-            this.snapshot.potentialMacroContexts.push(pmc);
-            ms.usages.push(pmc);
-            if (ms.parameters.length !== ma.arguments.length) {
+            this.snapshot.macroUsages.push(mu);
+            macro.usages.push(mu);
+            if (!md) {
                 continue;
             }
-            if (this.isCircularMacroExpansion(mc, ms)) {
+            if (this.isCircularMacroExpansion(mc, md)) {
                 continue;
             }
             const beforeEndPosition = ma.endPosition;
-            this.expandMacro(position, beforeEndPosition, nameOriginalRange, ms, ma, ic, mc);
+            this.expandMacro(position, beforeEndPosition, md, ma, mc);
             regex.lastIndex = position;
         }
     }
@@ -512,28 +535,25 @@ class DshlPreprocessor {
     private expandMacro(
         position: number,
         beforeEndPosition: number,
-        originalNameRange: Range,
-        ms: MacroStatement,
+        md: MacroDeclaration,
         ma: MacroArguments,
-        ic: IncludeContext | null,
         parentMc: MacroContext | null = null
     ): void {
-        const pasteText = this.getMacroPasteText(ms, ma);
+        const pasteText = this.getMacroPasteText(md, ma);
         const afterEndPosition = position + pasteText.length;
-        const originalRange = this.snapshot.getOriginalRange(position, beforeEndPosition);
         Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, afterEndPosition, pasteText, this.snapshot);
-        this.createMacroContext(position, afterEndPosition, originalRange, originalNameRange, ms, ma, ic, parentMc);
+        this.createMacroContext(position, afterEndPosition, md, parentMc);
         Preprocessor.addStringRanges(position, afterEndPosition, this.snapshot);
     }
 
-    private getMacroPasteText(ms: MacroStatement, ma: MacroArguments): string {
+    private getMacroPasteText(md: MacroDeclaration, ma: MacroArguments): string {
         if (!ma.arguments.length) {
-            return ms.contentSnapshot.originalText;
+            return md.contentSnapshot.originalText;
         }
         const contentSnapshot = new Snapshot(invalidVersion, '', '');
-        contentSnapshot.text = ms.contentSnapshot.originalText;
+        contentSnapshot.text = md.contentSnapshot.originalText;
         Preprocessor.addStringRanges(0, contentSnapshot.text.length, contentSnapshot);
-        const parameterNames = ms.parameters.map((mp) => mp.name);
+        const parameterNames = md.parameters.map((mp) => mp.name);
         const regex = new RegExp(`\\b(${parameterNames.join('|')})\\b`, 'g');
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(contentSnapshot.text))) {
@@ -560,34 +580,24 @@ class DshlPreprocessor {
     private createMacroContext(
         position: number,
         afterEndPosition: number,
-        originalRange: Range,
-        originalNameRange: Range,
-        ms: MacroStatement,
-        ma: MacroArguments,
-        ic: IncludeContext | null,
+        md: MacroDeclaration,
         parentMc: MacroContext | null
     ): MacroContext {
-        const isVisible = !parentMc && !ic;
         const mc: MacroContext = {
-            macroStatement: ms,
             startPosition: position,
             endPosition: afterEndPosition,
-            originalRange,
-            nameOriginalRange: originalNameRange,
             parent: parentMc,
             children: [],
-            isVisible,
-            arguments: ma.arguments,
-            parameterListOriginalRange: ma.argumentListOriginalRange,
+            macroDeclaration: md,
         };
         this.snapshot.macroContexts.push(mc);
         return mc;
     }
 
-    private isCircularMacroExpansion(mc: MacroContext | null, ms: MacroStatement | null): boolean {
+    private isCircularMacroExpansion(mc: MacroContext | null, md: MacroDeclaration | null): boolean {
         let currentMc: MacroContext | null = mc;
         while (currentMc) {
-            if (currentMc.macroStatement === ms) {
+            if (md && currentMc.macroDeclaration === md) {
                 return true;
             }
             currentMc = currentMc.parent;
@@ -606,7 +616,7 @@ class DshlPreprocessor {
             const match = regexResult[0];
             const hlslKeywordEndPosition = position + match.length;
             const ic = this.snapshot.getIncludeContextAt(position);
-            const mc = this.snapshot.getMacroContextAt(position);
+            const mc = this.snapshot.isInMacroContext(position);
             const hbp = new HlslBlockProcesor(this.snapshot);
             const hlslRange = hbp.getHlslBlock(hlslKeywordEndPosition);
             if (hlslRange) {

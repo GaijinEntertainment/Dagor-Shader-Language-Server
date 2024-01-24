@@ -135,16 +135,9 @@ export class HlslPreprocessor {
             const beforeEndPosition = position + match.length;
             const path = regexResult.groups.quotedPath ?? regexResult.groups.angularPath;
             const type = regexResult.groups.quotedPath ? IncludeType.HLSL_QUOTED : IncludeType.HLSL_ANGULAR;
-            const parentMc = this.snapshot.getMacroContextAt(position);
+            const mc = this.snapshot.isInMacroContext(position);
             const parentIc = this.snapshot.getIncludeContextDeepAt(position);
-            const is = Preprocessor.createIncludeStatement(
-                beforeEndPosition,
-                type,
-                path,
-                parentMc,
-                parentIc,
-                this.snapshot
-            );
+            const is = Preprocessor.createIncludeStatement(beforeEndPosition, type, path, mc, parentIc, this.snapshot);
             if (this.ifStack.some((is) => !is.condition)) {
                 return;
             }

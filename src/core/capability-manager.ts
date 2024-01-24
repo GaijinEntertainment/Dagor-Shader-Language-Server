@@ -19,6 +19,7 @@ const capabilities: Capabilities = {
     inlayHints: false,
     showMessage: false,
     signatureHelpActiveParameter: false,
+    signatureHelpContext: false,
 };
 
 export function initializeCapabilities(clientCapabilities: ClientCapabilities): void {
@@ -42,6 +43,7 @@ export function initializeCapabilities(clientCapabilities: ClientCapabilities): 
     capabilities.showMessage = !!clientCapabilities.window?.showMessage;
     capabilities.signatureHelpActiveParameter =
         !!clientCapabilities.textDocument?.signatureHelp?.signatureInformation?.activeParameterSupport;
+    capabilities.signatureHelpContext = !!clientCapabilities.textDocument?.signatureHelp?.contextSupport;
 }
 
 export function getCapabilities(): Capabilities {

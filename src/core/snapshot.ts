@@ -7,9 +7,10 @@ import { ElementRange } from '../interface/element-range';
 import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
+import { Macro } from '../interface/macro/macro';
 import { MacroContext } from '../interface/macro/macro-context';
-import { MacroContextBase } from '../interface/macro/macro-context-base';
-import { MacroStatement } from '../interface/macro/macro-statement';
+import { MacroDeclaration } from '../interface/macro/macro-declaration';
+import { MacroUsage } from '../interface/macro/macro-usage';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { RangeWithChildren } from '../interface/range-with-children';
 import { SnapshotVersion } from '../interface/snapshot-version';
@@ -25,9 +26,10 @@ export class Snapshot {
     public includeStatements: IncludeStatement[] = [];
     public includeContexts: IncludeContext[] = [];
     public defineStatements: DefineStatement[] = [];
-    public macroStatements: MacroStatement[] = [];
+    public macros: Macro[] = [];
+    public macroDeclarations: MacroDeclaration[] = [];
     public macroContexts: MacroContext[] = [];
-    public potentialMacroContexts: MacroContextBase[] = [];
+    public macroUsages: MacroUsage[] = [];
     public defineContexts: DefineContext[] = [];
     public stringRanges: ElementRange[] = [];
     public hlslBlocks: HlslBlock[] = [];
@@ -149,14 +151,14 @@ export class Snapshot {
         for (const ic of this.includeContexts) {
             this.updateOffsetAndChildren(ic, newPo);
         }
-        for (const ms of this.macroStatements) {
-            ms.position = this.updatePosition(ms.position, newPo);
-        }
-        for (const ds of this.defineStatements) {
-            ds.position = this.updatePosition(ds.position, newPo);
+        for (const md of this.macroDeclarations) {
+            md.position = this.updatePosition(md.position, newPo);
         }
         for (const mc of this.macroContexts) {
             this.updateOffsetAndChildren(mc, newPo);
+        }
+        for (const ds of this.defineStatements) {
+            ds.position = this.updatePosition(ds.position, newPo);
         }
         for (const dc of this.defineContexts) {
             dc.startPosition = this.updatePosition(dc.startPosition, newPo);
@@ -198,6 +200,10 @@ export class Snapshot {
         );
     }
 
+    public isInIncludeContext(position: number): boolean {
+        return this.includeContexts.some((ic) => ic.startPosition <= position && position <= ic.endPosition);
+    }
+
     public getIncludeContextAt(position: number): IncludeContext | null {
         return this.includeContexts.find((ic) => ic.startPosition <= position && position <= ic.endPosition) ?? null;
     }
@@ -225,8 +231,21 @@ export class Snapshot {
         return null;
     }
 
-    public getMacroContextAt(position: number): MacroContext | null {
-        return this.macroContexts.find((mc) => mc.startPosition <= position && position < mc.endPosition) ?? null;
+    public getMacro(name: string): Macro {
+        let macro = this.macros.find((m) => m.name === name);
+        if (!macro) {
+            macro = {
+                name,
+                declarations: [],
+                usages: [],
+            };
+            this.macros.push(macro);
+        }
+        return macro;
+    }
+
+    public isInMacroContext(position: number): boolean {
+        return this.macroContexts.some((mc) => mc.startPosition <= position && position < mc.endPosition);
     }
 
     public getMacroContextDeepAt(position: number): MacroContext | null {
@@ -273,10 +292,6 @@ export class Snapshot {
             return dc;
         }
         return null;
-    }
-
-    public getMacroStatement(name: string, position: number): MacroStatement | null {
-        return this.macroStatements.find((ms) => ms.name === name && ms.position <= position) ?? null;
     }
 
     public isInHlslBlock(position: Position): boolean {

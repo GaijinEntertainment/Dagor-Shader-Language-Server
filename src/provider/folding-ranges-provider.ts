@@ -9,10 +9,10 @@ export async function foldingRangesProvider(params: FoldingRangeParams): Promise
         return null;
     }
     const result: FoldingRange[] = [];
-    for (const ms of snapshot.macroStatements.filter((ms) => ms.uri === params.textDocument.uri)) {
+    for (const md of snapshot.macroDeclarations.filter((md) => md.uri === params.textDocument.uri)) {
         result.push({
-            startLine: ms.originalRange.start.line,
-            endLine: ms.originalRange.end.line,
+            startLine: md.originalRange.start.line,
+            endLine: md.originalRange.end.line,
             kind: getCapabilities().foldingRangeKinds.includes(FoldingRangeKind.Region)
                 ? FoldingRangeKind.Region
                 : undefined,

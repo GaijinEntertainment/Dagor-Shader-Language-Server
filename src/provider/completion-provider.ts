@@ -136,22 +136,24 @@ function getDshlItems(snapshot: Snapshot, position: Position): CompletionItem[] 
 }
 
 function getMacros(snapshot: Snapshot, position: Position): LanguageElementInfo[] {
-    return snapshot.macroStatements
-        .filter(
-            (ms) =>
-                ms.codeCompletionPosition.line < position.line ||
-                (ms.codeCompletionPosition.line === position.line &&
-                    ms.codeCompletionPosition.character <= position.character)
+    return snapshot.macros
+        .filter((m) =>
+            m.declarations.some(
+                (md) =>
+                    md.codeCompletionPosition.line < position.line ||
+                    (md.codeCompletionPosition.line === position.line &&
+                        md.codeCompletionPosition.character <= position.character)
+            )
         )
-        .map((ms) => ({
-            name: ms.name,
+        .map((m) => ({
+            name: m.name,
         }));
 }
 
 function getMacroParameters(snapshot: Snapshot, position: Position): LanguageElementInfo[] {
-    return snapshot.macroStatements
-        .filter((ms) => rangeContains(ms.contentOriginalRange, position))
-        .flatMap((ms) => ms.parameters)
+    return snapshot.macroDeclarations
+        .filter((md) => rangeContains(md.contentOriginalRange, position))
+        .flatMap((md) => md.parameters)
         .map((parameter) => ({
             name: parameter.name,
         }));
