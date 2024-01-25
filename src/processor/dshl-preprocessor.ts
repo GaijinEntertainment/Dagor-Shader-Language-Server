@@ -40,13 +40,11 @@ class DshlPreprocessor {
     }
 
     public async preprocess(): Promise<void> {
-        console.time('preprocess');
         this.preprocessMacros();
         this.findHlslBlocks(this.snapshot.text);
         await this.preprocessIncludes([]);
         this.expandMacros();
         this.processMacroContents();
-        console.timeEnd('preprocess');
     }
 
     private async preprocessIncludes(parentUris: DocumentUri[]): Promise<void> {

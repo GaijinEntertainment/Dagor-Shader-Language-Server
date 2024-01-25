@@ -55,9 +55,10 @@ export async function completionProvider(
     if (!snapshot) {
         return null;
     }
-    const is = snapshot.getIncludeStatementAtPath(params.position);
+    const position = params.position;
+    const is = snapshot.getIncludeStatementAtPath(position);
     if (is) {
-        const result = await getIncludeCompletionInfos(is, params.position);
+        const result = await getIncludeCompletionInfos(is, position);
         return result.map<CompletionItem>((fsii) => ({
             label: fsii.name,
             kind: fsii.isFile() ? CompletionItemKind.File : CompletionItemKind.Folder,
@@ -65,24 +66,26 @@ export async function completionProvider(
     }
     const includeTriggerCharacters = ['"', '<', '/', '\\'];
     const triggerCharacter = params.context?.triggerCharacter ?? '';
-    if (isCursorInCommentOrString(snapshot, params.position) || includeTriggerCharacters.includes(triggerCharacter)) {
+    if (isCursorInCommentOrString(snapshot, position) || includeTriggerCharacters.includes(triggerCharacter)) {
         return null;
     }
     const uri = params.textDocument.uri;
-    const hlsl = uri.endsWith('.hlsl') || uri.endsWith('.hlsli') || snapshot.isInHlslBlock(params.position);
+    const hlsl = uri.endsWith('.hlsl') || uri.endsWith('.hlsli') || snapshot.isInHlslBlock(position);
+    const result: CompletionItem[] = [];
+    addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
     if (hlsl) {
-        return getHlslItems();
+        addHlslItems(result);
     } else {
-        return getDshlItems(snapshot, params.position);
+        addDshlItems(result, snapshot, position);
     }
+    return result;
 }
 
 function isCursorInCommentOrString(snapshot: Snapshot, position: Position): boolean {
     return snapshot.noCodeCompletionRanges.some((r) => rangeContains(r, position));
 }
 
-function getHlslItems(): CompletionItem[] {
-    const result: CompletionItem[] = [];
+function addHlslItems(result: CompletionItem[]): void {
     addCompletionItems(result, hlslKeywords, CompletionItemKind.Keyword, 'keyword');
     addCompletionItems(result, hlslPreprocessorDirectives, CompletionItemKind.Keyword, 'preprocessor directive');
     addCompletionItems(
@@ -113,11 +116,9 @@ function getHlslItems(): CompletionItem[] {
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, hlslSnippets, CompletionItemKind.Snippet, 'snippet');
     }
-    return result;
 }
 
-function getDshlItems(snapshot: Snapshot, position: Position): CompletionItem[] {
-    const result: CompletionItem[] = [];
+function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
     addCompletionItems(result, dshlKeywords, CompletionItemKind.Keyword, 'keyword');
     addCompletionItems(result, dshlEnumValues, CompletionItemKind.Value, 'value');
     addCompletionItems(result, dshlModifiers, CompletionItemKind.Keyword, 'modifier');
@@ -128,11 +129,9 @@ function getDshlItems(snapshot: Snapshot, position: Position): CompletionItem[] 
     addCompletionItems(result, dshlProperties, CompletionItemKind.Property, 'property');
     addCompletionItems(result, dshlFunctions, CompletionItemKind.Function, 'function');
     addCompletionItems(result, getMacros(snapshot, position), CompletionItemKind.Constant, 'macro');
-    addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, dshlSnippets, CompletionItemKind.Snippet, 'snippet');
     }
-    return result;
 }
 
 function getMacros(snapshot: Snapshot, position: Position): LanguageElementInfo[] {
