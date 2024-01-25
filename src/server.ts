@@ -4,6 +4,7 @@ import {
     InitializeResult,
     InitializedParams,
     InlayHintRequest,
+    ServerCapabilities,
     TextDocumentSyncKind,
     TextDocuments,
 } from 'vscode-languageserver';
@@ -20,8 +21,6 @@ import { completionProvider } from './provider/completion-provider';
 import { declarationProvider } from './provider/declaration-provider';
 import { definitionProvider } from './provider/definition-provider';
 import { documentHighlightProvider } from './provider/document-highlight-provider';
-import { documentLinkResolveProvider } from './provider/document-link-resolve-provider';
-import { documentLinksProvider } from './provider/document-links-provider';
 import { documentSymbolProvider } from './provider/document-symbol-provider';
 import { foldingRangesProvider } from './provider/folding-ranges-provider';
 import { hoverProvider } from './provider/hover-provider';
@@ -82,29 +81,32 @@ export abstract class Server {
 
     protected onInitialize(ip: InitializeParams): InitializeResult {
         return {
-            capabilities: {
-                textDocumentSync: TextDocumentSyncKind.Incremental,
-                completionProvider: {
-                    triggerCharacters: ['"', '<', '/', '\\'],
-                    completionItem: {
-                        labelDetailsSupport: true,
-                    },
-                },
-                declarationProvider: true,
-                definitionProvider: true,
-                documentHighlightProvider: true,
-                documentLinkProvider: { resolveProvider: true },
-                documentSymbolProvider: true,
-                // foldingRangeProvider: true, TODO: disabled, because only works with DSHL macros, re-enable when the provider finds all ranges
-                hoverProvider: true,
-                implementationProvider: true,
-                inlayHintProvider: { documentSelector: [{ language: 'dshl' }] },
-                signatureHelpProvider: { triggerCharacters: ['(', ','] },
-            },
+            capabilities: this.getServerCapabilities(),
             serverInfo: {
                 name: SERVER_NAME,
                 version: SERVER_VERSION,
             },
+        };
+    }
+
+    protected getServerCapabilities(): ServerCapabilities {
+        return {
+            textDocumentSync: TextDocumentSyncKind.Incremental,
+            completionProvider: {
+                triggerCharacters: ['"', '<', '/', '\\'],
+                completionItem: {
+                    labelDetailsSupport: true,
+                },
+            },
+            declarationProvider: true,
+            definitionProvider: true,
+            documentHighlightProvider: true,
+            documentSymbolProvider: true,
+            // foldingRangeProvider: true, TODO: disabled, because only works with DSHL macros, re-enable when the provider finds all ranges
+            hoverProvider: true,
+            implementationProvider: true,
+            inlayHintProvider: { documentSelector: [{ language: 'dshl' }] },
+            signatureHelpProvider: { triggerCharacters: ['(', ','] },
         };
     }
 
@@ -155,8 +157,6 @@ export abstract class Server {
         this.connection.onDeclaration(declarationProvider);
         this.connection.onDefinition(definitionProvider);
         this.connection.onDocumentHighlight(documentHighlightProvider);
-        this.connection.onDocumentLinks(documentLinksProvider);
-        this.connection.onDocumentLinkResolve(documentLinkResolveProvider);
         this.connection.onDocumentSymbol(documentSymbolProvider);
         this.connection.onFoldingRanges(foldingRangesProvider);
         this.connection.onHover(hoverProvider);

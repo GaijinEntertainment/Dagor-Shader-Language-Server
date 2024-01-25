@@ -1,4 +1,10 @@
-import { Connection, InitializedParams, ProposedFeatures, createConnection } from 'vscode-languageserver/node';
+import {
+    Connection,
+    InitializedParams,
+    ProposedFeatures,
+    ServerCapabilities,
+    createConnection,
+} from 'vscode-languageserver/node';
 
 import { getConfiguration } from './core/configuration-manager';
 import { clearCache } from './core/file-cache-manager';
@@ -10,6 +16,8 @@ import {
     collectOverrideIncludeFolders,
     increaseShaderConfigVersion,
 } from './processor/include-processor';
+import { documentLinkResolveProvider } from './provider/document-link-resolve-provider';
+import { documentLinksProvider } from './provider/document-links-provider';
 import { Server } from './server';
 
 export class ServerDesktop extends Server {
@@ -19,7 +27,6 @@ export class ServerDesktop extends Server {
 
     protected override createHostDependent(): HostDependent {
         return {
-            documentLinkErrorMessage: "Couldn't find the file. Maybe you should change the launch options.",
             loadFile: loadFile,
             exists: exists,
             isFile: isFile,
@@ -28,8 +35,21 @@ export class ServerDesktop extends Server {
         };
     }
 
+    protected override getServerCapabilities(): ServerCapabilities {
+        return {
+            ...super.getServerCapabilities(),
+            documentLinkProvider: { resolveProvider: true },
+        };
+    }
+
     protected override async onInitialized(_ip: InitializedParams): Promise<void> {
         await this.collectShaderIncludeFolders(getConfiguration().shaderConfigOverride);
+    }
+
+    protected override addFeatures(): void {
+        super.addFeatures();
+        this.connection.onDocumentLinks(documentLinksProvider);
+        this.connection.onDocumentLinkResolve(documentLinkResolveProvider);
     }
 
     protected override onShutdown(): void {
