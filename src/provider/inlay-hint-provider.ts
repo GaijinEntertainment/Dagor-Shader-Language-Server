@@ -17,7 +17,7 @@ export async function inlayHintProvider(params: InlayHintParams): Promise<InlayH
     );
     const result: InlayHint[] = [];
     for (const mu of mus) {
-        const md = getBestMacroDeclaration(mu);
+        const md = mu.macroDeclaration ?? getBestMacroDeclaration(mu);
         if (md) {
             for (let i = 0; i < mu.arguments.length && i < md.parameters.length; i++) {
                 const ma = mu.arguments[i];

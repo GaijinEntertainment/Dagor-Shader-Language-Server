@@ -29,7 +29,7 @@ function createHoverContent(mu: MacroUsage): MarkupContent {
 }
 
 function getValue(mu: MacroUsage): string {
-    const md = getBestMacroDeclaration(mu);
+    const md = mu.macroDeclaration ?? getBestMacroDeclaration(mu);
     if (!md) {
         return '';
     }
