@@ -1,5 +1,8 @@
 import { Position, Range } from 'vscode-languageserver';
 
+export const defaultPosition: Position = { line: 0, character: 0 };
+export const defaultRange: Range = { start: defaultPosition, end: defaultPosition };
+
 export function rangesEqual(r1: Range, r2: Range): boolean {
     return positionsEqual(r1.start, r2.start) && positionsEqual(r1.end, r2.end);
 }

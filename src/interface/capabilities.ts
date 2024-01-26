@@ -17,4 +17,5 @@ export interface Capabilities {
     inlayHints: boolean;
     showMessage: boolean;
     signatureHelpActiveParameter: boolean;
+    signatureHelpContext: boolean;
 }

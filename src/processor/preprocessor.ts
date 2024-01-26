@@ -1,13 +1,11 @@
 import { Range } from 'vscode-languageserver';
 
 import { Snapshot } from '../core/snapshot';
-import { PerformanceHelper } from '../helper/performance-helper';
 import { ElementRange } from '../interface/element-range';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
 import { MacroArguments } from '../interface/macro/macro-arguments';
-import { MacroContext } from '../interface/macro/macro-context';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { TextEdit } from '../interface/text-edit';
 import { preprocessDshl } from './dshl-preprocessor';
@@ -20,39 +18,25 @@ export async function preprocess(snapshot: Snapshot): Promise<void> {
 
 export class Preprocessor {
     private snapshot: Snapshot;
-    private ph: PerformanceHelper;
 
     public constructor(snapshot: Snapshot) {
         this.snapshot = snapshot;
         this.snapshot.text = this.snapshot.originalText;
-        this.ph = new PerformanceHelper(this.snapshot.uri);
     }
 
     public clean(): void {
-        this.ph.start('clean');
-        this.ph.start('preprocessLineContinuations');
         this.preprocessLineContinuations();
-        this.ph.end('preprocessLineContinuations');
-        this.ph.start('preprocessComments');
         this.preprocessComments();
-        this.ph.end('preprocessComments');
         this.snapshot.cleanedText = this.snapshot.text;
-        this.ph.end('clean');
     }
 
     public async preprocess(): Promise<void> {
-        this.ph.start('preprocess');
         this.clean();
-        this.ph.log('  general preprocessor', 'clean');
-        this.ph.log('    line continuations', 'preprocessLineContinuations');
-        this.ph.log('    comments', 'preprocessComments');
         if (this.snapshot.uri.endsWith('.dshl')) {
             await preprocessDshl(this.snapshot);
         }
         await preprocessHlsl(this.snapshot);
         this.snapshot.preprocessedText = this.snapshot.text;
-        this.ph.end('preprocess');
-        this.ph.log('preprocessing', 'preprocess');
     }
 
     private preprocessLineContinuations(): void {
@@ -165,7 +149,7 @@ export class Preprocessor {
         beforeEndPosition: number,
         type: IncludeType,
         path: string,
-        parentMc: MacroContext | null,
+        mc: boolean,
         parentIc: IncludeContext | null,
         snapshot: Snapshot
     ): IncludeStatement {
@@ -178,7 +162,7 @@ export class Preprocessor {
             type,
             includerUri: parentIc?.snapshot?.uri ?? snapshot.uri,
         };
-        if (!parentMc && !parentIc) {
+        if (!mc && !parentIc) {
             snapshot.includeStatements.push(is);
         }
         return is;

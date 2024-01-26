@@ -21,7 +21,3 @@ export async function getFolderContent(file: string): Promise<FileSystemItemInfo
 export function watchFile(path: string, callback: (path: string) => void): FileWatcher {
     return Server.getHostDependent().watchFile(path, callback);
 }
-
-export function getDocumentLinkErrorMessage(): string {
-    return Server.getHostDependent().documentLinkErrorMessage;
-}

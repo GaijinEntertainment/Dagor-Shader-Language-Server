@@ -1,13 +1,95 @@
 import * as path from 'path';
-import { DocumentUri } from 'vscode-languageserver';
+import { DocumentUri, Position } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 
 import { getConfiguration } from '../core/configuration-manager';
 import { log, logDocumentLinkResolveShaderConfig } from '../core/debug';
-import { exists, isFile } from '../helper/file-helper';
+import { exists, getFolderContent, isFile } from '../helper/file-helper';
+import { FileSystemItemInfo } from '../interface/file-system/file-system-item-info';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
 import { ShaderConfig, includeFolders, overrideIncludeFolders } from './include-processor';
+
+export async function getIncludeCompletionInfos(
+    is: IncludeStatement,
+    position: Position
+): Promise<FileSystemItemInfo[]> {
+    const completionPath = getCompletionPath(is, position);
+    const result: FileSystemItemInfo[] = [];
+    const includerFileName = path.parse(is.includerUri).base;
+    const includerUri = URI.parse(is.includerUri).fsPath;
+    await addLocalItems(is, completionPath, includerUri, includerFileName, result);
+    await addIncludePathItems(is, completionPath, includerFileName, result);
+    return result;
+}
+
+async function addLocalItems(
+    is: IncludeStatement,
+    completionPath: string,
+    includerUri: string,
+    includerFileName: string,
+    result: FileSystemItemInfo[]
+): Promise<void> {
+    if (is.type !== IncludeType.HLSL_ANGULAR) {
+        const includedUri = path.join(includerUri, '..', completionPath);
+        if ((await exists(includedUri)) && !(await isFile(includedUri))) {
+            const content = await getFolderContent(includedUri);
+            result.push(...content.filter((fsi) => filterLocalItems(fsi, includerFileName, is.type)));
+        }
+    }
+}
+
+async function addIncludePathItems(
+    is: IncludeStatement,
+    completionPath: string,
+    includerFileName: string,
+    result: FileSystemItemInfo[]
+): Promise<void> {
+    const includeFolders = getIncludeFolders();
+    for (const includeFolder of includeFolders) {
+        const includedUri = path.join(includeFolder, completionPath);
+        if ((await exists(includedUri)) && !(await isFile(includedUri))) {
+            const content = await getFolderContent(includedUri);
+            result.push(...content.filter((fsi) => filterIncludePathItems(fsi, result, includerFileName, is.type)));
+        }
+    }
+}
+
+function filterLocalItems(fsi: FileSystemItemInfo, includerFileName: string, type: IncludeType): boolean {
+    if (fsi.isDirectory()) {
+        return true;
+    }
+    if (fsi.name === includerFileName) {
+        return false;
+    }
+    if (type === IncludeType.DSHL) {
+        return fsi.name.endsWith('.dshl');
+    } else {
+        return fsi.name.endsWith('.hlsl') || fsi.name.endsWith('.hlsli');
+    }
+}
+
+function filterIncludePathItems(
+    fsi: FileSystemItemInfo,
+    result: FileSystemItemInfo[],
+    includerFileName: string,
+    type: IncludeType
+): boolean {
+    if (result.some((r) => r.name === fsi.name)) {
+        return false;
+    }
+    return filterLocalItems(fsi, includerFileName, type);
+}
+
+function getCompletionPath(is: IncludeStatement, position: Position): string {
+    if (is.pathOriginalRange.start.line !== position.line) {
+        return is.path;
+    }
+    const cursorOffset = position.character - is.pathOriginalRange.start.character;
+    const pathBeforeCursor = is.path.substring(0, cursorOffset);
+    const lastIndex = Math.max(pathBeforeCursor.lastIndexOf('/'), pathBeforeCursor.lastIndexOf('\\'));
+    return lastIndex === -1 ? '' : pathBeforeCursor.substring(0, lastIndex);
+}
 
 export async function getIncludedDocumentUri(is: IncludeStatement | null): Promise<DocumentUri | null> {
     if (!is) {

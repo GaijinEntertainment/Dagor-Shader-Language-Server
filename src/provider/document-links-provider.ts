@@ -5,7 +5,6 @@ import { getCapabilities } from '../core/capability-manager';
 import { showDocumentLinkDebugLabel } from '../core/debug';
 import { getSnapshot } from '../core/document-manager';
 import { positionsEqual } from '../helper/helper';
-import { PerformanceHelper } from '../helper/performance-helper';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { getIncludedDocumentUri } from '../processor/include-resolver';
 
@@ -14,8 +13,6 @@ export async function documentLinksProvider(dlp: DocumentLinkParams): Promise<Do
     if (!snapshot) {
         return [];
     }
-    const ph = new PerformanceHelper(dlp.textDocument.uri);
-    ph.start('documentLinksProvider');
     const links: DocumentLink[] = [];
     for (const is of snapshot.includeStatements) {
         if (!positionsEqual(is.pathOriginalRange.start, is.pathOriginalRange.end)) {
@@ -23,8 +20,6 @@ export async function documentLinksProvider(dlp: DocumentLinkParams): Promise<Do
             links.push(link);
         }
     }
-    ph.end('documentLinksProvider');
-    ph.log('providing document links', 'documentLinksProvider');
     return links;
 }
 

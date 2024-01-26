@@ -3,7 +3,8 @@ import { DocumentHighlight, DocumentHighlightKind, DocumentHighlightParams } fro
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
 import { rangeContains } from '../helper/helper';
-import { MacroStatement } from '../interface/macro/macro-statement';
+import { Macro } from '../interface/macro/macro';
+import { MacroParameter } from '../interface/macro/macro-parameter';
 
 export async function documentHighlightProvider(
     params: DocumentHighlightParams
@@ -12,38 +13,68 @@ export async function documentHighlightProvider(
     if (!snapshot) {
         return null;
     }
-    const ms = getMacroStatement(snapshot, params);
-    if (!ms) {
-        return null;
+    const macro = getMacro(snapshot, params);
+    if (macro) {
+        const result: DocumentHighlight[] = [];
+        for (const md of macro.declarations.filter((md) => md.uri === params.textDocument.uri)) {
+            result.push({
+                range: md.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        for (const mu of macro.usages.filter((mu) => mu.isVisible)) {
+            result.push({
+                range: mu.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        return result;
     }
-    const result: DocumentHighlight[] = [];
-    if (ms.uri === params.textDocument.uri) {
+    const mp = getMacroParameter(snapshot, params);
+    if (mp) {
+        const result: DocumentHighlight[] = [];
         result.push({
-            range: ms.nameOriginalRange,
+            range: mp.originalRange,
             kind: DocumentHighlightKind.Text,
         });
-    }
-    for (const mc of ms.usages.filter((msa) => msa.isVisible)) {
-        result.push({
-            range: mc.nameOriginalRange,
-            kind: DocumentHighlightKind.Text,
-        });
-    }
-    return result;
-}
-
-function getMacroStatement(snapshot: Snapshot, dhp: DocumentHighlightParams): MacroStatement | null {
-    const ms = snapshot.macroStatements.find(
-        (ms) => ms.uri === dhp.textDocument.uri && rangeContains(ms.nameOriginalRange, dhp.position)
-    );
-    if (ms) {
-        return ms;
-    }
-    const pmc = snapshot.potentialMacroContexts.find(
-        (mc) => mc.isVisible && rangeContains(mc.nameOriginalRange, dhp.position)
-    );
-    if (pmc) {
-        return pmc.macroStatement;
+        for (const mpu of mp.usages) {
+            result.push({
+                range: mpu.originalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        return result;
     }
     return null;
+}
+
+function getMacro(snapshot: Snapshot, params: DocumentHighlightParams): Macro | null {
+    const md = snapshot.macroDeclarations.find(
+        (md) => md.uri === params.textDocument.uri && rangeContains(md.nameOriginalRange, params.position)
+    );
+    if (md) {
+        return md.macro;
+    }
+    const mu = snapshot.macroUsages.find((mu) => mu.isVisible && rangeContains(mu.nameOriginalRange, params.position));
+    if (mu) {
+        return mu.macro;
+    }
+    return null;
+}
+
+function getMacroParameter(snapshot: Snapshot, params: DocumentHighlightParams): MacroParameter | null {
+    const md =
+        snapshot.macroDeclarations.find(
+            (md) => md.uri === params.textDocument.uri && rangeContains(md.originalRange, params.position)
+        ) ?? null;
+    if (!md) {
+        return null;
+    }
+    return (
+        md.parameters.find(
+            (mp) =>
+                rangeContains(mp.originalRange, params.position) ||
+                mp.usages.some((mpu) => rangeContains(mpu.originalRange, params.position))
+        ) ?? null
+    );
 }

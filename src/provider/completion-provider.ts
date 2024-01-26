@@ -46,28 +46,46 @@ import {
 } from '../helper/hlsl-info';
 import { LanguageElementInfo } from '../interface/language-element-info';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
+import { getIncludeCompletionInfos } from '../processor/include-resolver';
 
 export async function completionProvider(
     params: CompletionParams
 ): Promise<CompletionItem[] | CompletionList | undefined | null> {
     const snapshot = await getSnapshot(params.textDocument.uri);
-    if (!snapshot || isCursorInCommentOrString(snapshot, params.position)) {
+    if (!snapshot) {
         return null;
     }
-    const hlsl = params.textDocument.uri.endsWith('.hlsl') || snapshot.isInHlslBlock(params.position);
-    if (hlsl) {
-        return getHlslItems();
-    } else {
-        return getDshlItems(snapshot, params.position);
+    const position = params.position;
+    const is = snapshot.getIncludeStatementAtPath(position);
+    if (is) {
+        const result = await getIncludeCompletionInfos(is, position);
+        return result.map<CompletionItem>((fsii) => ({
+            label: fsii.name,
+            kind: fsii.isFile() ? CompletionItemKind.File : CompletionItemKind.Folder,
+        }));
     }
+    const includeTriggerCharacters = ['"', '<', '/', '\\'];
+    const triggerCharacter = params.context?.triggerCharacter ?? '';
+    if (isCursorInCommentOrString(snapshot, position) || includeTriggerCharacters.includes(triggerCharacter)) {
+        return null;
+    }
+    const uri = params.textDocument.uri;
+    const hlsl = uri.endsWith('.hlsl') || uri.endsWith('.hlsli') || snapshot.isInHlslBlock(position);
+    const result: CompletionItem[] = [];
+    addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
+    if (hlsl) {
+        addHlslItems(result);
+    } else {
+        addDshlItems(result, snapshot, position);
+    }
+    return result;
 }
 
 function isCursorInCommentOrString(snapshot: Snapshot, position: Position): boolean {
     return snapshot.noCodeCompletionRanges.some((r) => rangeContains(r, position));
 }
 
-function getHlslItems(): CompletionItem[] {
-    const result: CompletionItem[] = [];
+function addHlslItems(result: CompletionItem[]): void {
     addCompletionItems(result, hlslKeywords, CompletionItemKind.Keyword, 'keyword');
     addCompletionItems(result, hlslPreprocessorDirectives, CompletionItemKind.Keyword, 'preprocessor directive');
     addCompletionItems(
@@ -98,11 +116,9 @@ function getHlslItems(): CompletionItem[] {
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, hlslSnippets, CompletionItemKind.Snippet, 'snippet');
     }
-    return result;
 }
 
-function getDshlItems(snapshot: Snapshot, position: Position): CompletionItem[] {
-    const result: CompletionItem[] = [];
+function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
     addCompletionItems(result, dshlKeywords, CompletionItemKind.Keyword, 'keyword');
     addCompletionItems(result, dshlEnumValues, CompletionItemKind.Value, 'value');
     addCompletionItems(result, dshlModifiers, CompletionItemKind.Keyword, 'modifier');
@@ -116,19 +132,29 @@ function getDshlItems(snapshot: Snapshot, position: Position): CompletionItem[] 
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, dshlSnippets, CompletionItemKind.Snippet, 'snippet');
     }
-    return result;
 }
 
 function getMacros(snapshot: Snapshot, position: Position): LanguageElementInfo[] {
-    return snapshot.macroStatements
-        .filter(
-            (ms) =>
-                ms.codeCompletionPosition.line < position.line ||
-                (ms.codeCompletionPosition.line === position.line &&
-                    ms.codeCompletionPosition.character <= position.character)
+    return snapshot.macros
+        .filter((m) =>
+            m.declarations.some(
+                (md) =>
+                    md.codeCompletionPosition.line < position.line ||
+                    (md.codeCompletionPosition.line === position.line &&
+                        md.codeCompletionPosition.character <= position.character)
+            )
         )
-        .map((ms) => ({
-            name: ms.name,
+        .map((m) => ({
+            name: m.name,
+        }));
+}
+
+function getMacroParameters(snapshot: Snapshot, position: Position): LanguageElementInfo[] {
+    return snapshot.macroDeclarations
+        .filter((md) => rangeContains(md.contentOriginalRange, position))
+        .flatMap((md) => md.parameters)
+        .map((parameter) => ({
+            name: parameter.name,
         }));
 }
 
