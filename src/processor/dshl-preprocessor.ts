@@ -1,10 +1,7 @@
 import { DocumentUri, Position, Range } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
 
-import { getFileContent, getFileVersion } from '../core/file-cache-manager';
 import { Snapshot } from '../core/snapshot';
 import { defaultRange } from '../helper/helper';
-import { getDocuments } from '../helper/server-helper';
 import { ElementRange } from '../interface/element-range';
 import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
@@ -105,33 +102,13 @@ class DshlPreprocessor {
         if (!uri || parentUris.includes(uri)) {
             return new Snapshot(invalidVersion, '', '');
         }
-        const snapshot = await this.getSnapshot(uri);
+        const snapshot = await Preprocessor.getSnapshot(uri, this.snapshot);
         new Preprocessor(snapshot).clean();
         const dp = new DshlPreprocessor(snapshot);
         dp.preprocessMacros();
         await dp.preprocessIncludes(parentUris);
         dp.expandMacros();
         return snapshot;
-    }
-
-    private async getSnapshot(uri: DocumentUri): Promise<Snapshot> {
-        // TODO: make it more uniform with the file cache, and support HLSL
-        const document = getDocuments().get(uri);
-        if (document) {
-            this.snapshot.version.includedDocumentsVersion.set(uri, {
-                version: document.version,
-                isManaged: true,
-            });
-            return new Snapshot(invalidVersion, uri, document.getText());
-        } else {
-            const text = await getFileContent(URI.parse(uri).fsPath);
-            const cachedVersion = getFileVersion(URI.parse(uri).fsPath);
-            this.snapshot.version.includedDocumentsVersion.set(uri, {
-                version: cachedVersion,
-                isManaged: false,
-            });
-            return new Snapshot(invalidVersion, uri, text);
-        }
     }
 
     private pasteIncludes(includeResults: IncludeResult[]): void {
@@ -385,7 +362,7 @@ class DshlPreprocessor {
     }
 
     private addIncludesInMacro(text: string, offset: number): void {
-        const regex = /#[ \t]*include[ \t]*(?:"(?<quotedPath>([^"]|\\")+)"|<(?<angularPath>[^>]+)>)/g;
+        const regex = /#[ \t]*include[ \t]*(?:"(?<quotedPath>([^"]|\\")*)"|<(?<angularPath>[^>]*)>)/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(text))) {
             if (regexResult.groups) {

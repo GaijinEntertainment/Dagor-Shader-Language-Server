@@ -1,11 +1,8 @@
 import { ANTLRInputStream, CommonTokenStream } from 'antlr4ts';
 import { DocumentUri } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
 
 import { ConditionLexer } from '../_generated/ConditionLexer';
 import { ConditionParser } from '../_generated/ConditionParser';
-import { getSnapshot } from '../core/document-manager';
-import { getFileContent } from '../core/file-cache-manager';
 import { Snapshot } from '../core/snapshot';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
@@ -33,8 +30,10 @@ export class HlslPreprocessor {
     }
 
     public async preprocess(): Promise<void> {
+        console.time('hlsl');
         await this.preprocessDirectives();
-        this.refreshMacroNames();
+        console.timeEnd('hlsl');
+        // this.refreshMacroNames();
         //HlslPreprocessor.expandMacros(0, this.snapshot.text.length, this.snapshot, this.macroNames);
     }
 
@@ -46,18 +45,14 @@ export class HlslPreprocessor {
             const match = regexResult[0];
             const beforeEndPosition = position + match.length;
             const nextStartPosition = await this.preprocessDirective(position, beforeEndPosition, match);
-            // regex.lastIndex = nextStartPosition;
+            regex.lastIndex = nextStartPosition;
         }
     }
 
     private async preprocessDirective(position: number, beforeEndPosition: number, match: string): Promise<number> {
-        const regexResult = this.getIncludeRegexResult(match);
+        const regexResult = /#[ \t]*include[ \t]*(?:"(?<quotedPath>([^"]|\\")*)"|<(?<angularPath>[^>]*)>)/g.exec(match);
         if (regexResult) {
-            await this.preprocessInclude(regexResult, position);
-            if (this.ifStack.some((is) => !is.condition) || Preprocessor.isInString(position, this.snapshot)) {
-                return beforeEndPosition;
-            }
-            return position;
+            return await this.preprocessInclude(regexResult, position);
         }
 
         // const is2 = this.getIfdefStatement(match, position);
@@ -120,29 +115,90 @@ export class HlslPreprocessor {
         return beforeEndPosition;
     }
 
-    private getIncludeRegexResult(text: string): RegExpExecArray | null {
-        const regex = /#[ \t]*include[ \t]*(?:"(?<quotedPath>([^"]|\\")+)"|<(?<angularPath>[^>]+)>)/g;
-        return regex.exec(text);
+    private async preprocessInclude(regexResult: RegExpExecArray, offset: number): Promise<number> {
+        const position = offset + regexResult.index;
+        const match = regexResult[0];
+        const beforeEndPosition = position + match.length;
+        if (Preprocessor.isInString(position, this.snapshot)) {
+            return beforeEndPosition;
+        }
+        const path = regexResult.groups?.quotedPath ?? regexResult.groups?.angularPath ?? '';
+        const type = regexResult.groups?.quotedPath ? IncludeType.HLSL_QUOTED : IncludeType.HLSL_ANGULAR;
+        const mc = this.snapshot.isInMacroContext(position);
+        const parentIc = this.snapshot.getIncludeContextDeepAt(position);
+        const is = Preprocessor.createIncludeStatement(beforeEndPosition, type, path, mc, parentIc, this.snapshot);
+        if (this.ifStack.some((is) => !is.condition)) {
+            return beforeEndPosition;
+        }
+        return await this.includeContent(position, beforeEndPosition, is, parentIc);
     }
 
-    private async preprocessInclude(regexResult: RegExpExecArray, offset: number): Promise<void> {
-        const position = offset + regexResult.index;
-        if (Preprocessor.isInString(position, this.snapshot)) {
-            return;
+    private async includeContent(
+        position: number,
+        beforeEndPosition: number,
+        is: IncludeStatement,
+        parentIc: IncludeContext | null
+    ): Promise<number> {
+        const uri = await getIncludedDocumentUri(is);
+        const includeSnapshot = await this.getInclude(uri, parentIc);
+        const includeText = includeSnapshot.text;
+        const afterEndPosition = position + includeText.length;
+        Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, afterEndPosition, includeText, this.snapshot);
+        const ic = this.createIncludeContext(position, afterEndPosition, uri, parentIc, is);
+        if (ic) {
+            Preprocessor.addStringRanges(position, afterEndPosition, this.snapshot);
         }
-        if (regexResult.groups) {
-            const match = regexResult[0];
-            const beforeEndPosition = position + match.length;
-            const path = regexResult.groups.quotedPath ?? regexResult.groups.angularPath;
-            const type = regexResult.groups.quotedPath ? IncludeType.HLSL_QUOTED : IncludeType.HLSL_ANGULAR;
-            const mc = this.snapshot.isInMacroContext(position);
-            const parentIc = this.snapshot.getIncludeContextDeepAt(position);
-            const is = Preprocessor.createIncludeStatement(beforeEndPosition, type, path, mc, parentIc, this.snapshot);
-            if (this.ifStack.some((is) => !is.condition)) {
-                return;
+        return afterEndPosition;
+    }
+
+    private async getInclude(uri: DocumentUri | null, parentIc: IncludeContext | null): Promise<Snapshot> {
+        if (!uri || this.isCircularInclude(parentIc, uri)) {
+            return new Snapshot(invalidVersion, '', '');
+        }
+        const snapshot = await Preprocessor.getSnapshot(uri, this.snapshot);
+        new Preprocessor(snapshot).clean();
+        return snapshot;
+    }
+
+    private createIncludeContext(
+        position: number,
+        afterEndPosition: number,
+        uri: DocumentUri | null,
+        parentIc: IncludeContext | null,
+        is: IncludeStatement
+    ): IncludeContext | null {
+        if (!uri) {
+            return null;
+        }
+        const ic: IncludeContext = {
+            startPosition: position,
+            localStartPosition: position,
+            endPosition: afterEndPosition,
+            includeStatement: is,
+            snapshot: this.snapshot,
+            parent: parentIc,
+            children: [],
+        };
+        if (parentIc) {
+            parentIc.children.push(ic);
+        } else {
+            this.snapshot.includeContexts.push(ic);
+        }
+        return ic;
+    }
+
+    private isCircularInclude(ic: IncludeContext | null, uri: DocumentUri | null): boolean {
+        if (this.snapshot.uri === uri) {
+            return true;
+        }
+        let currentIc = ic;
+        while (currentIc) {
+            if (currentIc?.snapshot?.uri === uri) {
+                return true;
             }
-            //await HlslPreprocessor.includeContent(position, beforeEndPosition, is, parentIc, this.snapshot);
+            currentIc = currentIc.parent;
         }
+        return false;
     }
 
     private getIfStatement(text: string, position: number): IfState | null {
@@ -342,86 +398,6 @@ export class HlslPreprocessor {
         const mn = this.snapshot.defineStatements.map((ds) => ds.name);
         const umn = [...new Set(mn)];
         this.macroNames = umn.join('|');
-    }
-
-    public static async includeContent(
-        position: number,
-        beforeEndPosition: number,
-        is: IncludeStatement,
-        parentIc: IncludeContext | null,
-        snapshot: Snapshot
-    ): Promise<void> {
-        const uri = await getIncludedDocumentUri(is);
-        const includeText = await HlslPreprocessor.getIncludeText(uri, parentIc, snapshot);
-        const afterEndPosition = position + includeText.length;
-        Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, afterEndPosition, includeText, snapshot);
-        const ic = HlslPreprocessor.createIncludeContext(position, afterEndPosition, uri, parentIc, snapshot, is);
-        if (ic) {
-            Preprocessor.addStringRanges(position, afterEndPosition, snapshot);
-        }
-    }
-
-    private static createIncludeContext(
-        position: number,
-        afterEndPosition: number,
-        uri: DocumentUri | null,
-        parentIc: IncludeContext | null,
-        snapshot: Snapshot,
-        is: IncludeStatement
-    ): IncludeContext | null {
-        if (!uri) {
-            return null;
-        }
-        const ic: IncludeContext = {
-            startPosition: position,
-            localStartPosition: position,
-            endPosition: afterEndPosition,
-            includeStatement: is,
-            snapshot,
-            parent: parentIc,
-            children: [],
-        };
-        if (parentIc) {
-            parentIc.children.push(ic);
-        } else {
-            snapshot.includeContexts.push(ic);
-        }
-        return ic;
-    }
-
-    private static async getIncludeText(
-        uri: DocumentUri | null,
-        parentIc: IncludeContext | null,
-        snapshot: Snapshot
-    ): Promise<string> {
-        const circularInclude = HlslPreprocessor.isCircularInclude(parentIc, uri, snapshot);
-        return uri && !circularInclude ? await HlslPreprocessor.getText(uri) : '';
-    }
-
-    private static async getText(uri: DocumentUri): Promise<string> {
-        let includedSnapshot = await getSnapshot(uri);
-        if (includedSnapshot) {
-            return includedSnapshot.cleanedText;
-        } else {
-            const text = await getFileContent(URI.parse(uri).fsPath);
-            includedSnapshot = new Snapshot(invalidVersion, uri, text);
-            new Preprocessor(includedSnapshot).clean();
-            return includedSnapshot.cleanedText;
-        }
-    }
-
-    private static isCircularInclude(ic: IncludeContext | null, uri: DocumentUri | null, snapshot: Snapshot): boolean {
-        if (snapshot.uri === uri) {
-            return true;
-        }
-        let currentIc = ic;
-        while (currentIc) {
-            if (currentIc?.snapshot?.uri === uri) {
-                return true;
-            }
-            currentIc = currentIc.parent;
-        }
-        return false;
     }
 
     public static isDefined(text: string, position: number, snapshot: Snapshot): boolean {

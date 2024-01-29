@@ -1,12 +1,16 @@
-import { Range } from 'vscode-languageserver';
+import { DocumentUri, Range } from 'vscode-languageserver';
 
+import { URI } from 'vscode-uri';
+import { getFileContent, getFileVersion } from '../core/file-cache-manager';
 import { Snapshot } from '../core/snapshot';
+import { getDocuments } from '../helper/server-helper';
 import { ElementRange } from '../interface/element-range';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
 import { MacroArguments } from '../interface/macro/macro-arguments';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
+import { invalidVersion } from '../interface/snapshot-version';
 import { TextEdit } from '../interface/text-edit';
 import { preprocessDshl } from './dshl-preprocessor';
 import { preprocessHlsl } from './hlsl-preprocessor';
@@ -197,5 +201,26 @@ export class Preprocessor {
     public static getMacroArguments(identifierEndPosition: number, snapshot: Snapshot): MacroArguments | null {
         const map = new MacroArgumentsProcesor(snapshot);
         return map.getMacroArguments(identifierEndPosition);
+    }
+
+    public static async getSnapshot(uri: DocumentUri, snapshot: Snapshot): Promise<Snapshot> {
+        // TODO: make it more uniform with the file cache
+        const document = getDocuments().get(uri);
+        if (document) {
+            snapshot.version.includedDocumentsVersion.set(uri, {
+                version: document.version,
+                isManaged: true,
+            });
+            return new Snapshot(invalidVersion, uri, document.getText());
+        } else {
+            const fsUri = URI.parse(uri).fsPath;
+            const text = await getFileContent(fsUri);
+            const cachedVersion = getFileVersion(fsUri);
+            snapshot.version.includedDocumentsVersion.set(uri, {
+                version: cachedVersion,
+                isManaged: false,
+            });
+            return new Snapshot(invalidVersion, uri, text);
+        }
     }
 }
