@@ -97,15 +97,27 @@ export class HlslPreprocessor {
             this.preprocessEndif(position);
             return beforeEndPosition;
         }
-        // const ds = this.getDefineStatement(match, position);
-        // if (ds) {
-        //     Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
-        //     return position;
-        // }
-        // if (this.isUndefStatement(match, position)) {
-        //     Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
-        //     return position;
-        // }
+        if (!this.isAnyFalseAbove()) {
+            const objectDefineRegex = /#[ \t]*define[ \t]+?(?<name>[a-zA-Z_]\w*)[ \t]+?(?<content>.*)?/;
+            regexResult = objectDefineRegex.exec(match);
+            if (regexResult) {
+                this.preprocessObjectDefine(regexResult, position);
+                return beforeEndPosition;
+            }
+            const functionDefineRegex =
+                /#[ \t]*define[ \t]+(?<name>[a-zA-Z_]\w*)\((?<params>[ \t]*[a-zA-Z_]\w*([ \t]*,[ \t]*[a-zA-Z_]\w*)*[ \t]*,?)?[ \t]*\)(?<content>.*)?/;
+            regexResult = functionDefineRegex.exec(match);
+            if (regexResult) {
+                this.preprocessFunctionDefine(regexResult, position);
+                return beforeEndPosition;
+            }
+            const undefRegex = /#[ \t]*undef[ \t]+(?<name>[a-zA-Z_]\w*).*/;
+            regexResult = undefRegex.exec(match);
+            if (regexResult) {
+                this.preprocessUndef(regexResult, position);
+                return beforeEndPosition;
+            }
+        }
         return beforeEndPosition;
     }
 
@@ -337,68 +349,51 @@ export class HlslPreprocessor {
         }
     }
 
-    private getDefineStatement(text: string, position: number): DefineStatement | null {
-        // if (this.ifStack.some((is) => !is.condition)) {
-        //     return null;
-        // }
-        // let regex = /#[ \t]*define[ \t]+?(?<name>[a-zA-Z_]\w*)[ \t]+?(?<content>.*)?/;
-        // let regexResult = regex.exec(text);
-        // if (regexResult && regexResult.groups) {
-        //     const name = regexResult.groups.name;
-        //     const content = regexResult.groups.content?.trim().replace(/[ \t]*#[ \t]*#[ \t]*/g, '') ?? '';
-        //     const ds: DefineStatement = {
-        //         objectLike: true,
-        //         position: regexResult.index + position,
-        //         name,
-        //         parameters: [],
-        //         content,
-        //         undefPosition: null,
-        //     };
-        //     this.snapshot.defineStatements.push(ds);
-        //     return ds;
-        // }
-        // regex =
-        //     /#[ \t]*define[ \t]+(?<name>[a-zA-Z_]\w*)\((?<params>[ \t]*[a-zA-Z_]\w*([ \t]*,[ \t]*[a-zA-Z_]\w*)*[ \t]*,?)?[ \t]*\)(?<content>.*)?/;
-        // regexResult = regex.exec(text);
-        // if (regexResult && regexResult.groups) {
-        //     const name = regexResult.groups.name;
-        //     const content = regexResult.groups.content?.trim() ?? '';
-        //     const ds: DefineStatement = {
-        //         objectLike: false,
-        //         position: regexResult.index + position,
-        //         name,
-        //         parameters:
-        //             regexResult.groups.params
-        //                 ?.replace(/[ \t]/g, '')
-        //                 .split(',')
-        //                 .filter((p) => p.length) ?? [],
-        //         content,
-        //         undefPosition: null,
-        //     };
-        //     this.snapshot.defineStatements.push(ds);
-        //     return ds;
-        // }
-        return null;
+    private preprocessObjectDefine(regexResult: RegExpExecArray, position: number): void {
+        if (regexResult.groups) {
+            const name = regexResult.groups.name;
+            const content = regexResult.groups.content?.trim().replace(/[ \t]*#[ \t]*#[ \t]*/g, '') ?? '';
+            const ds: DefineStatement = {
+                objectLike: true,
+                position: regexResult.index + position,
+                name,
+                parameters: [],
+                content,
+                undefPosition: null,
+            };
+            this.snapshot.defineStatements.push(ds);
+        }
     }
 
-    private isUndefStatement(text: string, position: number): boolean {
-        // if (this.ifStack.some((is) => !is.condition)) {
-        //     return false;
-        // }
-        // const regex = /#[ \t]*undef[ \t]+(?<name>[a-zA-Z_]\w*).*/;
-        // const regexResult = regex.exec(text);
-        // if (regexResult && regexResult.groups) {
-        //     if (this.ifStack.every((is) => is.condition)) {
-        //         const name = regexResult.groups.name;
-        //         this.snapshot.defineStatements
-        //             .filter((ds) => ds.name === name && ds.position <= position)
-        //             .forEach((ds) => {
-        //                 if (ds.undefPosition == null) ds.undefPosition = position;
-        //             });
-        //     }
-        //     return true;
-        // }
-        return false;
+    private preprocessFunctionDefine(regexResult: RegExpExecArray, position: number): void {
+        if (regexResult.groups) {
+            const name = regexResult.groups.name;
+            const content = regexResult.groups.content?.trim() ?? '';
+            const ds: DefineStatement = {
+                objectLike: false,
+                position: regexResult.index + position,
+                name,
+                parameters:
+                    regexResult.groups.params
+                        ?.replace(/[ \t]/g, '')
+                        .split(',')
+                        .filter((p) => p.length) ?? [],
+                content,
+                undefPosition: null,
+            };
+            this.snapshot.defineStatements.push(ds);
+        }
+    }
+
+    private preprocessUndef(regexResult: RegExpExecArray, position: number): void {
+        if (regexResult.groups) {
+            const name = regexResult.groups.name;
+            this.snapshot.defineStatements
+                .filter((ds) => ds.name === name && ds.position <= position)
+                .forEach((ds) => {
+                    if (ds.undefPosition == null) ds.undefPosition = position;
+                });
+        }
     }
 
     private evaluateCondition(condition: string, position: number): boolean {
