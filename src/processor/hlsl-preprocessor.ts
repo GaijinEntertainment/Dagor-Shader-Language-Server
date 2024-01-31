@@ -234,7 +234,7 @@ export class HlslPreprocessor {
 
     private preprocessElif(regex: RegExp, regexResult: RegExpExecArray, offset: number): void {
         const ifState: IfState = { position: offset, condition: false };
-        this.addIfFoldingRange(offset);
+        HlslPreprocessor.addIfFoldingRange(offset, this.ifStack, this.snapshot);
         if (!this.isAnyFalseAbove() && this.isAllFalseInTheSameLevel()) {
             this.refreshMacroNames();
             const position = offset + regexResult.index;
@@ -255,20 +255,20 @@ export class HlslPreprocessor {
                 ifState.condition = this.evaluateCondition(finalRegexResult.groups.condition, position);
             }
         }
-        this.addIfState(ifState);
+        HlslPreprocessor.addIfState(this.ifStack, ifState);
     }
 
     private preprocessElse(offset: number): void {
         const ifState: IfState = { position: offset, condition: false };
-        this.addIfFoldingRange(offset);
+        HlslPreprocessor.addIfFoldingRange(offset, this.ifStack, this.snapshot);
         if (!this.isAnyFalseAbove() && this.isAllFalseInTheSameLevel()) {
             ifState.condition = true;
         }
-        this.addIfState(ifState);
+        HlslPreprocessor.addIfState(this.ifStack, ifState);
     }
 
     private preprocessEndif(position: number): void {
-        this.addIfFoldingRange(position);
+        HlslPreprocessor.addIfFoldingRange(position, this.ifStack, this.snapshot);
         if (!this.isAnyFalseAbove()) {
             this.addRemoveRanges(position);
         }
@@ -297,13 +297,6 @@ export class HlslPreprocessor {
         }
     }
 
-    private addIfState(ifState: IfState): void {
-        if (this.ifStack.length) {
-            const ifStates = this.ifStack[this.ifStack.length - 1];
-            ifStates.push(ifState);
-        }
-    }
-
     private isAnyFalseAbove(checkLastLevel = false): boolean {
         const offset = checkLastLevel ? 0 : 1;
         for (let i = 0; i < this.ifStack.length - offset; i++) {
@@ -324,16 +317,23 @@ export class HlslPreprocessor {
         return true;
     }
 
-    private addIfFoldingRange(position: number): void {
-        const mc = this.snapshot.isInMacroContext(position);
-        const ic = this.snapshot.isInIncludeContext(position);
-        if (!mc && !ic && this.ifStack.length) {
-            const ifStates = this.ifStack[this.ifStack.length - 1];
+    public static addIfFoldingRange(position: number, ifStack: IfState[][], snapshot: Snapshot): void {
+        const mc = snapshot.isInMacroContext(position);
+        const ic = snapshot.isInIncludeContext(position);
+        if (!mc && !ic && ifStack.length) {
+            const ifStates = ifStack[ifStack.length - 1];
             if (ifStates.length) {
                 const ifState = ifStates[ifStates.length - 1];
-                const originalRange = this.snapshot.getOriginalRange(ifState.position, position);
-                this.snapshot.ifRanges.push(originalRange);
+                const originalRange = snapshot.getOriginalRange(ifState.position, position);
+                snapshot.ifRanges.push(originalRange);
             }
+        }
+    }
+
+    public static addIfState(ifStack: IfState[][], ifState: IfState): void {
+        if (ifStack.length) {
+            const ifStates = ifStack[ifStack.length - 1];
+            ifStates.push(ifState);
         }
     }
 

@@ -4,6 +4,7 @@ import { Snapshot } from '../core/snapshot';
 import { defaultRange } from '../helper/helper';
 import { ElementRange } from '../interface/element-range';
 import { HlslBlock } from '../interface/hlsl-block';
+import { IfState } from '../interface/if-state';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeResult } from '../interface/include/include-result';
 import { IncludeStatement } from '../interface/include/include-statement';
@@ -20,6 +21,7 @@ import { shaderStageKeywordToEnum } from '../interface/shader-stage';
 import { invalidVersion } from '../interface/snapshot-version';
 import { TextEdit } from '../interface/text-edit';
 import { HlslBlockProcesor } from './hlsl-block-processor';
+import { HlslPreprocessor } from './hlsl-preprocessor';
 import { getIncludedDocumentUri } from './include-resolver';
 import { Preprocessor } from './preprocessor';
 
@@ -223,7 +225,7 @@ class DshlPreprocessor {
             const parametersOffset = position + (regexResult.groups?.beforeParameters?.length ?? 0);
             const macroParameters = this.getParameters(parameters, parametersOffset);
             if (this.isRoot) {
-                this.addIncludesInMacro(content, contentOffset);
+                this.addHlslDirectivesInMacro(content, contentOffset);
                 this.findHlslBlocks(content, contentOffset);
                 this.addParameterUsages(macroParameters, content, contentOffset);
             }
@@ -361,20 +363,62 @@ class DshlPreprocessor {
             }));
     }
 
-    private addIncludesInMacro(text: string, offset: number): void {
-        const regex = /#[ \t]*include[ \t]*(?:"(?<quotedPath>([^"]|\\")*)"|<(?<angularPath>[^>]*)>)/g;
+    private addHlslDirectivesInMacro(text: string, offset: number): void {
+        const ifStack: IfState[][] = [];
+        const regex = /#.*/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(text))) {
-            if (regexResult.groups) {
-                const position = offset + regexResult.index;
-                if (Preprocessor.isInString(position, this.snapshot)) {
-                    continue;
-                }
+            let position = offset + regexResult.index;
+            if (Preprocessor.isInString(position, this.snapshot)) {
+                continue;
+            }
+            const match = regexResult[0];
+            const includeRegex = /#[ \t]*include[ \t]*(?:"(?<quotedPath>([^"]|\\")*)"|<(?<angularPath>[^>]*)>)/;
+            regexResult = includeRegex.exec(match);
+            if (regexResult && regexResult.groups) {
+                position += regexResult.index;
                 const match = regexResult[0];
                 const beforeEndPosition = position + match.length;
                 const path = regexResult.groups.quotedPath ?? regexResult.groups.angularPath;
                 const type = regexResult.groups.quotedPath ? IncludeType.HLSL_QUOTED : IncludeType.HLSL_ANGULAR;
                 Preprocessor.createIncludeStatement(beforeEndPosition, type, path, false, null, this.snapshot);
+            }
+            const ifRegex = /^#[ \t]*if\b(?<condition>.*)/;
+            regexResult = ifRegex.exec(match);
+            if (regexResult) {
+                position += regexResult.index;
+                const ifState: IfState = { position, condition: false };
+                ifStack.push([ifState]);
+            }
+            const ifdefRegex = /#[ \t]*(?<directive>ifn?def\b)(?<condition>.*)/;
+            regexResult = ifdefRegex.exec(match);
+            if (regexResult) {
+                position += regexResult.index;
+                const ifState: IfState = { position, condition: false };
+                ifStack.push([ifState]);
+            }
+            const elifRegex = /^#[ \t]*elif\b(?<condition>.*)/;
+            regexResult = elifRegex.exec(match);
+            if (regexResult) {
+                position += regexResult.index;
+                const ifState: IfState = { position, condition: false };
+                HlslPreprocessor.addIfFoldingRange(position, ifStack, this.snapshot);
+                HlslPreprocessor.addIfState(ifStack, ifState);
+            }
+            const elseRegex = /^#[ \t]*else\b.*/;
+            regexResult = elseRegex.exec(match);
+            if (regexResult) {
+                position += regexResult.index;
+                const ifState: IfState = { position, condition: false };
+                HlslPreprocessor.addIfFoldingRange(position, ifStack, this.snapshot);
+                HlslPreprocessor.addIfState(ifStack, ifState);
+            }
+            const endifRegex = /^#[ \t]*endif\b.*/;
+            regexResult = endifRegex.exec(match);
+            if (regexResult) {
+                position += regexResult.index;
+                HlslPreprocessor.addIfFoldingRange(position, ifStack, this.snapshot);
+                ifStack.pop();
             }
         }
     }
