@@ -32,6 +32,7 @@ export class Snapshot {
     public macroUsages: MacroUsage[] = [];
     public defineContexts: DefineContext[] = [];
     public stringRanges: ElementRange[] = [];
+    public ifRanges: Range[] = [];
     public hlslBlocks: HlslBlock[] = [];
     public noCodeCompletionRanges: Range[] = [];
     public preprocessingOffsets: PreprocessingOffset[] = [];

@@ -35,12 +35,14 @@ export class Preprocessor {
     }
 
     public async preprocess(): Promise<void> {
+        console.time('preprocess');
         this.clean();
         if (this.snapshot.uri.endsWith('.dshl')) {
             await preprocessDshl(this.snapshot);
         }
         await preprocessHlsl(this.snapshot);
         this.snapshot.preprocessedText = this.snapshot.text;
+        console.timeEnd('preprocess');
     }
 
     private preprocessLineContinuations(): void {
