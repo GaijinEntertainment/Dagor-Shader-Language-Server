@@ -63,7 +63,7 @@ export class HlslPreprocessor {
     }
 
     private async preprocessDirective(position: number, beforeEndPosition: number, match: string): Promise<number> {
-        let regexResult = /#[ \t]*include[ \t]*(?:"(?<quotedPath>([^"]|\\")*)"|<(?<angularPath>[^>]*)>)/.exec(match);
+        let regexResult = /#[ \t]*include[ \t]*(?:"(?<quotedPath>(?:[^"]|\\")*)"|<(?<angularPath>[^>]*)>)/.exec(match);
         if (regexResult) {
             return await this.preprocessInclude(regexResult, position);
         }

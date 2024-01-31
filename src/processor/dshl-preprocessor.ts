@@ -39,6 +39,7 @@ class DshlPreprocessor {
     }
 
     public async preprocess(): Promise<void> {
+        this.addDshlDirectives();
         this.preprocessMacros();
         this.findHlslBlocks(this.snapshot.text);
         await this.preprocessIncludes([]);
@@ -363,6 +364,53 @@ class DshlPreprocessor {
             }));
     }
 
+    private addDshlDirectives(): void {
+        const ifStack: IfState[][] = [];
+        const regex = /##.*/g;
+        let regexResult: RegExpExecArray | null;
+        while ((regexResult = regex.exec(this.snapshot.text))) {
+            let position = regexResult.index;
+            if (Preprocessor.isInString(position, this.snapshot)) {
+                continue;
+            }
+            const match = regexResult[0];
+            const ifRegex = /^##[ \t]*if\b.*/;
+            regexResult = ifRegex.exec(match);
+            if (regexResult) {
+                position += regexResult.index;
+                const ifState: IfState = { position, condition: false };
+                ifStack.push([ifState]);
+                continue;
+            }
+            const elifRegex = /^##[ \t]*elif\b.*/;
+            regexResult = elifRegex.exec(match);
+            if (regexResult) {
+                position += regexResult.index;
+                const ifState: IfState = { position, condition: false };
+                HlslPreprocessor.addIfFoldingRange(position, ifStack, this.snapshot);
+                HlslPreprocessor.addIfState(ifStack, ifState);
+                continue;
+            }
+            const elseRegex = /^##[ \t]*else\b.*/;
+            regexResult = elseRegex.exec(match);
+            if (regexResult) {
+                position += regexResult.index;
+                const ifState: IfState = { position, condition: false };
+                HlslPreprocessor.addIfFoldingRange(position, ifStack, this.snapshot);
+                HlslPreprocessor.addIfState(ifStack, ifState);
+                continue;
+            }
+            const endifRegex = /^##[ \t]*endif\b.*/;
+            regexResult = endifRegex.exec(match);
+            if (regexResult) {
+                position += regexResult.index;
+                HlslPreprocessor.addIfFoldingRange(position, ifStack, this.snapshot);
+                ifStack.pop();
+                continue;
+            }
+        }
+    }
+
     private addHlslDirectivesInMacro(text: string, offset: number): void {
         const ifStack: IfState[][] = [];
         const regex = /#.*/g;
@@ -373,7 +421,7 @@ class DshlPreprocessor {
                 continue;
             }
             const match = regexResult[0];
-            const includeRegex = /#[ \t]*include[ \t]*(?:"(?<quotedPath>([^"]|\\")*)"|<(?<angularPath>[^>]*)>)/;
+            const includeRegex = /#[ \t]*include[ \t]*(?:"(?:[^"]|\\")*"|<[^>]*>)/;
             regexResult = includeRegex.exec(match);
             if (regexResult && regexResult.groups) {
                 position += regexResult.index;
@@ -382,28 +430,32 @@ class DshlPreprocessor {
                 const path = regexResult.groups.quotedPath ?? regexResult.groups.angularPath;
                 const type = regexResult.groups.quotedPath ? IncludeType.HLSL_QUOTED : IncludeType.HLSL_ANGULAR;
                 Preprocessor.createIncludeStatement(beforeEndPosition, type, path, false, null, this.snapshot);
+                continue;
             }
-            const ifRegex = /^#[ \t]*if\b(?<condition>.*)/;
+            const ifRegex = /^#[ \t]*if\b.*/;
             regexResult = ifRegex.exec(match);
             if (regexResult) {
                 position += regexResult.index;
                 const ifState: IfState = { position, condition: false };
                 ifStack.push([ifState]);
+                continue;
             }
-            const ifdefRegex = /#[ \t]*(?<directive>ifn?def\b)(?<condition>.*)/;
+            const ifdefRegex = /#[ \t]*ifn?def\b.*/;
             regexResult = ifdefRegex.exec(match);
             if (regexResult) {
                 position += regexResult.index;
                 const ifState: IfState = { position, condition: false };
                 ifStack.push([ifState]);
+                continue;
             }
-            const elifRegex = /^#[ \t]*elif\b(?<condition>.*)/;
+            const elifRegex = /^#[ \t]*elif\b.*/;
             regexResult = elifRegex.exec(match);
             if (regexResult) {
                 position += regexResult.index;
                 const ifState: IfState = { position, condition: false };
                 HlslPreprocessor.addIfFoldingRange(position, ifStack, this.snapshot);
                 HlslPreprocessor.addIfState(ifStack, ifState);
+                continue;
             }
             const elseRegex = /^#[ \t]*else\b.*/;
             regexResult = elseRegex.exec(match);
@@ -412,6 +464,7 @@ class DshlPreprocessor {
                 const ifState: IfState = { position, condition: false };
                 HlslPreprocessor.addIfFoldingRange(position, ifStack, this.snapshot);
                 HlslPreprocessor.addIfState(ifStack, ifState);
+                continue;
             }
             const endifRegex = /^#[ \t]*endif\b.*/;
             regexResult = endifRegex.exec(match);
@@ -419,6 +472,7 @@ class DshlPreprocessor {
                 position += regexResult.index;
                 HlslPreprocessor.addIfFoldingRange(position, ifStack, this.snapshot);
                 ifStack.pop();
+                continue;
             }
         }
     }
