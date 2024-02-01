@@ -17,3 +17,7 @@ export function rangeContains(r: Range, p: Position): boolean {
         (p.line < r.end.line || (p.line === r.end.line && p.character <= r.end.character))
     );
 }
+
+export function isBeforeOrEqual(p1: Position, p2: Position): boolean {
+    return p1.line < p2.line || (p1.line === p2.line && p1.character <= p2.character);
+}

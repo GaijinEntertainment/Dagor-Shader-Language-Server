@@ -148,7 +148,7 @@ class IncludeProcessor {
         blkContent: string
     ): Promise<void> {
         let regexResult: RegExpExecArray | null;
-        const includeRegex = /((?<=\binclude\s*")[^"]*(?="))|((?<=\binclude\s+)[^"\s]+?(?=\s))/g;
+        const includeRegex = /((?<=\binclude\s*")[^"]*(?="))|((?<=\binclude\s+)[^"\s]+(?=\s))/g;
         while ((regexResult = includeRegex.exec(blkContent))) {
             const relativePath = blkContent.substring(regexResult.index, regexResult.index + regexResult[0].length);
             const workspacePath = path.join(path.dirname(blkPath), relativePath);

@@ -13,6 +13,7 @@ import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroUsage } from '../interface/macro/macro-usage';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { RangeWithChildren } from '../interface/range-with-children';
+import { ShaderBlock } from '../interface/shader-block';
 import { SnapshotVersion } from '../interface/snapshot-version';
 
 export class Snapshot {
@@ -33,6 +34,8 @@ export class Snapshot {
     public defineContexts: DefineContext[] = [];
     public stringRanges: ElementRange[] = [];
     public ifRanges: Range[] = [];
+    public shaderBlocks: ShaderBlock[] = [];
+    public globalHlslBlocks: HlslBlock[] = [];
     public hlslBlocks: HlslBlock[] = [];
     public noCodeCompletionRanges: Range[] = [];
     public preprocessingOffsets: PreprocessingOffset[] = [];
@@ -172,6 +175,10 @@ export class Snapshot {
         for (const hb of this.hlslBlocks) {
             hb.startPosition = this.updatePosition(hb.startPosition, newPo);
             hb.endPosition = this.updatePosition(hb.endPosition, newPo);
+        }
+        for (const sb of this.shaderBlocks) {
+            sb.startPosition = this.updatePosition(sb.startPosition, newPo);
+            sb.endPosition = this.updatePosition(sb.endPosition, newPo);
         }
         this.preprocessingOffsets.push(newPo);
     }

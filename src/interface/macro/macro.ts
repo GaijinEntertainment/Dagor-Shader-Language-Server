@@ -1,3 +1,4 @@
+import { positionsEqual } from '../../helper/helper';
 import { MacroDeclaration } from './macro-declaration';
 import { MacroUsage } from './macro-usage';
 
@@ -17,9 +18,6 @@ export function getMacroDeclaration(macro: Macro, parameterCount: number, positi
 
 export function isDeclarationAlreadyAdded(macro: Macro, md: MacroDeclaration): boolean {
     return macro.declarations.some(
-        (md2) =>
-            md2.uri === md.uri &&
-            md2.originalRange.start.line === md.originalRange.start.line &&
-            md2.originalRange.start.character === md.originalRange.start.character
+        (md2) => md2.uri === md.uri && positionsEqual(md2.originalRange.start, md.originalRange.start)
     );
 }

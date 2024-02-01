@@ -17,10 +17,11 @@ import { MacroParameter } from '../interface/macro/macro-parameter';
 import { MacroType } from '../interface/macro/macro-type';
 import { MacroUsage } from '../interface/macro/macro-usage';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
-import { shaderStageKeywordToEnum } from '../interface/shader-stage';
+import { ShaderBlock } from '../interface/shader-block';
+import { ShaderStage, shaderStageKeywordToEnum } from '../interface/shader-stage';
 import { invalidVersion } from '../interface/snapshot-version';
 import { TextEdit } from '../interface/text-edit';
-import { HlslBlockProcesor } from './hlsl-block-processor';
+import { BlockProcesor } from './block-processor';
 import { HlslPreprocessor } from './hlsl-preprocessor';
 import { getIncludedDocumentUri } from './include-resolver';
 import { Preprocessor } from './preprocessor';
@@ -41,10 +42,11 @@ class DshlPreprocessor {
     public async preprocess(): Promise<void> {
         this.addDshlDirectives();
         this.preprocessMacros();
-        this.findHlslBlocks(this.snapshot.text);
         await this.preprocessIncludes([]);
         this.expandMacros();
         this.processMacroContents();
+        this.findShaderBlocks();
+        this.findHlslBlocks(this.snapshot.text);
     }
 
     private async preprocessIncludes(parentUris: DocumentUri[]): Promise<void> {
@@ -135,6 +137,7 @@ class DshlPreprocessor {
                 includeStatement: result.includeStatement,
                 snapshot: result.snapshot,
                 parent: null,
+                originalEndPosition: this.snapshot.getOriginalPosition(afterEndPosition, false),
             };
             for (const sr of result.snapshot.stringRanges) {
                 sr.startPosition += offset;
@@ -664,6 +667,30 @@ class DshlPreprocessor {
         return false;
     }
 
+    private findShaderBlocks(): void {
+        const regex = /\bshader\s+[A-Za-z_]\w*(\s*,\s*[A-Za-z_]\w*)*/g;
+        let regexResult: RegExpExecArray | null;
+        while ((regexResult = regex.exec(this.snapshot.text))) {
+            const position = regexResult.index;
+            if (Preprocessor.isInString(position, this.snapshot)) {
+                continue;
+            }
+            const match = regexResult[0];
+            const identifierEndPosition = position + match.length;
+            const blockProcessor = new BlockProcesor(this.snapshot);
+            const shaderRange = blockProcessor.getBlock(identifierEndPosition);
+            if (shaderRange) {
+                const shaderBlock: ShaderBlock = {
+                    startPosition: shaderRange.startPosition,
+                    endPosition: shaderRange.endPosition,
+                    originalRange: this.snapshot.getOriginalRange(shaderRange.startPosition, shaderRange.endPosition),
+                    hlslBlocks: [],
+                };
+                this.snapshot.shaderBlocks.push(shaderBlock);
+            }
+        }
+    }
+
     private findHlslBlocks(text: string, offset = 0): void {
         const regex = /\b(?:hlsl\s*(?:\(\s*(?<stage>\w*)\s*\))?)/g;
         let regexResult: RegExpExecArray | null;
@@ -674,20 +701,40 @@ class DshlPreprocessor {
             }
             const match = regexResult[0];
             const hlslKeywordEndPosition = position + match.length;
-            const hbp = new HlslBlockProcesor(this.snapshot);
-            const hlslRange = hbp.getHlslBlock(hlslKeywordEndPosition);
+            const blockProcessor = new BlockProcesor(this.snapshot);
+            const hlslRange = blockProcessor.getBlock(hlslKeywordEndPosition);
             if (hlslRange) {
                 const stage = regexResult.groups?.stage ?? '';
-                const hlslBlock: HlslBlock = {
-                    originalRange: this.isRoot
-                        ? this.snapshot.getOriginalRange(hlslRange.startPosition, hlslRange.endPosition)
-                        : defaultRange,
-                    isVisible: this.isRoot,
-                    stage: shaderStageKeywordToEnum(stage),
-                    ...hlslRange,
-                };
-                this.snapshot.hlslBlocks.push(hlslBlock);
+                const stageEnum = shaderStageKeywordToEnum(stage);
+                this.createHlslBlock(hlslRange, stageEnum);
             }
+        }
+    }
+
+    private createHlslBlock(hlslRange: ElementRange, stage: ShaderStage | null) {
+        const hlslBlock: HlslBlock = {
+            originalRange: this.snapshot.getOriginalRange(hlslRange.startPosition, hlslRange.endPosition),
+            isVisible:
+                this.isRoot &&
+                !this.snapshot.isInIncludeContext(hlslRange.startPosition) &&
+                !this.snapshot.isInMacroContext(hlslRange.startPosition),
+            stage,
+            defineStatements: [],
+            ...hlslRange,
+        };
+        this.addHlslBlock(hlslBlock);
+        return hlslBlock;
+    }
+
+    private addHlslBlock(hlslBlock: HlslBlock): void {
+        this.snapshot.hlslBlocks.push(hlslBlock);
+        const shaderBlock = this.snapshot.shaderBlocks.find(
+            (sb) => sb.startPosition <= hlslBlock.startPosition && hlslBlock.endPosition <= sb.endPosition
+        );
+        if (shaderBlock) {
+            shaderBlock.hlslBlocks.push(hlslBlock);
+        } else {
+            this.snapshot.globalHlslBlocks.push(hlslBlock);
         }
     }
 }

@@ -7,6 +7,7 @@ import { Snapshot } from '../core/snapshot';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
+import { HlslBlock } from '../interface/hlsl-block';
 import { IfState } from '../interface/if-state';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
@@ -98,17 +99,17 @@ export class HlslPreprocessor {
             return beforeEndPosition;
         }
         if (!this.isAnyFalseAbove()) {
-            const objectDefineRegex = /#[ \t]*define[ \t]+?(?<name>[a-zA-Z_]\w*)[ \t]+?(?<content>.*)?/;
-            regexResult = objectDefineRegex.exec(match);
-            if (regexResult) {
-                this.preprocessObjectDefine(regexResult, position);
-                return beforeEndPosition;
-            }
             const functionDefineRegex =
                 /#[ \t]*define[ \t]+(?<name>[a-zA-Z_]\w*)\((?<params>[ \t]*[a-zA-Z_]\w*([ \t]*,[ \t]*[a-zA-Z_]\w*)*[ \t]*,?)?[ \t]*\)(?<content>.*)?/;
             regexResult = functionDefineRegex.exec(match);
             if (regexResult) {
                 this.preprocessFunctionDefine(regexResult, position);
+                return beforeEndPosition;
+            }
+            const objectDefineRegex = /#[ \t]*define[ \t]+(?<name>[a-zA-Z_]\w*)[ \t]*(?<content>.*)?/;
+            regexResult = objectDefineRegex.exec(match);
+            if (regexResult) {
+                this.preprocessObjectDefine(regexResult, position);
                 return beforeEndPosition;
             }
             const undefRegex = /#[ \t]*undef[ \t]+(?<name>[a-zA-Z_]\w*).*/;
@@ -133,7 +134,8 @@ export class HlslPreprocessor {
         if (this.isAnyFalseAbove(true)) {
             return beforeEndPosition;
         }
-        return await this.includeContent(position, beforeEndPosition, is, parentIc);
+        await this.includeContent(position, beforeEndPosition, is, parentIc);
+        return offset;
     }
 
     private async includeContent(
@@ -141,7 +143,7 @@ export class HlslPreprocessor {
         beforeEndPosition: number,
         is: IncludeStatement,
         parentIc: IncludeContext | null
-    ): Promise<number> {
+    ): Promise<void> {
         const uri = await getIncludedDocumentUri(is);
         const includeSnapshot = await this.getInclude(uri, parentIc);
         const includeText = includeSnapshot.text;
@@ -151,7 +153,6 @@ export class HlslPreprocessor {
         if (ic) {
             Preprocessor.addStringRanges(position, afterEndPosition, this.snapshot);
         }
-        return afterEndPosition;
     }
 
     private async getInclude(uri: DocumentUri | null, parentIc: IncludeContext | null): Promise<Snapshot> {
@@ -181,6 +182,7 @@ export class HlslPreprocessor {
             snapshot: this.snapshot,
             parent: parentIc,
             children: [],
+            originalEndPosition: this.snapshot.getOriginalPosition(afterEndPosition, false),
         };
         if (parentIc) {
             parentIc.children.push(ic);
@@ -349,49 +351,80 @@ export class HlslPreprocessor {
         }
     }
 
-    private preprocessObjectDefine(regexResult: RegExpExecArray, position: number): void {
+    private preprocessObjectDefine(regexResult: RegExpExecArray, offset: number): void {
+        const content = regexResult.groups?.content?.trim().replace(/[ \t]*#[ \t]*#[ \t]*/g, '') ?? '';
+        this.preprocessDefine(regexResult, offset, true, [], content);
+    }
+
+    private preprocessFunctionDefine(regexResult: RegExpExecArray, offset: number): void {
+        const parameters =
+            regexResult.groups?.params
+                ?.replace(/[ \t]/g, '')
+                .split(',')
+                .filter((p) => p.length) ?? [];
+        const content = regexResult.groups?.content?.trim() ?? '';
+        this.preprocessDefine(regexResult, offset, false, parameters, content);
+    }
+
+    private preprocessDefine(
+        regexResult: RegExpExecArray,
+        offset: number,
+        objectLike: boolean,
+        parameters: string[],
+        content: string
+    ): void {
         if (regexResult.groups) {
+            const position = regexResult.index + offset;
             const name = regexResult.groups.name;
-            const content = regexResult.groups.content?.trim().replace(/[ \t]*#[ \t]*#[ \t]*/g, '') ?? '';
+            const ic = this.snapshot.getIncludeContextAt(position);
+            const nameOriginalRange = this.snapshot.getOriginalRange(position, position + name.length);
             const ds: DefineStatement = {
-                objectLike: true,
-                position: regexResult.index + position,
+                objectLike,
+                position,
+                nameOriginalRange,
                 name,
-                parameters: [],
+                parameters,
                 content,
                 undefPosition: null,
+                codeCompletionPosition: ic ? ic.originalEndPosition : nameOriginalRange.end,
+                undefCodeCompletionPosition: null,
             };
-            this.snapshot.defineStatements.push(ds);
+            this.addDefine(position, ds);
         }
     }
 
-    private preprocessFunctionDefine(regexResult: RegExpExecArray, position: number): void {
-        if (regexResult.groups) {
-            const name = regexResult.groups.name;
-            const content = regexResult.groups.content?.trim() ?? '';
-            const ds: DefineStatement = {
-                objectLike: false,
-                position: regexResult.index + position,
-                name,
-                parameters:
-                    regexResult.groups.params
-                        ?.replace(/[ \t]/g, '')
-                        .split(',')
-                        .filter((p) => p.length) ?? [],
-                content,
-                undefPosition: null,
-            };
-            this.snapshot.defineStatements.push(ds);
+    private addDefine(position: number, ds: DefineStatement): void {
+        this.snapshot.defineStatements.push(ds);
+        const shaderBlock = this.snapshot.shaderBlocks.find(
+            (sb) => sb.startPosition <= position && position <= sb.endPosition
+        );
+        if (shaderBlock) {
+            this.addDefineToHlslBlock(position, shaderBlock.hlslBlocks, ds);
+        } else {
+            this.addDefineToHlslBlock(position, this.snapshot.globalHlslBlocks, ds);
+        }
+    }
+
+    private addDefineToHlslBlock(position: number, hlslBlocks: HlslBlock[], ds: DefineStatement): void {
+        const hb = hlslBlocks.find((hb) => hb.startPosition <= position && position <= hb.endPosition);
+        if (hb) {
+            hb.defineStatements.push(ds);
         }
     }
 
     private preprocessUndef(regexResult: RegExpExecArray, position: number): void {
         if (regexResult.groups) {
             const name = regexResult.groups.name;
+            const ic = this.snapshot.getIncludeContextAt(position);
             this.snapshot.defineStatements
                 .filter((ds) => ds.name === name && ds.position <= position)
                 .forEach((ds) => {
-                    if (ds.undefPosition == null) ds.undefPosition = position;
+                    if (ds.undefPosition === null) {
+                        ds.undefPosition = position;
+                        ds.undefCodeCompletionPosition = ic
+                            ? ic.originalEndPosition
+                            : this.snapshot.getOriginalPosition(position, true);
+                    }
                 });
         }
     }
