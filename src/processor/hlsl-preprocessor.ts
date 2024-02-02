@@ -4,6 +4,7 @@ import { DocumentUri } from 'vscode-languageserver';
 import { ConditionLexer } from '../_generated/ConditionLexer';
 import { ConditionParser } from '../_generated/ConditionParser';
 import { Snapshot } from '../core/snapshot';
+import { defaultRange } from '../helper/helper';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
@@ -376,11 +377,19 @@ export class HlslPreprocessor {
         if (regexResult.groups) {
             const position = regexResult.index + offset;
             const name = regexResult.groups.name;
+            const match = regexResult[0];
             const ic = this.snapshot.getIncludeContextAt(position);
-            const nameOriginalRange = this.snapshot.getOriginalRange(position, position + name.length);
+            const isVisible = !ic && !this.snapshot.isInMacroContext(position);
+            const originalRange = isVisible
+                ? this.snapshot.getOriginalRange(position, position + match.length)
+                : defaultRange;
+            const nameOriginalRange = isVisible
+                ? this.snapshot.getOriginalRange(position, position + name.length)
+                : defaultRange;
             const ds: DefineStatement = {
                 objectLike,
                 position,
+                originalRange,
                 nameOriginalRange,
                 name,
                 parameters,
@@ -388,6 +397,7 @@ export class HlslPreprocessor {
                 undefPosition: null,
                 codeCompletionPosition: ic ? ic.originalEndPosition : nameOriginalRange.end,
                 undefCodeCompletionPosition: null,
+                isVisible,
             };
             this.addDefine(position, ds);
         }

@@ -2,8 +2,8 @@ import { DocumentSymbol, DocumentSymbolParams, SymbolInformation, SymbolKind } f
 
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
+import { toStringDefineStatementHeader, toStringDefineStatementParameterList } from '../interface/define-statement';
 import {
-    MacroDeclaration,
     toStringMacroDeclarationHeader,
     toStringMacroDeclarationParameterList,
 } from '../interface/macro/macro-declaration';
@@ -16,42 +16,54 @@ export async function documentSymbolProvider(
         return null;
     }
     const mds = snapshot.macroDeclarations.filter((md) => md.uri === params.textDocument.uri);
+    const dss = snapshot.defineStatements.filter((ds) => ds.isVisible);
     if (getCapabilities().documentSymbolHierarchy) {
         const result: DocumentSymbol[] = [];
         for (const md of mds) {
-            const ds = getDocumentSymbol(md);
-            result.push(ds);
+            result.push({
+                name: md.name,
+                kind: SymbolKind.Constant,
+                range: md.originalRange,
+                selectionRange: md.nameOriginalRange,
+                detail: toStringMacroDeclarationParameterList(md),
+            });
+        }
+        for (const ds of dss) {
+            result.push({
+                name: ds.name,
+                kind: SymbolKind.Constant,
+                range: ds.originalRange,
+                selectionRange: ds.nameOriginalRange,
+                detail: toStringDefineStatementParameterList(ds),
+            });
         }
         return result;
     } else {
         const result: SymbolInformation[] = [];
         for (const md of mds) {
-            const si = getSymbolInformation(md);
-            result.push(si);
+            const macroHeader = toStringMacroDeclarationHeader(md);
+            result.push({
+                name: macroHeader,
+                kind: SymbolKind.Constant,
+                containerName: macroHeader,
+                location: {
+                    range: md.nameOriginalRange,
+                    uri: md.uri,
+                },
+            });
+        }
+        for (const ds of dss) {
+            const defineHeader = toStringDefineStatementHeader(ds);
+            result.push({
+                name: defineHeader,
+                kind: SymbolKind.Constant,
+                containerName: defineHeader,
+                location: {
+                    range: ds.nameOriginalRange,
+                    uri: params.textDocument.uri,
+                },
+            });
         }
         return result;
     }
-}
-
-function getDocumentSymbol(md: MacroDeclaration): DocumentSymbol {
-    return {
-        name: md.name,
-        kind: SymbolKind.Constant,
-        range: md.originalRange,
-        selectionRange: md.nameOriginalRange,
-        detail: toStringMacroDeclarationParameterList(md),
-    };
-}
-
-function getSymbolInformation(md: MacroDeclaration): SymbolInformation {
-    const macroHeader = toStringMacroDeclarationHeader(md);
-    return {
-        name: macroHeader,
-        kind: SymbolKind.Constant,
-        containerName: macroHeader,
-        location: {
-            range: md.nameOriginalRange,
-            uri: md.uri,
-        },
-    };
 }
