@@ -25,11 +25,30 @@ import {
     dshlProperties,
 } from '../helper/dshl-info';
 import { isBeforeOrEqual, rangeContains } from '../helper/helper';
+import {
+    hlslAttributes,
+    hlslBufferTypes,
+    hlslDshlPreprocessorDirectives,
+    hlslEnumTypes,
+    hlslFunctions,
+    hlslKeywords,
+    hlslModifiers,
+    hlslNonPrimitiveTypes,
+    hlslPreprocessorDirectives,
+    hlslPreprocessorPragmaDirectives,
+    hlslPrimitiveTypes,
+    hlslSemantics,
+    hlslStructTypes,
+    hlslSystemValueSemantics,
+    hlslTextureTypes,
+    hlslVariables,
+    hlslVectorMatrixStringTypes,
+} from '../helper/hlsl-info';
 import { DefineStatement } from '../interface/define-statement';
 import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
 import { ShaderStage } from '../interface/shader-stage';
-import { dshlSnippets } from '../interface/snippets';
+import { dshlSnippets, hlslSnippets } from '../interface/snippets';
 import { getIncludeCompletionInfos } from '../processor/include-resolver';
 
 export async function completionProvider(
@@ -56,7 +75,7 @@ export async function completionProvider(
     const uri = params.textDocument.uri;
     const hlsl = uri.endsWith('.hlsl') || uri.endsWith('.hlsli') || snapshot.isInHlslBlock(position);
     const result: CompletionItem[] = [];
-    // addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
+    addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
     if (hlsl) {
         addHlslItems(result, snapshot, position);
     } else {
@@ -71,36 +90,36 @@ function isCursorInCommentOrString(snapshot: Snapshot, position: Position): bool
 
 function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
     addDefines(result, snapshot, position);
-    // addCompletionItems(result, hlslKeywords, CompletionItemKind.Keyword, 'keyword');
-    // addCompletionItems(result, hlslPreprocessorDirectives, CompletionItemKind.Keyword, 'preprocessor directive');
-    // addCompletionItems(
-    //     result,
-    //     hlslPreprocessorPragmaDirectives,
-    //     CompletionItemKind.Keyword,
-    //     'preprocessor pragma directive'
-    // );
-    // addCompletionItems(
-    //     result,
-    //     hlslDshlPreprocessorDirectives,
-    //     CompletionItemKind.Keyword,
-    //     'DSHL preprocessor directive'
-    // );
-    // addCompletionItems(result, hlslModifiers, CompletionItemKind.Keyword, 'modifier');
-    // addCompletionItems(result, hlslAttributes, CompletionItemKind.Keyword, 'attribute');
-    // addCompletionItems(result, hlslSemantics, CompletionItemKind.Keyword, 'semantic');
-    // addCompletionItems(result, hlslSystemValueSemantics, CompletionItemKind.Keyword, 'semantic');
-    // addCompletionItems(result, hlslStructTypes, CompletionItemKind.Class, 'type');
-    // addCompletionItems(result, hlslEnumTypes, CompletionItemKind.Enum, 'enum');
-    // addCompletionItems(result, hlslBufferTypes, CompletionItemKind.Class, 'type');
-    // addCompletionItems(result, hlslTextureTypes, CompletionItemKind.Class, 'type');
-    // addCompletionItems(result, hlslNonPrimitiveTypes, CompletionItemKind.Class, 'type');
-    // addCompletionItems(result, hlslVectorMatrixStringTypes, CompletionItemKind.Class, 'type');
-    // addPrimitiveTypes(result, hlslPrimitiveTypes);
-    // addCompletionItems(result, hlslVariables, CompletionItemKind.Variable, 'variable');
-    // addCompletionItems(result, hlslFunctions, CompletionItemKind.Function, 'function');
-    // if (getCapabilities().completionSnippets) {
-    //     addCompletionItems(result, hlslSnippets, CompletionItemKind.Snippet, 'snippet');
-    // }
+    addCompletionItems(result, hlslKeywords, CompletionItemKind.Keyword, 'keyword');
+    addCompletionItems(result, hlslPreprocessorDirectives, CompletionItemKind.Keyword, 'preprocessor directive');
+    addCompletionItems(
+        result,
+        hlslPreprocessorPragmaDirectives,
+        CompletionItemKind.Keyword,
+        'preprocessor pragma directive'
+    );
+    addCompletionItems(
+        result,
+        hlslDshlPreprocessorDirectives,
+        CompletionItemKind.Keyword,
+        'DSHL preprocessor directive'
+    );
+    addCompletionItems(result, hlslModifiers, CompletionItemKind.Keyword, 'modifier');
+    addCompletionItems(result, hlslAttributes, CompletionItemKind.Keyword, 'attribute');
+    addCompletionItems(result, hlslSemantics, CompletionItemKind.Keyword, 'semantic');
+    addCompletionItems(result, hlslSystemValueSemantics, CompletionItemKind.Keyword, 'semantic');
+    addCompletionItems(result, hlslStructTypes, CompletionItemKind.Class, 'type');
+    addCompletionItems(result, hlslEnumTypes, CompletionItemKind.Enum, 'enum');
+    addCompletionItems(result, hlslBufferTypes, CompletionItemKind.Class, 'type');
+    addCompletionItems(result, hlslTextureTypes, CompletionItemKind.Class, 'type');
+    addCompletionItems(result, hlslNonPrimitiveTypes, CompletionItemKind.Class, 'type');
+    addCompletionItems(result, hlslVectorMatrixStringTypes, CompletionItemKind.Class, 'type');
+    addPrimitiveTypes(result, hlslPrimitiveTypes);
+    addCompletionItems(result, hlslVariables, CompletionItemKind.Variable, 'variable');
+    addCompletionItems(result, hlslFunctions, CompletionItemKind.Function, 'function');
+    if (getCapabilities().completionSnippets) {
+        addCompletionItems(result, hlslSnippets, CompletionItemKind.Snippet, 'snippet');
+    }
 }
 
 function addDefines(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
@@ -108,18 +127,30 @@ function addDefines(result: CompletionItem[], snapshot: Snapshot, position: Posi
         const defines = snapshot.defineStatements;
         addDefinesIfAvailable(result, defines, position);
     } else {
-        const hb = snapshot.hlslBlocks.find((hb) => rangeContains(hb.originalRange, position));
-        if (hb) {
-            const shaderBlock = snapshot.shaderBlocks.find((sb) => rangeContains(sb.originalRange, position));
-            if (shaderBlock) {
-                addDefinesInDshl(result, shaderBlock.hlslBlocks, position, hb.stage);
+        const md = snapshot.macroDeclarations.find((md) => rangeContains(md.contentOriginalRange, position));
+        const definesSnapshot = md?.contentSnapshot ?? snapshot;
+        addDefinesInDshl(result, definesSnapshot, position);
+        if (md) {
+            const hb = definesSnapshot.hlslBlocks.find((hb) => rangeContains(hb.originalRange, position)) ?? null;
+            if (hb) {
+                addDefinesInHlslBlocks(result, snapshot.globalHlslBlocks, md.originalRange.start, hb.stage);
             }
-            addDefinesInDshl(result, snapshot.globalHlslBlocks, position, hb.stage);
         }
     }
 }
 
-function addDefinesInDshl(
+function addDefinesInDshl(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
+    const hb = snapshot.hlslBlocks.find((hb) => rangeContains(hb.originalRange, position)) ?? null;
+    if (hb) {
+        const shaderBlock = snapshot.shaderBlocks.find((sb) => rangeContains(sb.originalRange, position));
+        if (shaderBlock) {
+            addDefinesInHlslBlocks(result, shaderBlock.hlslBlocks, position, hb.stage);
+        }
+        addDefinesInHlslBlocks(result, snapshot.globalHlslBlocks, position, hb.stage);
+    }
+}
+
+function addDefinesInHlslBlocks(
     result: CompletionItem[],
     hbs: HlslBlock[],
     position: Position,

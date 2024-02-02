@@ -16,7 +16,7 @@ export class BlockProcesor {
         this.snapshot = snapshot;
     }
 
-    public getBlock(startPosition: number): ElementRange | null {
+    public getBlock(startPosition: number, offset = 0): ElementRange | null {
         for (this.index = startPosition; this.index < this.snapshot.text.length; this.index++) {
             this.setCharacter(this.snapshot.text);
             if (this.isCharacterWhitespace()) {
@@ -27,8 +27,8 @@ export class BlockProcesor {
                 this.blockStartPosition = this.index + 1;
             } else if (this.isBlockEnd()) {
                 return {
-                    startPosition: this.blockStartPosition,
-                    endPosition: this.index,
+                    startPosition: offset + this.blockStartPosition,
+                    endPosition: offset + this.index,
                 };
             } else if (this.insideBlock) {
                 this.handleCharacters();

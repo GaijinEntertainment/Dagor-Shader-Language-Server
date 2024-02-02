@@ -303,6 +303,9 @@ export class Snapshot {
     }
 
     public isInHlslBlock(position: Position): boolean {
-        return this.hlslBlocks.some((hb) => hb.isVisible && rangeContains(hb.originalRange, position));
+        return (
+            this.hlslBlocks.some((hb) => hb.isVisible && rangeContains(hb.originalRange, position)) ||
+            this.macroDeclarations.some((md) => md.contentSnapshot.isInHlslBlock(position))
+        );
     }
 }

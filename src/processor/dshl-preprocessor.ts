@@ -45,8 +45,8 @@ class DshlPreprocessor {
         await this.preprocessIncludes([]);
         this.expandMacros();
         this.processMacroContents();
-        this.findShaderBlocks();
-        this.findHlslBlocks(this.snapshot.text);
+        this.findShaderBlocks(this.snapshot);
+        this.findHlslBlocks(this.snapshot);
     }
 
     private async preprocessIncludes(parentUris: DocumentUri[]): Promise<void> {
@@ -228,9 +228,11 @@ class DshlPreprocessor {
             const parameters = regexResult.groups?.parameters ?? '';
             const parametersOffset = position + (regexResult.groups?.beforeParameters?.length ?? 0);
             const macroParameters = this.getParameters(parameters, parametersOffset);
+            const contentSnapshot = this.createContentSnapshot(content, contentOffset);
             if (this.isRoot) {
-                this.addHlslDirectivesInMacro(content, contentOffset);
-                this.findHlslBlocks(content, contentOffset);
+                this.findShaderBlocks(contentSnapshot, contentOffset);
+                this.findHlslBlocks(contentSnapshot, contentOffset);
+                new HlslPreprocessor(this.snapshot).addHlslDirectivesInMacro(contentSnapshot, contentOffset);
                 this.addParameterUsages(macroParameters, content, contentOffset);
             }
             this.createMacroDeclaration(
@@ -238,6 +240,7 @@ class DshlPreprocessor {
                 originalRange,
                 nameOriginalRange,
                 contentOffset,
+                contentSnapshot,
                 match,
                 name,
                 macroParameters,
@@ -296,6 +299,7 @@ class DshlPreprocessor {
         originalRange: Range,
         nameOriginalRange: Range,
         contentPosition: number,
+        contentSnapshot: Snapshot,
         match: string,
         name: string,
         parameters: MacroParameter[],
@@ -305,7 +309,6 @@ class DshlPreprocessor {
         const contentOriginalRange = this.isRoot
             ? this.snapshot.getOriginalRange(contentPosition, contentPosition + content.length)
             : defaultRange;
-        const contentSnapshot = this.createContentSnapshot(content, contentPosition);
         const macro = this.snapshot.getMacro(name);
         const md: MacroDeclaration = {
             uri: this.snapshot.uri,
@@ -404,72 +407,6 @@ class DshlPreprocessor {
                 continue;
             }
             const endifRegex = /^##[ \t]*endif\b.*/;
-            regexResult = endifRegex.exec(match);
-            if (regexResult) {
-                position += regexResult.index;
-                HlslPreprocessor.addIfFoldingRange(position, ifStack, this.snapshot);
-                ifStack.pop();
-                continue;
-            }
-        }
-    }
-
-    private addHlslDirectivesInMacro(text: string, offset: number): void {
-        const ifStack: IfState[][] = [];
-        const regex = /#.*/g;
-        let regexResult: RegExpExecArray | null;
-        while ((regexResult = regex.exec(text))) {
-            let position = offset + regexResult.index;
-            if (Preprocessor.isInString(position, this.snapshot)) {
-                continue;
-            }
-            const match = regexResult[0];
-            const includeRegex = /#[ \t]*include[ \t]*(?:"(?:[^"]|\\")*"|<[^>]*>)/;
-            regexResult = includeRegex.exec(match);
-            if (regexResult && regexResult.groups) {
-                position += regexResult.index;
-                const match = regexResult[0];
-                const beforeEndPosition = position + match.length;
-                const path = regexResult.groups.quotedPath ?? regexResult.groups.angularPath;
-                const type = regexResult.groups.quotedPath ? IncludeType.HLSL_QUOTED : IncludeType.HLSL_ANGULAR;
-                Preprocessor.createIncludeStatement(beforeEndPosition, type, path, false, null, this.snapshot);
-                continue;
-            }
-            const ifRegex = /^#[ \t]*if\b.*/;
-            regexResult = ifRegex.exec(match);
-            if (regexResult) {
-                position += regexResult.index;
-                const ifState: IfState = { position, condition: false };
-                ifStack.push([ifState]);
-                continue;
-            }
-            const ifdefRegex = /#[ \t]*ifn?def\b.*/;
-            regexResult = ifdefRegex.exec(match);
-            if (regexResult) {
-                position += regexResult.index;
-                const ifState: IfState = { position, condition: false };
-                ifStack.push([ifState]);
-                continue;
-            }
-            const elifRegex = /^#[ \t]*elif\b.*/;
-            regexResult = elifRegex.exec(match);
-            if (regexResult) {
-                position += regexResult.index;
-                const ifState: IfState = { position, condition: false };
-                HlslPreprocessor.addIfFoldingRange(position, ifStack, this.snapshot);
-                HlslPreprocessor.addIfState(ifStack, ifState);
-                continue;
-            }
-            const elseRegex = /^#[ \t]*else\b.*/;
-            regexResult = elseRegex.exec(match);
-            if (regexResult) {
-                position += regexResult.index;
-                const ifState: IfState = { position, condition: false };
-                HlslPreprocessor.addIfFoldingRange(position, ifStack, this.snapshot);
-                HlslPreprocessor.addIfState(ifStack, ifState);
-                continue;
-            }
-            const endifRegex = /^#[ \t]*endif\b.*/;
             regexResult = endifRegex.exec(match);
             if (regexResult) {
                 position += regexResult.index;
@@ -667,18 +604,18 @@ class DshlPreprocessor {
         return false;
     }
 
-    private findShaderBlocks(): void {
+    private findShaderBlocks(snapshot: Snapshot, offset = 0): void {
         const regex = /\bshader\s+[A-Za-z_]\w*(\s*,\s*[A-Za-z_]\w*)*/g;
         let regexResult: RegExpExecArray | null;
-        while ((regexResult = regex.exec(this.snapshot.text))) {
+        while ((regexResult = regex.exec(snapshot.text))) {
             const position = regexResult.index;
-            if (Preprocessor.isInString(position, this.snapshot)) {
+            if (Preprocessor.isInString(position, snapshot)) {
                 continue;
             }
             const match = regexResult[0];
             const identifierEndPosition = position + match.length;
-            const blockProcessor = new BlockProcesor(this.snapshot);
-            const shaderRange = blockProcessor.getBlock(identifierEndPosition);
+            const blockProcessor = new BlockProcesor(snapshot);
+            const shaderRange = blockProcessor.getBlock(identifierEndPosition, offset);
             if (shaderRange) {
                 const shaderBlock: ShaderBlock = {
                     startPosition: shaderRange.startPosition,
@@ -686,32 +623,32 @@ class DshlPreprocessor {
                     originalRange: this.snapshot.getOriginalRange(shaderRange.startPosition, shaderRange.endPosition),
                     hlslBlocks: [],
                 };
-                this.snapshot.shaderBlocks.push(shaderBlock);
+                snapshot.shaderBlocks.push(shaderBlock);
             }
         }
     }
 
-    private findHlslBlocks(text: string, offset = 0): void {
+    private findHlslBlocks(snapshot: Snapshot, offset = 0): void {
         const regex = /\b(?:hlsl\s*(?:\(\s*(?<stage>\w*)\s*\))?)/g;
         let regexResult: RegExpExecArray | null;
-        while ((regexResult = regex.exec(text))) {
-            const position = offset + regexResult.index;
-            if (Preprocessor.isInString(position, this.snapshot)) {
+        while ((regexResult = regex.exec(snapshot.text))) {
+            const position = regexResult.index;
+            if (Preprocessor.isInString(position, snapshot)) {
                 continue;
             }
             const match = regexResult[0];
             const hlslKeywordEndPosition = position + match.length;
-            const blockProcessor = new BlockProcesor(this.snapshot);
-            const hlslRange = blockProcessor.getBlock(hlslKeywordEndPosition);
+            const blockProcessor = new BlockProcesor(snapshot);
+            const hlslRange = blockProcessor.getBlock(hlslKeywordEndPosition, offset);
             if (hlslRange) {
                 const stage = regexResult.groups?.stage ?? '';
                 const stageEnum = shaderStageKeywordToEnum(stage);
-                this.createHlslBlock(hlslRange, stageEnum);
+                this.createHlslBlock(hlslRange, stageEnum, snapshot);
             }
         }
     }
 
-    private createHlslBlock(hlslRange: ElementRange, stage: ShaderStage | null) {
+    private createHlslBlock(hlslRange: ElementRange, stage: ShaderStage | null, snapshot: Snapshot) {
         const hlslBlock: HlslBlock = {
             originalRange: this.snapshot.getOriginalRange(hlslRange.startPosition, hlslRange.endPosition),
             isVisible:
@@ -722,19 +659,19 @@ class DshlPreprocessor {
             defineStatements: [],
             ...hlslRange,
         };
-        this.addHlslBlock(hlslBlock);
+        this.addHlslBlock(hlslBlock, snapshot);
         return hlslBlock;
     }
 
-    private addHlslBlock(hlslBlock: HlslBlock): void {
-        this.snapshot.hlslBlocks.push(hlslBlock);
-        const shaderBlock = this.snapshot.shaderBlocks.find(
+    private addHlslBlock(hlslBlock: HlslBlock, snapshot: Snapshot): void {
+        snapshot.hlslBlocks.push(hlslBlock);
+        const shaderBlock = snapshot.shaderBlocks.find(
             (sb) => sb.startPosition <= hlslBlock.startPosition && hlslBlock.endPosition <= sb.endPosition
         );
         if (shaderBlock) {
             shaderBlock.hlslBlocks.push(hlslBlock);
         } else {
-            this.snapshot.globalHlslBlocks.push(hlslBlock);
+            snapshot.globalHlslBlocks.push(hlslBlock);
         }
     }
 }
