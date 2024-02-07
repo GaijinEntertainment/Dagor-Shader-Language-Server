@@ -17,6 +17,11 @@ export interface DefineStatement {
     usages: DefineContext[];
 }
 
+export function toStringDefineStatementWithContent(ds: DefineStatement): string {
+    const header = toStringDefineStatement(ds);
+    return `${header} ${ds.content}`;
+}
+
 export function toStringDefineStatement(ds: DefineStatement): string {
     const header = toStringDefineStatementHeader(ds);
     return `#define ${header}`;

@@ -294,8 +294,8 @@ export class Snapshot {
         );
     }
 
-    public isDefined(name: string, position: number): boolean {
-        return this.getDefineStatements(position).some((ds) => ds.name === name);
+    public getDefinition(name: string, position: number): DefineStatement | null {
+        return this.getDefineStatements(position).find((ds) => ds.name === name) ?? null;
     }
 
     public getDefineStatements(position: number): DefineStatement[] {

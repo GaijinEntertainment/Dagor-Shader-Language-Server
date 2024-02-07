@@ -214,7 +214,8 @@ export class HlslPreprocessor {
             const position = offset + regexResult.index;
             const directive = regexResult.groups.directive;
             const condition = regexResult.groups.condition.trim();
-            let defined = this.snapshot.isDefined(condition, position);
+            const ds = this.snapshot.getDefinition(condition, position);
+            let defined = !!ds;
             if (directive === 'ifndef') {
                 defined = !defined;
             }
@@ -732,6 +733,11 @@ export class HlslPreprocessor {
                         globalPosition,
                         globalPosition + identifier.length
                     ),
+                    isVisible:
+                        expansions.length === 0 &&
+                        !this.snapshot.isInIncludeContext(globalPosition) &&
+                        !this.snapshot.isInMacroContext(globalPosition),
+                    expansion: te.newText,
                 };
                 this.snapshot.defineContexts.push(dc);
                 ds.usages.push(dc);

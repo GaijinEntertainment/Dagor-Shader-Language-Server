@@ -49,11 +49,13 @@ export async function documentHighlightProvider(
     const ds = getDefineStatement(snapshot, params);
     if (ds) {
         const result: DocumentHighlight[] = [];
-        result.push({
-            range: ds.nameOriginalRange,
-            kind: DocumentHighlightKind.Text,
-        });
-        for (const dc of ds.usages) {
+        if (ds.isVisible) {
+            result.push({
+                range: ds.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        for (const dc of ds.usages.filter((dc) => dc.isVisible)) {
             result.push({
                 range: dc.nameOriginalRange,
                 kind: DocumentHighlightKind.Text,
@@ -85,7 +87,9 @@ function getDefineStatement(snapshot: Snapshot, params: DocumentHighlightParams)
     if (ds) {
         return ds;
     }
-    const dc = snapshot.defineContexts.find((dc) => rangeContains(dc.nameOriginalRange, params.position));
+    const dc = snapshot.defineContexts.find(
+        (dc) => dc.isVisible && rangeContains(dc.nameOriginalRange, params.position)
+    );
     if (dc) {
         return dc.define;
     }

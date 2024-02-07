@@ -180,7 +180,7 @@ export class ConditionVisitor
     private evaluateOtherExpression(ctx: ExpressionContext): bigint | null {
         const identifier = ctx.IDENTIFIER();
         if (ctx.DEFINED()) {
-            return this.snapshot.isDefined(identifier?.text ?? '', this.position) ? 1n : 0n;
+            return this.snapshot.getDefinition(identifier?.text ?? '', this.position) ? 1n : 0n;
         }
         if (identifier) {
             return 0n;

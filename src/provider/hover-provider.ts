@@ -3,6 +3,8 @@ import { Hover, HoverParams, MarkupContent, MarkupKind } from 'vscode-languagese
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
+import { DefineContext } from '../interface/define-context';
+import { toStringDefineStatementWithContent } from '../interface/define-statement';
 import { toStringMacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroUsage, getBestMacroDeclaration } from '../interface/macro/macro-usage';
 
@@ -12,23 +14,32 @@ export async function hoverProvider(params: HoverParams): Promise<Hover | undefi
         return null;
     }
     const mu = snapshot.macroUsages.find((mu) => mu.isVisible && rangeContains(mu.nameOriginalRange, params.position));
-    if (!mu || !mu.macro.declarations.length) {
-        return null;
+    if (mu?.macro?.declarations?.length) {
+        return {
+            contents: createMacroHoverContent(mu),
+            range: mu.nameOriginalRange,
+        };
     }
-    return {
-        contents: createHoverContent(mu),
-        range: mu.nameOriginalRange,
-    };
+    const dc = snapshot.defineContexts.find(
+        (dc) => dc.isVisible && rangeContains(dc.nameOriginalRange, params.position)
+    );
+    if (dc) {
+        return {
+            contents: createDefineHoverContent(dc),
+            range: dc.nameOriginalRange,
+        };
+    }
+    return null;
 }
 
-function createHoverContent(mu: MacroUsage): MarkupContent {
+function createMacroHoverContent(mu: MacroUsage): MarkupContent {
     return {
         kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
-        value: getValue(mu),
+        value: getMacroValue(mu),
     };
 }
 
-function getValue(mu: MacroUsage): string {
+function getMacroValue(mu: MacroUsage): string {
     const md = mu.macroDeclaration ?? getBestMacroDeclaration(mu);
     if (!md) {
         return '';
@@ -38,6 +49,28 @@ function getValue(mu: MacroUsage): string {
         return `\`\`\`dshl\n${macroHeader}\n\`\`\``;
     } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
         return macroHeader;
+    } else {
+        return '';
+    }
+}
+
+function createDefineHoverContent(dc: DefineContext): MarkupContent {
+    return {
+        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
+        value: getDefineValue(dc),
+    };
+}
+
+function getDefineValue(dc: DefineContext): string {
+    const ds = dc.define;
+    if (!ds) {
+        return '';
+    }
+    const define = toStringDefineStatementWithContent(ds);
+    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
+        return `\`\`\`hlsl\n${define}\n\`\`\`\nExpands to:\n\`\`\`hlsl\n${dc.expansion}\n\`\`\``;
+    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
+        return `${define}\nExpands to:\n${dc.expansion}`;
     } else {
         return '';
     }
