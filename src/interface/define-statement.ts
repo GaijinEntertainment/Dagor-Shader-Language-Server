@@ -1,4 +1,5 @@
 import { Position, Range } from 'vscode-languageserver';
+import { DefineContext } from './define-context';
 
 export interface DefineStatement {
     position: number;
@@ -13,6 +14,7 @@ export interface DefineStatement {
     codeCompletionPosition: Position;
     undefCodeCompletionPosition: Position | null;
     isVisible: boolean;
+    usages: DefineContext[];
 }
 
 export function toStringDefineStatement(ds: DefineStatement): string {

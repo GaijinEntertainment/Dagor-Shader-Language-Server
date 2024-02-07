@@ -287,29 +287,6 @@ export class Snapshot {
         return null;
     }
 
-    public defineContextAt(position: number): DefineContext | null {
-        for (const dc of this.defineContexts) {
-            const result = this.getDefineContext(dc, position);
-            if (result) {
-                return result;
-            }
-        }
-        return null;
-    }
-
-    private getDefineContext(dc: DefineContext, position: number): DefineContext | null {
-        if (dc.startPosition <= position && position < dc.afterEndPosition) {
-            for (const c of dc.children) {
-                const result = this.getDefineContext(c, position);
-                if (result) {
-                    return result;
-                }
-            }
-            return dc;
-        }
-        return null;
-    }
-
     public isInHlslBlock(position: Position): boolean {
         return (
             this.hlslBlocks.some((hb) => hb.isVisible && rangeContains(hb.originalRange, position)) ||

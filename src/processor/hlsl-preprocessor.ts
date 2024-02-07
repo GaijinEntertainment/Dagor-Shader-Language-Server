@@ -425,6 +425,7 @@ export class HlslPreprocessor {
             codeCompletionPosition: ic ? ic.includeStatement.originalEndPosition : nameOriginalRange.end,
             undefCodeCompletionPosition: null,
             isVisible,
+            usages: [],
         };
         this.addDefine(position, ds, snapshot);
         return ds;
@@ -604,7 +605,7 @@ export class HlslPreprocessor {
         return parser;
     }
 
-    private expandDefines(): DefineContext[] {
+    private expandDefines(): void {
         this.textEdits = [];
         if (this.snapshot.uri.endsWith(HLSL_EXTENSION) || this.snapshot.uri.endsWith(HLSLI_EXTENSION)) {
             const definesMap = this.createDefinesMap(this.snapshot.defineStatements);
@@ -618,7 +619,6 @@ export class HlslPreprocessor {
             // }
         }
         Preprocessor.executeTextEdits(this.textEdits, this.snapshot, false);
-        return [];
     }
 
     private expandGlobalHlslBlocks(): void {
@@ -722,15 +722,20 @@ export class HlslPreprocessor {
                 ma
             );
             textEdits.push(te);
-            this.snapshot.defineContexts.push({
-                startPosition: globalPosition,
-                children: [],
-                define: ds,
-                parent: null,
-                result: '',
-                afterEndPosition: globalPosition + te.newText.length,
-                beforeEndPosition: globalPosition + macroSnapshot.text.length,
-            });
+            if (expansions.length === 0) {
+                const dc: DefineContext = {
+                    startPosition: globalPosition,
+                    define: ds,
+                    afterEndPosition: globalPosition + te.newText.length,
+                    beforeEndPosition: globalPosition + macroSnapshot.text.length,
+                    nameOriginalRange: this.snapshot.getOriginalRange(
+                        globalPosition,
+                        globalPosition + identifier.length
+                    ),
+                };
+                this.snapshot.defineContexts.push(dc);
+                ds.usages.push(dc);
+            }
             identifierRegex.lastIndex = beforeEndPosition;
         }
         if (!isTopLevel) {

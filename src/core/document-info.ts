@@ -99,7 +99,6 @@ export class DocumentInfo {
         if (this.analyzedVersion <= snapshot.version) {
             this.analyzedVersion = snapshot.version;
             this.snapshot = snapshot;
-            console.log(this.snapshot.text);
         }
     }
 }

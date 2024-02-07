@@ -3,6 +3,7 @@ import { DocumentHighlight, DocumentHighlightKind, DocumentHighlightParams } fro
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
 import { rangeContains } from '../helper/helper';
+import { DefineStatement } from '../interface/define-statement';
 import { Macro } from '../interface/macro/macro';
 import { MacroParameter } from '../interface/macro/macro-parameter';
 
@@ -45,6 +46,21 @@ export async function documentHighlightProvider(
         }
         return result;
     }
+    const ds = getDefineStatement(snapshot, params);
+    if (ds) {
+        const result: DocumentHighlight[] = [];
+        result.push({
+            range: ds.nameOriginalRange,
+            kind: DocumentHighlightKind.Text,
+        });
+        for (const dc of ds.usages) {
+            result.push({
+                range: dc.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        return result;
+    }
     return null;
 }
 
@@ -58,6 +74,20 @@ function getMacro(snapshot: Snapshot, params: DocumentHighlightParams): Macro | 
     const mu = snapshot.macroUsages.find((mu) => mu.isVisible && rangeContains(mu.nameOriginalRange, params.position));
     if (mu) {
         return mu.macro;
+    }
+    return null;
+}
+
+function getDefineStatement(snapshot: Snapshot, params: DocumentHighlightParams): DefineStatement | null {
+    const ds = snapshot.defineStatements.find(
+        (ds) => ds.isVisible && rangeContains(ds.nameOriginalRange, params.position)
+    );
+    if (ds) {
+        return ds;
+    }
+    const dc = snapshot.defineContexts.find((dc) => rangeContains(dc.nameOriginalRange, params.position));
+    if (dc) {
+        return dc.define;
     }
     return null;
 }

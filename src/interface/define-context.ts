@@ -1,3 +1,4 @@
+import { Range } from 'vscode-languageserver';
 import { DefineStatement } from './define-statement';
 
 export interface DefineContext {
@@ -5,7 +6,5 @@ export interface DefineContext {
     startPosition: number;
     beforeEndPosition: number;
     afterEndPosition: number;
-    result: string;
-    parent: DefineContext | null;
-    children: DefineContext[];
+    nameOriginalRange: Range;
 }
