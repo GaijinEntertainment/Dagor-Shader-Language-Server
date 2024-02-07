@@ -2,6 +2,7 @@ import { Position, Range } from 'vscode-languageserver';
 
 export interface DefineStatement {
     position: number;
+    endPosition: number;
     originalRange: Range;
     nameOriginalRange: Range;
     objectLike: boolean;

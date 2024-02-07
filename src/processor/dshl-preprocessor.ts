@@ -50,7 +50,7 @@ class DshlPreprocessor {
     }
 
     private async preprocessIncludes(parentUris: DocumentUri[]): Promise<void> {
-        const regex = /(?<=^[ \t]*)include(?:_optional)?\s*"(?<path>[^"]*)"/gm;
+        const regex = /(?<=^[ \t]*)include(?:_optional)?\s*"(?<path>(\\"|[^"])*)"/gm;
         let regexResult: RegExpExecArray | null;
         const results: IncludeResult[] = [];
         while ((regexResult = regex.exec(this.snapshot.text))) {
@@ -221,9 +221,9 @@ class DshlPreprocessor {
             );
             const originalRange = this.snapshot.getOriginalRange(position, beforeEndPosition);
             textEdits.push({
-                position,
-                beforeEndPosition,
-                pasteText: '',
+                startPosition: position,
+                endPosition: beforeEndPosition,
+                newText: '',
             });
             const parameters = regexResult.groups?.parameters ?? '';
             const parametersOffset = position + (regexResult.groups?.beforeParameters?.length ?? 0);
@@ -247,7 +247,7 @@ class DshlPreprocessor {
                 content
             );
         }
-        Preprocessor.executeTextEdits(textEdits, this.snapshot);
+        Preprocessor.executeTextEdits(textEdits, this.snapshot, false);
     }
 
     private getParameters(parameters: string, offset: number): MacroParameter[] {
@@ -313,6 +313,7 @@ class DshlPreprocessor {
         const md: MacroDeclaration = {
             uri: this.snapshot.uri,
             position,
+            endPosition: position + match.length,
             originalRange,
             nameOriginalRange,
             contentOriginalRange,

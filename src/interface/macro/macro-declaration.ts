@@ -8,6 +8,7 @@ import { MacroType } from './macro-type';
 export interface MacroDeclaration {
     uri: DocumentUri;
     position: number;
+    endPosition: number;
     originalRange: Range;
     nameOriginalRange: Range;
     codeCompletionPosition: Position;

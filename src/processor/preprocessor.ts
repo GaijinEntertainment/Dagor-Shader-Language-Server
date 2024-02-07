@@ -1,6 +1,7 @@
 import { DocumentUri, Range } from 'vscode-languageserver';
 
 import { URI } from 'vscode-uri';
+import { DSHL_EXTENSION } from '../core/constant';
 import { getFileContent, getFileVersion } from '../core/file-cache-manager';
 import { Snapshot } from '../core/snapshot';
 import { getDocuments } from '../helper/server-helper';
@@ -35,14 +36,12 @@ export class Preprocessor {
     }
 
     public async preprocess(): Promise<void> {
-        console.time('preprocess');
         this.clean();
-        if (this.snapshot.uri.endsWith('.dshl')) {
+        if (this.snapshot.uri.endsWith(DSHL_EXTENSION)) {
             await preprocessDshl(this.snapshot);
         }
         await preprocessHlsl(this.snapshot);
         this.snapshot.preprocessedText = this.snapshot.text;
-        console.timeEnd('preprocess');
     }
 
     private preprocessLineContinuations(): void {
@@ -54,18 +53,18 @@ export class Preprocessor {
             const match = regexResult[0];
             const beforeEndPosition = position + match.length;
             textEdits.push({
-                position,
-                beforeEndPosition,
-                pasteText: '',
+                startPosition: position,
+                endPosition: beforeEndPosition,
+                newText: '',
             });
         }
-        Preprocessor.executeTextEdits(textEdits, this.snapshot);
+        Preprocessor.executeTextEdits(textEdits, this.snapshot, false);
     }
 
     private preprocessComments(): void {
         const textEdits: TextEdit[] = [];
         const regex =
-            /"(?:[^"]|\\")*"|(?<=#[ \t]*include[ \t]*)<[^>]*>|(?<error>(?<=#[ \t]*error).*)|'(?:[^']|\\')*'|(?<singleLineComment>\/\/.*)|(?<multiLineComment>\/\*[\s\S*]*?\*\/)/g;
+            /"(?:\\"|[^"])*"|(?<=#[ \t]*include[ \t]*)<[^>]*>|(?<error>(?<=#[ \t]*error).*)|'(?:[^']|\\')*'|(?<singleLineComment>\/\/.*)|(?<multiLineComment>\/\*[\s\S*]*?\*\/)/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(this.snapshot.text))) {
             const position = regexResult.index;
@@ -80,9 +79,9 @@ export class Preprocessor {
             const isComment = regexResult.groups?.singleLineComment || regexResult.groups?.multiLineComment;
             if (isComment) {
                 textEdits.push({
-                    position,
-                    beforeEndPosition,
-                    pasteText: ' ',
+                    startPosition: position,
+                    endPosition: beforeEndPosition,
+                    newText: ' ',
                 });
             } else {
                 const sr: ElementRange = {
@@ -92,7 +91,7 @@ export class Preprocessor {
                 this.snapshot.stringRanges.push(sr);
             }
         }
-        Preprocessor.executeTextEdits(textEdits, this.snapshot);
+        Preprocessor.executeTextEdits(textEdits, this.snapshot, false);
     }
 
     private static addPreprocessingOffset(
@@ -134,20 +133,43 @@ export class Preprocessor {
         Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, position, '', snapshot);
     }
 
-    public static executeTextEdits(textEdits: TextEdit[], snapshot: Snapshot): void {
+    public static executeTextEdits(textEdits: TextEdit[], snapshot: Snapshot, addStringRanges: boolean): void {
+        if (!textEdits.length) {
+            return;
+        }
         let offset = 0;
-        for (const te of textEdits) {
-            te.position += offset;
-            te.beforeEndPosition += offset;
-            const afterEndPosition = te.position + te.pasteText.length;
-            Preprocessor.changeTextAndAddOffset(
-                te.position,
-                te.beforeEndPosition,
-                afterEndPosition,
-                te.pasteText,
+        const result: string[] = [];
+        const editRanges: ElementRange[] = [];
+        textEdits = textEdits.sort((a, b) => a.startPosition - b.startPosition);
+        for (let i = 0; i < textEdits.length; i++) {
+            const textEdit = textEdits[i];
+            const afterEndPosition = textEdit.startPosition + textEdit.newText.length;
+            Preprocessor.addPreprocessingOffset(
+                textEdit.startPosition + offset,
+                textEdit.endPosition + offset,
+                afterEndPosition + offset,
                 snapshot
             );
-            offset += te.pasteText.length - (te.beforeEndPosition - te.position);
+            editRanges.push({
+                startPosition: textEdit.startPosition + offset,
+                endPosition: afterEndPosition + offset,
+            });
+            offset += textEdit.newText.length - (textEdit.endPosition - textEdit.startPosition);
+            if (i === 0) {
+                result.push(snapshot.text.substring(0, textEdit.startPosition));
+            }
+            result.push(textEdit.newText);
+            if (i === textEdits.length - 1) {
+                result.push(snapshot.text.substring(textEdit.endPosition));
+            } else {
+                result.push(snapshot.text.substring(textEdit.endPosition, textEdits[i + 1].startPosition));
+            }
+        }
+        snapshot.text = result.join('');
+        if (addStringRanges) {
+            for (const er of editRanges) {
+                Preprocessor.addStringRanges(er.startPosition, er.endPosition, snapshot);
+            }
         }
     }
 
@@ -181,7 +203,7 @@ export class Preprocessor {
     }
 
     public static addStringRanges(startPosition: number, endPosition: number, snapshot: Snapshot): void {
-        const regex = /"(?:[^"]|\\")*"|(?<=#[ \t]*include[ \t]*)<[^>]*>|(?<=#[ \t]*error).*|'(?:[^']|\\')*'/g;
+        const regex = /"(?:\\"|[^"])*"|(?<=#[ \t]*include[ \t]*)<[^>]*>|(?<=#[ \t]*error).*|'(?:[^']|\\')*'/g;
         let regexResult: RegExpExecArray | null;
         const text = snapshot.text.substring(startPosition, endPosition);
         while ((regexResult = regex.exec(text))) {
@@ -190,7 +212,7 @@ export class Preprocessor {
             const endPosition = position + match.length;
             const sr: ElementRange = {
                 startPosition: position,
-                endPosition: endPosition,
+                endPosition,
             };
             snapshot.stringRanges.push(sr);
         }

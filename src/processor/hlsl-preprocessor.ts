@@ -3,8 +3,9 @@ import { DocumentUri } from 'vscode-languageserver';
 
 import { ConditionLexer } from '../_generated/ConditionLexer';
 import { ConditionParser } from '../_generated/ConditionParser';
+import { HLSLI_EXTENSION, HLSL_EXTENSION } from '../core/constant';
 import { Snapshot } from '../core/snapshot';
-import { defaultRange } from '../helper/helper';
+import { defaultRange, isIntervalContains } from '../helper/helper';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
@@ -13,7 +14,10 @@ import { IfState } from '../interface/if-state';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
+import { MacroArguments } from '../interface/macro/macro-arguments';
+import { ShaderBlock } from '../interface/shader-block';
 import { invalidVersion } from '../interface/snapshot-version';
+import { TextEdit } from '../interface/text-edit';
 import { ConditionVisitor } from './condition-visitor';
 import { getIncludedDocumentUri } from './include-resolver';
 import { Preprocessor } from './preprocessor';
@@ -25,8 +29,7 @@ export async function preprocessHlsl(snapshot: Snapshot): Promise<void> {
 export class HlslPreprocessor {
     private snapshot: Snapshot;
     private ifStack: IfState[][] = [];
-    private removeRanges: ElementRange[] = [];
-    private macroNames = '';
+    private textEdits: TextEdit[] = [];
 
     public constructor(snapshot: Snapshot) {
         this.snapshot = snapshot;
@@ -34,19 +37,7 @@ export class HlslPreprocessor {
 
     public async preprocess(): Promise<void> {
         await this.preprocessDirectives();
-        this.removeCode();
-        // this.refreshMacroNames();
-        //HlslPreprocessor.expandMacros(0, this.snapshot.text.length, this.snapshot, this.macroNames);
-    }
-
-    private removeCode(): void {
-        let offset = 0;
-        for (const range of this.removeRanges.sort((a, b) => a.startPosition - b.startPosition)) {
-            range.startPosition += offset;
-            range.endPosition += offset;
-            Preprocessor.removeTextAndAddOffset(range.startPosition, range.endPosition, this.snapshot);
-            offset += range.startPosition - range.endPosition;
-        }
+        this.expandDefines();
     }
 
     private async preprocessDirectives(): Promise<void> {
@@ -62,17 +53,18 @@ export class HlslPreprocessor {
             const nextStartPosition = await this.preprocessDirective(position, beforeEndPosition, match);
             regex.lastIndex = nextStartPosition;
         }
+        Preprocessor.executeTextEdits(this.textEdits, this.snapshot, false);
     }
 
     private async preprocessDirective(position: number, beforeEndPosition: number, match: string): Promise<number> {
-        let regexResult = /#[ \t]*include[ \t]*(?:"(?<quotedPath>(?:[^"]|\\")*)"|<(?<angularPath>[^>]*)>)/.exec(match);
+        let regexResult = /#[ \t]*include[ \t]*(?:"(?<quotedPath>(?:\\"|[^"])*)"|<(?<angularPath>[^>]*)>)/.exec(match);
         if (regexResult) {
             return await this.preprocessInclude(regexResult, position);
         }
         const ifRegex = /^#[ \t]*if\b(?<condition>.*)/;
         regexResult = ifRegex.exec(match);
         if (regexResult) {
-            this.preprocessIf(ifRegex, regexResult, position);
+            this.preprocessIf(regexResult, position);
             return beforeEndPosition;
         }
         const ifdefRegex = /#[ \t]*(?<directive>ifn?def\b)(?<condition>.*)/;
@@ -84,7 +76,7 @@ export class HlslPreprocessor {
         const elifRegex = /^#[ \t]*elif\b(?<condition>.*)/;
         regexResult = elifRegex.exec(match);
         if (regexResult) {
-            this.preprocessElif(elifRegex, regexResult, position);
+            this.preprocessElif(regexResult, position);
             return beforeEndPosition;
         }
         const elseRegex = /^#[ \t]*else\b.*/;
@@ -207,28 +199,11 @@ export class HlslPreprocessor {
         return false;
     }
 
-    private preprocessIf(regex: RegExp, regexResult: RegExpExecArray, offset: number): void {
+    private preprocessIf(regexResult: RegExpExecArray, offset: number): void {
         const ifState: IfState = { position: offset, condition: false };
         this.ifStack.push([ifState]);
         if (!this.isAnyFalseAbove()) {
-            this.refreshMacroNames();
-            const position = offset + regexResult.index;
-            const match = regexResult[0];
-            const dcs = HlslPreprocessor.expandMacros(
-                position,
-                position + match.length,
-                this.snapshot,
-                this.macroNames
-            );
-            const expansionOffset = dcs
-                .map((dc) => dc.afterEndPosition - dc.beforeEndPosition)
-                .reduce((prev, curr) => prev + curr, 0);
-            const finalRegexResult = regex.exec(
-                this.snapshot.text.substring(position, position + match.length + expansionOffset)
-            );
-            if (finalRegexResult && finalRegexResult.groups) {
-                ifState.condition = this.evaluateCondition(finalRegexResult.groups.condition, position);
-            }
+            this.setCondition(regexResult, offset, ifState);
         }
     }
 
@@ -239,7 +214,7 @@ export class HlslPreprocessor {
             const position = offset + regexResult.index;
             const directive = regexResult.groups.directive;
             const condition = regexResult.groups.condition.trim();
-            let defined = HlslPreprocessor.isDefined(condition, position, this.snapshot);
+            let defined = this.snapshot.isDefined(condition, position);
             if (directive === 'ifndef') {
                 defined = !defined;
             }
@@ -247,28 +222,11 @@ export class HlslPreprocessor {
         }
     }
 
-    private preprocessElif(regex: RegExp, regexResult: RegExpExecArray, offset: number): void {
+    private preprocessElif(regexResult: RegExpExecArray, offset: number): void {
         const ifState: IfState = { position: offset, condition: false };
         HlslPreprocessor.addIfFoldingRange(offset, this.ifStack, this.snapshot);
         if (!this.isAnyFalseAbove() && this.isAllFalseInTheSameLevel()) {
-            this.refreshMacroNames();
-            const position = offset + regexResult.index;
-            const match = regexResult[0];
-            const dcs = HlslPreprocessor.expandMacros(
-                position,
-                position + match.length,
-                this.snapshot,
-                this.macroNames
-            );
-            const expansionOffset = dcs
-                .map((dc) => dc.afterEndPosition - dc.beforeEndPosition)
-                .reduce((prev, curr) => prev + curr, 0);
-            const finalRegexResult = regex.exec(
-                this.snapshot.text.substring(position, position + match.length + expansionOffset)
-            );
-            if (finalRegexResult && finalRegexResult.groups) {
-                ifState.condition = this.evaluateCondition(finalRegexResult.groups.condition, position);
-            }
+            this.setCondition(regexResult, offset, ifState);
         }
         HlslPreprocessor.addIfState(this.ifStack, ifState);
     }
@@ -285,19 +243,59 @@ export class HlslPreprocessor {
     private preprocessEndif(position: number): void {
         HlslPreprocessor.addIfFoldingRange(position, this.ifStack, this.snapshot);
         if (!this.isAnyFalseAbove()) {
-            this.addRemoveRanges(position);
+            this.addDirectiveTextEdits(position);
         }
         this.ifStack.pop();
     }
 
-    private addRemoveRanges(position: number): void {
+    private setCondition(regexResult: RegExpExecArray, offset: number, ifState: IfState): void {
+        const position = offset + regexResult.index;
+        const match = regexResult[0];
+        const defines = this.snapshot.getDefineStatements(position);
+        let text = regexResult.groups?.condition ?? '';
+        if (defines.length) {
+            const snapshot = new Snapshot(invalidVersion, text, '');
+            snapshot.text = text;
+            const definesMap = this.createDefinesMap(defines);
+            this.snapshot.stringRanges.forEach((sr) => {
+                if (sr.endPosition >= position && sr.startPosition <= position + match.length) {
+                    snapshot.stringRanges.push({
+                        startPosition: sr.startPosition - position,
+                        endPosition: sr.endPosition - position,
+                    });
+                }
+            });
+            this.expandAll(definesMap, defines, [], snapshot, position);
+            text = snapshot.text;
+        }
+        ifState.condition = this.evaluateCondition(text, position);
+    }
+
+    private createDefinesMap(defines: DefineStatement[]): Map<string, DefineStatement[]> {
+        const definesMap = new Map<string, DefineStatement[]>();
+        for (const ds of defines) {
+            let dss = definesMap.get(ds.name);
+            if (!dss) {
+                dss = [];
+                definesMap.set(ds.name, dss);
+            }
+            dss.push(ds);
+        }
+        return definesMap;
+    }
+
+    private addDirectiveTextEdits(position: number): void {
         if (this.ifStack.length) {
             const ifStates = this.ifStack[this.ifStack.length - 1];
             let lastPosition = -1;
             for (const ifState of ifStates) {
                 if (ifState.condition) {
                     if (lastPosition !== -1) {
-                        this.removeRanges.push({ startPosition: lastPosition, endPosition: ifState.position });
+                        this.textEdits.push({
+                            startPosition: lastPosition,
+                            endPosition: ifState.position,
+                            newText: '',
+                        });
                     }
                     lastPosition = -1;
                 } else {
@@ -307,7 +305,7 @@ export class HlslPreprocessor {
                 }
             }
             if (lastPosition !== -1) {
-                this.removeRanges.push({ startPosition: lastPosition, endPosition: position });
+                this.textEdits.push({ startPosition: lastPosition, endPosition: position, newText: '' });
             }
         }
     }
@@ -417,6 +415,7 @@ export class HlslPreprocessor {
         const ds: DefineStatement = {
             objectLike,
             position,
+            endPosition: position + match.length,
             originalRange,
             nameOriginalRange,
             name,
@@ -476,7 +475,7 @@ export class HlslPreprocessor {
                 continue;
             }
             const match = regexResult[0];
-            const includeRegex = /#[ \t]*include[ \t]*(?:"(?:[^"]|\\")*"|<[^>]*>)/;
+            const includeRegex = /#[ \t]*include[ \t]*(?:"(?:\\"|[^"])*"|<[^>]*>)/;
             regexResult = includeRegex.exec(match);
             if (regexResult && regexResult.groups) {
                 position += offset + regexResult.index;
@@ -605,234 +604,318 @@ export class HlslPreprocessor {
         return parser;
     }
 
-    private refreshMacroNames(): void {
-        const mn = this.snapshot.defineStatements.map((ds) => ds.name);
-        const umn = [...new Set(mn)];
-        this.macroNames = umn.join('|');
-    }
-
-    public static isDefined(text: string, position: number, snapshot: Snapshot): boolean {
-        return !!snapshot.defineStatements.find(
-            (ds) =>
-                ds.name === text && ds.position <= position && (ds.undefPosition == null || ds.undefPosition > position)
-        );
-    }
-
-    public static expandMacros(
-        fromPosition: number,
-        toPosition: number,
-        snapshot: Snapshot,
-        macroNames: string
-    ): DefineContext[] {
-        if (!snapshot.defineStatements.length) {
-            return [];
+    private expandDefines(): DefineContext[] {
+        this.textEdits = [];
+        if (this.snapshot.uri.endsWith(HLSL_EXTENSION) || this.snapshot.uri.endsWith(HLSLI_EXTENSION)) {
+            const definesMap = this.createDefinesMap(this.snapshot.defineStatements);
+            const tes = this.expandAll(definesMap, this.snapshot.defineStatements, [], this.snapshot, 0, true);
+            this.textEdits.push(...tes);
+        } else {
+            this.expandGlobalHlslBlocks();
+            this.expandShaderHlslBlocks();
+            // for (const md of this.snapshot.macroDeclarations) {
+            //     // TODO: in macro statements
+            // }
         }
+        Preprocessor.executeTextEdits(this.textEdits, this.snapshot, false);
+        return [];
+    }
 
-        const macroIdentifierRegex = new RegExp(`\\b(${macroNames})\\b`, 'g');
-        macroIdentifierRegex.lastIndex = fromPosition;
+    private expandGlobalHlslBlocks(): void {
+        this.expandHlslBlocks(this.snapshot.globalHlslBlocks, null);
+    }
+
+    private expandShaderHlslBlocks(): void {
+        for (const sb of this.snapshot.shaderBlocks) {
+            this.expandHlslBlocks(sb.hlslBlocks, sb);
+        }
+    }
+
+    private expandHlslBlocks(hbs: HlslBlock[], sb: ShaderBlock | null): void {
+        for (const hb of hbs) {
+            const defines = this.getDefineStatementsInHlslBlock(hb, sb);
+            if (!defines.length) {
+                continue;
+            }
+            const text = this.snapshot.text.substring(hb.startPosition, hb.endPosition);
+            const definesMap = this.createDefinesMap(defines);
+            const snapshot = new Snapshot(invalidVersion, text, '');
+            snapshot.text = text;
+            snapshot.stringRanges.push(
+                ...this.snapshot.stringRanges
+                    .filter((sr) => sr.startPosition >= hb.startPosition && sr.endPosition <= hb.endPosition)
+                    .map((sr) => ({
+                        startPosition: sr.startPosition - hb.startPosition,
+                        endPosition: sr.endPosition - hb.startPosition,
+                    }))
+            );
+            const tes = this.expandAll(definesMap, hb.defineStatements, [], snapshot, hb.startPosition, true);
+            tes.forEach((te) => {
+                te.startPosition += hb.startPosition;
+                te.endPosition += hb.startPosition;
+            });
+            this.textEdits.push(...tes);
+        }
+    }
+
+    private expandAll(
+        definesMap: Map<string, DefineStatement[]>,
+        defines: DefineStatement[],
+        expansions: DefineStatement[],
+        snapshot: Snapshot,
+        offset: number,
+        isTopLevel = false
+    ): TextEdit[] {
+        const textEdits: TextEdit[] = [];
+        const identifierRegex = /\b([a-zA-Z_]\w*)\b/g;
         let regexResult: RegExpExecArray | null;
-        const result: DefineContext[] = [];
-        while ((regexResult = macroIdentifierRegex.exec(snapshot.text.substring(0, toPosition)))) {
-            const identifierStartPosition = regexResult.index;
+        while ((regexResult = identifierRegex.exec(snapshot.text))) {
+            const localPosition = regexResult.index;
+            const globalPosition = localPosition + offset;
+            if (Preprocessor.isInString(localPosition, snapshot)) {
+                continue;
+            }
+            if (defines.some((ds) => isIntervalContains(ds.position, ds.endPosition, globalPosition))) {
+                continue;
+            }
             const identifier = regexResult[0];
-            const identifierEndPosition = identifierStartPosition + identifier.length;
-            macroIdentifierRegex.lastIndex = identifierEndPosition;
-
+            const dss = definesMap
+                .get(identifier)
+                ?.filter(
+                    (ds) =>
+                        ds.endPosition <= globalPosition &&
+                        (ds.undefPosition == null || ds.undefPosition > globalPosition)
+                );
+            if (!dss?.length) {
+                continue;
+            }
+            const identifierEndPosition = localPosition + identifier.length;
             const ma = Preprocessor.getMacroArguments(identifierEndPosition, snapshot);
             const objectLike = !ma;
             const ds =
-                snapshot.defineStatements.find(
-                    (ds) =>
-                        ds.name === identifier &&
-                        ds.position <= identifierStartPosition &&
-                        ds.objectLike === objectLike &&
-                        ds.parameters.length === (ma?.arguments?.length ?? 0) &&
-                        (ds.undefPosition == null || ds.undefPosition > identifierStartPosition)
+                dss.find(
+                    (ds) => ds.objectLike === objectLike && ds.parameters.length === (ma?.arguments?.length ?? 0)
                 ) ?? null;
-            if (!ds) {
+            if (!ds || expansions.includes(ds)) {
                 continue;
             }
-            const parentDc = snapshot.defineContextAt(identifierStartPosition);
-            if (HlslPreprocessor.isCircularDefineExpansion(parentDc, ds)) {
-                continue;
-            }
+
             const beforeEndPosition = ma ? ma.endPosition : identifierEndPosition;
-            if (Preprocessor.isInString(identifierStartPosition, snapshot)) {
+            const macroSnapshot = new Snapshot(invalidVersion, '', '');
+            snapshot.stringRanges.forEach((sr) => {
+                if (sr.startPosition >= localPosition && sr.endPosition <= beforeEndPosition) {
+                    macroSnapshot.stringRanges.push({
+                        startPosition: sr.startPosition - localPosition,
+                        endPosition: sr.endPosition - localPosition,
+                    });
+                }
+            });
+            macroSnapshot.text = snapshot.text.substring(localPosition, beforeEndPosition);
+            const te = this.expandSpecific(
+                localPosition,
+                globalPosition,
+                macroSnapshot,
+                definesMap,
+                defines,
+                [ds, ...expansions],
+                ds,
+                ma
+            );
+            textEdits.push(te);
+            this.snapshot.defineContexts.push({
+                startPosition: globalPosition,
+                children: [],
+                define: ds,
+                parent: null,
+                result: '',
+                afterEndPosition: globalPosition + te.newText.length,
+                beforeEndPosition: globalPosition + macroSnapshot.text.length,
+            });
+            identifierRegex.lastIndex = beforeEndPosition;
+        }
+        if (!isTopLevel) {
+            Preprocessor.executeTextEdits(textEdits, snapshot, false);
+        }
+        return textEdits;
+    }
+
+    private expandSpecific(
+        localPosition: number,
+        globalPosition: number,
+        snapshot: Snapshot,
+        definesMap: Map<string, DefineStatement[]>,
+        defines: DefineStatement[],
+        expansions: DefineStatement[],
+        ds: DefineStatement,
+        ma: MacroArguments | null
+    ): TextEdit {
+        const beforeEndPosition = snapshot.text.length;
+        snapshot.text = ds.content;
+        Preprocessor.addStringRanges(0, snapshot.text.length, snapshot);
+        if (ma) {
+            let parameterReplacements: ElementRange[] = [];
+            if (ds.parameters.length) {
+                this.parameterReplacement(snapshot, ds, ma, parameterReplacements);
+            }
+            this.concatenation(snapshot, parameterReplacements);
+            parameterReplacements = this.mergeParameterReplacements(parameterReplacements);
+            this.expandParameters(globalPosition, snapshot, definesMap, defines, expansions, parameterReplacements);
+        }
+        this.expandAll(definesMap, defines, expansions, snapshot, globalPosition);
+        return {
+            newText: snapshot.text,
+            startPosition: localPosition,
+            endPosition: localPosition + beforeEndPosition,
+        };
+    }
+
+    private parameterReplacement(
+        snapshot: Snapshot,
+        ds: DefineStatement,
+        ma: MacroArguments,
+        parameterReplacements: ElementRange[]
+    ): void {
+        const textEdits: TextEdit[] = [];
+        const parameterNames = ds.parameters.join('|');
+        const macroParameterRegex = new RegExp(
+            `(?<![^# \\t][ \\t]*#[ \\t]*)((?<stringification>#)[ \\t]*)?\\b(?<name>${parameterNames})\\b`,
+            'g'
+        );
+        let regexResult: RegExpExecArray | null;
+        let offset = 0;
+        while ((regexResult = macroParameterRegex.exec(snapshot.text))) {
+            const parameterStartPosition = regexResult.index;
+            if (Preprocessor.isInString(parameterStartPosition, snapshot)) {
                 continue;
             }
-            const macroSnapshot = new Snapshot(invalidVersion, '', '');
-            macroSnapshot.text = ds.content;
-            Preprocessor.addStringRanges(0, macroSnapshot.text.length, macroSnapshot);
-            let parameterReplacements: ElementRange[] = [];
-            let dc: DefineContext | null = null;
-            if (!ds.objectLike) {
-                if (ds.parameters.length) {
-                    const parameterNames = ds.parameters.join('|');
-                    const macroParameterRegex = new RegExp(
-                        `(?<![^# \\t][ \\t]*#[ \\t]*)((?<stringification>#)[ \\t]*)?\\b(?<name>${parameterNames})\\b`,
-                        'g'
-                    );
-                    let regexResult: RegExpExecArray | null;
-                    while ((regexResult = macroParameterRegex.exec(macroSnapshot.text))) {
-                        const parameterStartPosition = regexResult.index;
-                        if (Preprocessor.isInString(parameterStartPosition, macroSnapshot)) {
-                            continue;
-                        }
-                        const parameterMatch = regexResult[0];
-                        const parameterBeforeEndPosition = parameterStartPosition + parameterMatch.length;
-                        if (regexResult.groups) {
-                            const parameterName = regexResult.groups.name;
-                            const stringification = !!regexResult.groups.stringification;
-                            const argument = ma
-                                ? ma.arguments[ds.parameters.indexOf(parameterName)].content
-                                : parameterName;
-                            const replacement = stringification ? HlslPreprocessor.stringify(argument) : argument;
-                            const parameterAfterEndPosition = parameterStartPosition + replacement.length;
-                            Preprocessor.changeTextAndAddOffset(
-                                parameterStartPosition,
-                                parameterBeforeEndPosition,
-                                parameterAfterEndPosition,
-                                replacement,
-                                macroSnapshot
-                            );
-                            Preprocessor.addStringRanges(
-                                parameterStartPosition,
-                                parameterAfterEndPosition,
-                                macroSnapshot
-                            );
-
-                            if (!stringification) {
-                                parameterReplacements.push({
-                                    startPosition: identifierStartPosition + parameterStartPosition,
-                                    endPosition: identifierStartPosition + parameterAfterEndPosition,
-                                });
-                            }
-                            macroParameterRegex.lastIndex = parameterAfterEndPosition;
-                        }
-                    }
+            const parameterMatch = regexResult[0];
+            const parameterBeforeEndPosition = parameterStartPosition + parameterMatch.length;
+            if (regexResult.groups) {
+                const parameterName = regexResult.groups.name;
+                const stringification = !!regexResult.groups.stringification;
+                const argument = ma ? ma.arguments[ds.parameters.indexOf(parameterName)].content : parameterName;
+                const replacement = stringification ? this.stringify(argument) : argument;
+                const parameterAfterEndPosition = parameterStartPosition + replacement.length;
+                textEdits.push({
+                    newText: replacement,
+                    startPosition: parameterStartPosition,
+                    endPosition: parameterBeforeEndPosition,
+                });
+                if (!stringification) {
+                    parameterReplacements.push({
+                        startPosition: offset + parameterStartPosition,
+                        endPosition: offset + parameterAfterEndPosition,
+                    });
                 }
-                const regex = /[ \t]*#[ \t]*#[ \t]*/g;
-                let regexResult: RegExpExecArray | null;
-                while ((regexResult = regex.exec(macroSnapshot.text))) {
-                    const position = regexResult.index;
-                    if (Preprocessor.isInString(position, macroSnapshot)) {
-                        continue;
-                    }
-                    const match = regexResult[0];
-                    const beforeEndPosition = position + match.length;
-                    Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, position, '', macroSnapshot);
-                    regex.lastIndex = position;
-                    for (const r of parameterReplacements) {
-                        if (position < r.startPosition) {
-                            r.startPosition -= match.length;
-                            r.endPosition -= match.length;
-                        }
-                    }
-                }
-                for (let i = 0; i < parameterReplacements.length; i++) {
-                    for (let j = 0; j < parameterReplacements.length; j++) {
-                        if (
-                            i !== j &&
-                            parameterReplacements[i].endPosition === parameterReplacements[j].startPosition
-                        ) {
-                            parameterReplacements[i].endPosition = parameterReplacements[j].endPosition;
-                            parameterReplacements[j].startPosition = -1;
-                            parameterReplacements[j].endPosition = -1;
-                        }
-                    }
-                }
-                parameterReplacements = parameterReplacements.filter((r) => r.startPosition >= 0);
-
-                const afterEndPosition = identifierStartPosition + macroSnapshot.text.length;
-                dc = {
-                    define: ds,
-                    startPosition: identifierStartPosition,
-                    beforeEndPosition,
-                    afterEndPosition,
-                    result: macroSnapshot.text,
-                    parent: parentDc,
-                    children: [],
-                };
-                result.push(dc);
-                Preprocessor.changeTextAndAddOffset(
-                    identifierStartPosition,
-                    beforeEndPosition,
-                    afterEndPosition,
-                    macroSnapshot.text,
-                    snapshot
-                );
-                Preprocessor.addStringRanges(identifierStartPosition, afterEndPosition, snapshot);
-                snapshot.defineContexts.push(dc);
-                for (const replacement of parameterReplacements) {
-                    const dcs = HlslPreprocessor.expandMacros(
-                        replacement.startPosition,
-                        replacement.endPosition,
-                        snapshot,
-                        macroNames
-                    );
-                    const offset = dcs
-                        .map((dc) => dc.afterEndPosition - dc.beforeEndPosition)
-                        .reduce((prev, curr) => prev + curr, 0);
-                    for (const r of parameterReplacements) {
-                        r.startPosition += offset;
-                        r.endPosition += offset;
-                    }
-                }
-                HlslPreprocessor.expandMacros(fromPosition, toPosition, snapshot, macroNames);
-            } else {
-                const afterEndPosition = identifierStartPosition + macroSnapshot.text.length;
-                dc = {
-                    define: ds,
-                    startPosition: identifierStartPosition,
-                    beforeEndPosition,
-                    afterEndPosition,
-                    result: macroSnapshot.text,
-                    parent: parentDc,
-                    children: [],
-                };
-                result.push(dc);
-                Preprocessor.changeTextAndAddOffset(
-                    identifierStartPosition,
-                    beforeEndPosition,
-                    afterEndPosition,
-                    macroSnapshot.text,
-                    snapshot
-                );
-                Preprocessor.addStringRanges(identifierStartPosition, afterEndPosition, snapshot);
-                snapshot.defineContexts.push(dc);
+                offset += replacement.length - parameterName.length;
             }
+        }
+        Preprocessor.executeTextEdits(textEdits, snapshot, true);
+    }
 
-            macroIdentifierRegex.lastIndex = dc?.afterEndPosition ?? identifierStartPosition;
-            toPosition += dc ? dc.afterEndPosition - dc.beforeEndPosition : 0;
+    private concatenation(snapshot: Snapshot, parameterReplacements: ElementRange[]): void {
+        const textEdits: TextEdit[] = [];
+        const regex = /[ \t]*#[ \t]*#[ \t]*/g;
+        let regexResult: RegExpExecArray | null;
+        while ((regexResult = regex.exec(snapshot.text))) {
+            const position = regexResult.index;
+            if (Preprocessor.isInString(position, snapshot)) {
+                continue;
+            }
+            const match = regexResult[0];
+            const beforeEndPosition = position + match.length;
+            textEdits.push({
+                newText: '',
+                startPosition: position,
+                endPosition: beforeEndPosition,
+            });
+            for (const r of parameterReplacements) {
+                if (position < r.startPosition) {
+                    r.startPosition -= match.length;
+                    r.endPosition -= match.length;
+                }
+            }
+        }
+        Preprocessor.executeTextEdits(textEdits, snapshot, false);
+    }
+
+    private mergeParameterReplacements(parameterReplacements: ElementRange[]): ElementRange[] {
+        for (let i = 0; i < parameterReplacements.length; i++) {
+            for (let j = 0; j < parameterReplacements.length; j++) {
+                if (i !== j && parameterReplacements[i].endPosition === parameterReplacements[j].startPosition) {
+                    parameterReplacements[i].endPosition = parameterReplacements[j].endPosition;
+                    parameterReplacements[j].startPosition = -1;
+                    parameterReplacements[j].endPosition = -1;
+                }
+            }
+        }
+        return parameterReplacements.filter((r) => r.startPosition >= 0);
+    }
+
+    private expandParameters(
+        globalPosition: number,
+        snapshot: Snapshot,
+        definesMap: Map<string, DefineStatement[]>,
+        defines: DefineStatement[],
+        expansions: DefineStatement[],
+        parameterReplacements: ElementRange[]
+    ): void {
+        const textEdits: TextEdit[] = [];
+        for (const replacement of parameterReplacements) {
+            if (Preprocessor.isInString(replacement.startPosition, snapshot)) {
+                continue;
+            }
+            const replacementSnapshot = new Snapshot(invalidVersion, '', '');
+            replacementSnapshot.text = snapshot.text.substring(replacement.startPosition, replacement.endPosition);
+            const tes = this.expandAll(
+                definesMap,
+                defines,
+                expansions,
+                replacementSnapshot,
+                globalPosition + replacement.startPosition
+            );
+            tes.forEach((te) => {
+                te.startPosition += replacement.startPosition;
+                te.endPosition += replacement.startPosition;
+            });
+            textEdits.push(...tes);
+        }
+        Preprocessor.executeTextEdits(textEdits, snapshot, true);
+    }
+
+    private getDefineStatementsInHlslBlock(hb: HlslBlock, sb: ShaderBlock | null): DefineStatement[] {
+        const result = this.snapshot.globalHlslBlocks
+            .filter((h) => (h.stage === hb.stage || h.stage === null) && h.endPosition <= hb.endPosition)
+            .flatMap((h) => h.defineStatements);
+        if (sb) {
+            result.push(
+                ...sb.hlslBlocks
+                    .filter((h) => (h.stage === hb.stage || h.stage === null) && h.endPosition <= hb.endPosition)
+                    .flatMap((h) => h.defineStatements)
+            );
         }
         return result;
     }
 
-    private static stringify(argument: string): string {
+    private stringify(argument: string): string {
         const argumentSnapshot = new Snapshot(invalidVersion, '', '');
         argumentSnapshot.text = argument;
         Preprocessor.addStringRanges(0, argument.length, argumentSnapshot);
+        const textEdits: TextEdit[] = [];
         const regex = /"|\\/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(argumentSnapshot.text))) {
             const position = regexResult.index;
             const quote = regexResult[0] === '"';
             if (quote || Preprocessor.isInString(position, argumentSnapshot)) {
-                Preprocessor.changeTextAndAddOffset(position, position, position + 2, '\\', argumentSnapshot);
-                regex.lastIndex = position + 2;
+                textEdits.push({
+                    startPosition: position,
+                    endPosition: position,
+                    newText: '\\',
+                });
             }
         }
+        Preprocessor.executeTextEdits(textEdits, argumentSnapshot, false);
         return `"${argumentSnapshot.text}"`;
-    }
-
-    private static isCircularDefineExpansion(dc: DefineContext | null, ds: DefineStatement | null): boolean {
-        let currentDc: DefineContext | null = dc;
-        while (currentDc) {
-            if (currentDc.define === ds) {
-                return true;
-            }
-            currentDc = currentDc.parent;
-        }
-        return false;
     }
 }

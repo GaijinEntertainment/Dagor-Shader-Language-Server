@@ -3,7 +3,6 @@ import { AbstractParseTreeVisitor } from 'antlr4ts/tree/AbstractParseTreeVisitor
 import { ExpressionContext } from '../_generated/ConditionParser';
 import { ConditionParserVisitor } from '../_generated/ConditionParserVisitor';
 import { Snapshot } from '../core/snapshot';
-import { HlslPreprocessor } from './hlsl-preprocessor';
 
 export class ConditionVisitor
     extends AbstractParseTreeVisitor<bigint | null>
@@ -181,7 +180,7 @@ export class ConditionVisitor
     private evaluateOtherExpression(ctx: ExpressionContext): bigint | null {
         const identifier = ctx.IDENTIFIER();
         if (ctx.DEFINED()) {
-            return HlslPreprocessor.isDefined(identifier?.text ?? '', this.position, this.snapshot) ? 1n : 0n;
+            return this.snapshot.isDefined(identifier?.text ?? '', this.position) ? 1n : 0n;
         }
         if (identifier) {
             return 0n;

@@ -11,6 +11,7 @@ import {
 } from 'vscode-languageserver';
 
 import { getCapabilities } from '../core/capability-manager';
+import { HLSLI_EXTENSION, HLSL_EXTENSION } from '../core/constant';
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
 import {
@@ -73,7 +74,7 @@ export async function completionProvider(
         return null;
     }
     const uri = params.textDocument.uri;
-    const hlsl = uri.endsWith('.hlsl') || uri.endsWith('.hlsli') || snapshot.isInHlslBlock(position);
+    const hlsl = uri.endsWith(HLSL_EXTENSION) || uri.endsWith(HLSLI_EXTENSION) || snapshot.isInHlslBlock(position);
     const result: CompletionItem[] = [];
     addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
     if (hlsl) {
@@ -123,7 +124,7 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
 }
 
 function addDefines(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
-    if (snapshot.uri.endsWith('.hlsl') || snapshot.uri.endsWith('.hlsli')) {
+    if (snapshot.uri.endsWith(HLSL_EXTENSION) || snapshot.uri.endsWith(HLSLI_EXTENSION)) {
         const defines = snapshot.defineStatements;
         addDefinesIfAvailable(result, defines, position);
     } else {

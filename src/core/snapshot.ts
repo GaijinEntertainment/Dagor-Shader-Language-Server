@@ -1,6 +1,6 @@
 import { DocumentUri, Position, Range } from 'vscode-languageserver';
 
-import { defaultPosition, rangeContains } from '../helper/helper';
+import { defaultPosition, isIntervalContains, rangeContains } from '../helper/helper';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
@@ -15,6 +15,7 @@ import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { RangeWithChildren } from '../interface/range-with-children';
 import { ShaderBlock } from '../interface/shader-block';
 import { SnapshotVersion } from '../interface/snapshot-version';
+import { HLSLI_EXTENSION, HLSL_EXTENSION } from './constant';
 
 export class Snapshot {
     public readonly version: SnapshotVersion;
@@ -134,8 +135,11 @@ export class Snapshot {
         while (lowerIndex <= upperIndex) {
             currentIndex = Math.floor((lowerIndex + upperIndex) / 2);
             if (
-                position >= originalTextOffsets[currentIndex].startPosition &&
-                position <= originalTextOffsets[currentIndex].endPosition
+                isIntervalContains(
+                    originalTextOffsets[currentIndex].startPosition,
+                    originalTextOffsets[currentIndex].endPosition,
+                    position
+                )
             ) {
                 return { line: currentIndex, character: position - originalTextOffsets[currentIndex].startPosition };
             }
@@ -157,12 +161,14 @@ export class Snapshot {
         }
         for (const md of this.macroDeclarations) {
             md.position = this.updatePosition(md.position, newPo);
+            md.endPosition = this.updatePosition(md.endPosition, newPo);
         }
         for (const mc of this.macroContexts) {
             this.updateOffsetAndChildren(mc, newPo);
         }
         for (const ds of this.defineStatements) {
             ds.position = this.updatePosition(ds.position, newPo);
+            ds.endPosition = this.updatePosition(ds.endPosition, newPo);
         }
         for (const dc of this.defineContexts) {
             dc.startPosition = this.updatePosition(dc.startPosition, newPo);
@@ -209,11 +215,13 @@ export class Snapshot {
     }
 
     public isInIncludeContext(position: number): boolean {
-        return this.includeContexts.some((ic) => ic.startPosition <= position && position <= ic.endPosition);
+        return this.includeContexts.some((ic) => isIntervalContains(ic.startPosition, ic.endPosition, position));
     }
 
     public getIncludeContextAt(position: number): IncludeContext | null {
-        return this.includeContexts.find((ic) => ic.startPosition <= position && position <= ic.endPosition) ?? null;
+        return (
+            this.includeContexts.find((ic) => isIntervalContains(ic.startPosition, ic.endPosition, position)) ?? null
+        );
     }
 
     public getIncludeContextDeepAt(position: number): IncludeContext | null {
@@ -227,7 +235,7 @@ export class Snapshot {
     }
 
     private getIncludeContext(ic: IncludeContext, position: number): IncludeContext | null {
-        if (ic.startPosition <= position && position <= ic.endPosition) {
+        if (isIntervalContains(ic.startPosition, ic.endPosition, position)) {
             for (const c of ic.children) {
                 const result = this.getIncludeContext(c, position);
                 if (result) {
@@ -307,5 +315,58 @@ export class Snapshot {
             this.hlslBlocks.some((hb) => hb.isVisible && rangeContains(hb.originalRange, position)) ||
             this.macroDeclarations.some((md) => md.contentSnapshot.isInHlslBlock(position))
         );
+    }
+
+    public isDefined(name: string, position: number): boolean {
+        return this.getDefineStatements(position).some((ds) => ds.name === name);
+    }
+
+    public getDefineStatements(position: number): DefineStatement[] {
+        if (this.uri.endsWith(HLSL_EXTENSION) || this.uri.endsWith(HLSLI_EXTENSION)) {
+            return this.defineStatements.filter((ds) => this.isDefineAvailable(ds, position));
+        } else {
+            const result: DefineStatement[] = [];
+            const md = this.macroDeclarations.find((md) => isIntervalContains(md.position, md.endPosition, position));
+            const definesSnapshot = md?.contentSnapshot ?? this;
+            const hb =
+                definesSnapshot.hlslBlocks.find((hb) =>
+                    isIntervalContains(hb.startPosition, hb.endPosition, position)
+                ) ?? null;
+            if (hb) {
+                const shaderBlock = definesSnapshot.shaderBlocks.find((sb) =>
+                    isIntervalContains(sb.startPosition, sb.endPosition, position)
+                );
+                if (shaderBlock) {
+                    result.push(...this.getDefineStatementsInHlslBlocks(shaderBlock.hlslBlocks, position, hb.stage));
+                }
+                result.push(
+                    ...this.getDefineStatementsInHlslBlocks(definesSnapshot.globalHlslBlocks, position, hb.stage)
+                );
+            }
+            if (md && hb) {
+                result.push(...this.getDefineStatementsInHlslBlocks(this.globalHlslBlocks, md.position, hb.stage));
+            }
+            return result;
+        }
+    }
+
+    private getDefineStatementsInHlslBlocks(
+        hbs: HlslBlock[],
+        position: number,
+        stage: string | null
+    ): DefineStatement[] {
+        return hbs
+            .filter(
+                (hb) =>
+                    hb.startPosition <= position &&
+                    position <= hb.endPosition &&
+                    (hb.stage === null || hb.stage === stage)
+            )
+            .flatMap((hb) => hb.defineStatements)
+            .filter((ds) => this.isDefineAvailable(ds, position));
+    }
+
+    private isDefineAvailable(ds: DefineStatement, position: number): boolean {
+        return ds.endPosition <= position && (!ds.undefPosition || position <= ds.undefPosition);
     }
 }
