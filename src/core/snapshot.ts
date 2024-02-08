@@ -35,6 +35,7 @@ export class Snapshot {
     public defineContexts: DefineContext[] = [];
     public stringRanges: ElementRange[] = [];
     public ifRanges: Range[] = [];
+    public directives: ElementRange[] = [];
     public shaderBlocks: ShaderBlock[] = [];
     public globalHlslBlocks: HlslBlock[] = [];
     public hlslBlocks: HlslBlock[] = [];
@@ -185,6 +186,10 @@ export class Snapshot {
         for (const sb of this.shaderBlocks) {
             sb.startPosition = this.updatePosition(sb.startPosition, newPo);
             sb.endPosition = this.updatePosition(sb.endPosition, newPo);
+        }
+        for (const d of this.directives) {
+            d.startPosition = this.updatePosition(d.startPosition, newPo);
+            d.endPosition = this.updatePosition(d.endPosition, newPo);
         }
         this.preprocessingOffsets.push(newPo);
     }
@@ -345,5 +350,9 @@ export class Snapshot {
 
     private isDefineAvailable(ds: DefineStatement, position: number): boolean {
         return ds.endPosition <= position && (!ds.undefPosition || position <= ds.undefPosition);
+    }
+
+    public isInDirective(position: number): boolean {
+        return this.directives.some((d) => isIntervalContains(d.startPosition, d.endPosition, position));
     }
 }

@@ -1,5 +1,5 @@
 import { ANTLRInputStream, CommonTokenStream } from 'antlr4ts';
-import { DocumentUri } from 'vscode-languageserver';
+import { DocumentUri, Range } from 'vscode-languageserver';
 
 import { ConditionLexer } from '../_generated/ConditionLexer';
 import { ConditionParser } from '../_generated/ConditionParser';
@@ -61,19 +61,19 @@ export class HlslPreprocessor {
         if (regexResult) {
             return await this.preprocessInclude(regexResult, position);
         }
-        const ifRegex = /^#[ \t]*if\b(?<condition>.*)/;
+        const ifRegex = /(?<beforeCondition>^#[ \t]*if\b[ \t]*)(?<condition>.*)/;
         regexResult = ifRegex.exec(match);
         if (regexResult) {
             this.preprocessIf(regexResult, position);
             return beforeEndPosition;
         }
-        const ifdefRegex = /#[ \t]*(?<directive>ifn?def\b)(?<condition>.*)/;
+        const ifdefRegex = /(?<beforeCondition>#[ \t]*(?<directive>ifn?def\b)[ \t]*)(?<condition>.*)/;
         regexResult = ifdefRegex.exec(match);
         if (regexResult) {
             this.preprocessIfdef(regexResult, position);
             return beforeEndPosition;
         }
-        const elifRegex = /^#[ \t]*elif\b(?<condition>.*)/;
+        const elifRegex = /(?<beforeCondition>^#[ \t]*elif\b[ \t]*)(?<condition>.*)/;
         regexResult = elifRegex.exec(match);
         if (regexResult) {
             this.preprocessElif(regexResult, position);
@@ -206,6 +206,7 @@ export class HlslPreprocessor {
         if (!this.isAnyFalseAbove()) {
             this.setCondition(regexResult, offset, ifState);
         }
+        this.snapshot.directives.push({ startPosition: offset, endPosition: offset + regexResult[0].length });
     }
 
     private preprocessIfdef(regexResult: RegExpExecArray, offset: number): void {
@@ -216,12 +217,27 @@ export class HlslPreprocessor {
             const directive = regexResult.groups.directive;
             const condition = regexResult.groups.condition.trim();
             const ds = this.snapshot.getDefinition(condition, position);
+            if (ds) {
+                const conditionPosition = position + (regexResult.groups.beforeCondition?.length ?? 0);
+                const endPosition = conditionPosition + condition.length;
+                HlslPreprocessor.createDefineContext(
+                    conditionPosition,
+                    endPosition,
+                    endPosition,
+                    this.snapshot.getOriginalRange(conditionPosition, endPosition),
+                    ds,
+                    this.snapshot,
+                    !this.snapshot.isInIncludeContext(position) && !this.snapshot.isInMacroContext(position),
+                    null
+                );
+            }
             let defined = !!ds;
             if (directive === 'ifndef') {
                 defined = !defined;
             }
             ifState.condition = defined;
         }
+        this.snapshot.directives.push({ startPosition: offset, endPosition: offset + regexResult[0].length });
     }
 
     private preprocessElif(regexResult: RegExpExecArray, offset: number): void {
@@ -231,6 +247,7 @@ export class HlslPreprocessor {
             this.setCondition(regexResult, offset, ifState);
         }
         HlslPreprocessor.addIfState(this.ifStack, ifState);
+        this.snapshot.directives.push({ startPosition: offset, endPosition: offset + regexResult[0].length });
     }
 
     private preprocessElse(offset: number): void {
@@ -253,6 +270,7 @@ export class HlslPreprocessor {
     private setCondition(regexResult: RegExpExecArray, offset: number, ifState: IfState): void {
         const position = offset + regexResult.index;
         const match = regexResult[0];
+        const conditionPosition = position + (regexResult.groups?.beforeCondition?.length ?? 0);
         const defines = this.snapshot.getDefineStatements(position);
         let text = regexResult.groups?.condition ?? '';
         if (defines.length) {
@@ -267,10 +285,10 @@ export class HlslPreprocessor {
                     });
                 }
             });
-            this.expandAll(definesMap, defines, [], snapshot, position);
+            this.expandAll(definesMap, defines, [], snapshot, conditionPosition);
             text = snapshot.text;
         }
-        ifState.condition = this.evaluateCondition(text, position);
+        ifState.condition = this.evaluateCondition(text, conditionPosition);
     }
 
     private createDefinesMap(defines: DefineStatement[]): Map<string, DefineStatement[]> {
@@ -671,7 +689,7 @@ export class HlslPreprocessor {
         while ((regexResult = identifierRegex.exec(snapshot.text))) {
             const localPosition = regexResult.index;
             const globalPosition = localPosition + offset;
-            if (Preprocessor.isInString(localPosition, snapshot)) {
+            if (Preprocessor.isInString(localPosition, snapshot) || this.snapshot.isInDirective(globalPosition)) {
                 continue;
             }
             if (defines.some((ds) => isIntervalContains(ds.position, ds.endPosition, globalPosition))) {
@@ -722,23 +740,26 @@ export class HlslPreprocessor {
             );
             textEdits.push(te);
             if (expansions.length === 0) {
-                const dc: DefineContext = {
-                    startPosition: globalPosition,
-                    define: ds,
-                    afterEndPosition: globalPosition + te.newText.length,
-                    beforeEndPosition: globalPosition + macroSnapshot.text.length,
-                    nameOriginalRange: this.snapshot.getOriginalRange(
-                        globalPosition,
-                        globalPosition + identifier.length
-                    ),
-                    isVisible:
-                        expansions.length === 0 &&
-                        !this.snapshot.isInIncludeContext(globalPosition) &&
-                        !this.snapshot.isInMacroContext(globalPosition),
-                    expansion: te.newText,
-                };
-                this.snapshot.defineContexts.push(dc);
-                ds.usages.push(dc);
+                const beforeEndPosition = globalPosition + te.newText.length;
+                const afterEndPosition = globalPosition + macroSnapshot.text.length;
+                const nameOriginalRange = this.snapshot.getOriginalRange(
+                    globalPosition,
+                    globalPosition + identifier.length
+                );
+                const isVisible =
+                    expansions.length === 0 &&
+                    !this.snapshot.isInIncludeContext(globalPosition) &&
+                    !this.snapshot.isInMacroContext(globalPosition);
+                HlslPreprocessor.createDefineContext(
+                    globalPosition,
+                    beforeEndPosition,
+                    afterEndPosition,
+                    nameOriginalRange,
+                    ds,
+                    this.snapshot,
+                    isVisible,
+                    te.newText
+                );
             }
             identifierRegex.lastIndex = beforeEndPosition;
         }
@@ -926,5 +947,29 @@ export class HlslPreprocessor {
         }
         Preprocessor.executeTextEdits(textEdits, argumentSnapshot, false);
         return `"${argumentSnapshot.text}"`;
+    }
+
+    public static createDefineContext(
+        position: number,
+        beforeEndPosition: number,
+        afterEndPosition: number,
+        nameOriginalRange: Range,
+        ds: DefineStatement,
+        snapshot: Snapshot,
+        isVisible: boolean,
+        expansion: string | null
+    ): DefineContext {
+        const dc: DefineContext = {
+            define: ds,
+            expansion,
+            startPosition: position,
+            beforeEndPosition,
+            afterEndPosition,
+            nameOriginalRange,
+            isVisible,
+        };
+        snapshot.defineContexts.push(dc);
+        ds.usages.push(dc);
+        return dc;
     }
 }

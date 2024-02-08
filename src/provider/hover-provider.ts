@@ -68,9 +68,17 @@ function getDefineValue(dc: DefineContext): string {
     }
     const define = toStringDefineStatementWithContent(ds);
     if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
-        return `\`\`\`hlsl\n${define}\n\`\`\`\nExpands to:\n\`\`\`hlsl\n${dc.expansion}\n\`\`\``;
+        let result = `\`\`\`hlsl\n${define}\n\`\`\``;
+        if (dc.expansion !== null) {
+            result += `\nExpands to:\n\`\`\`hlsl\n${dc.expansion}\n\`\`\``;
+        }
+        return result;
     } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
-        return `${define}\nExpands to:\n${dc.expansion}`;
+        if (dc.expansion === null) {
+            return define;
+        } else {
+            return `${define}\nExpands to:\n${dc.expansion}`;
+        }
     } else {
         return '';
     }
