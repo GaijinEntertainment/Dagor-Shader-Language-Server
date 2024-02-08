@@ -2,6 +2,7 @@ import { DocumentUri, Location, LocationLink, Position } from 'vscode-languagese
 
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
+import { DefineStatement } from '../interface/define-statement';
 import { Macro } from '../interface/macro/macro';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroParameter } from '../interface/macro/macro-parameter';
@@ -18,11 +19,22 @@ export async function linkProviderBase(
     }
     let md = snapshot.macroDeclarations.find((md) => md.uri === uri && rangeContains(md.nameOriginalRange, position));
     if (md) {
-        return getDeclarationLocation(md.macro, linkSupport, md);
+        return getMacroDeclarationLocation(md.macro, linkSupport, md);
     }
     const mu = snapshot.macroUsages.find((mu) => mu.isVisible && rangeContains(mu.nameOriginalRange, position));
     if (mu) {
-        return getDeclarationLocation(mu.macro, linkSupport);
+        return getMacroDeclarationLocation(mu.macro, linkSupport);
+    }
+    const ds = snapshot.defineStatements.find((ds) => ds.isVisible && rangeContains(ds.nameOriginalRange, position));
+    if (ds) {
+        return getDefineDeclarationLocation(ds, linkSupport);
+    }
+    const dc = snapshot.defineContexts.find(
+        (dc) =>
+            dc.isVisible && rangeContains(dc.nameOriginalRange, position) && (!implementation || !dc.define.objectLike)
+    );
+    if (dc) {
+        return getDefineDeclarationLocation(dc.define, linkSupport);
     }
     if (implementation) {
         return null;
@@ -41,7 +53,7 @@ export async function linkProviderBase(
     return null;
 }
 
-function getDeclarationLocation(
+function getMacroDeclarationLocation(
     macro: Macro,
     linkSupport: boolean,
     sourceMd?: MacroDeclaration
@@ -57,6 +69,23 @@ function getDeclarationLocation(
         return {
             range: md.nameOriginalRange,
             uri: md.uri,
+        };
+    }
+}
+
+function getDefineDeclarationLocation(ds: DefineStatement, linkSupport: boolean): LocationLink[] | Location {
+    if (linkSupport) {
+        return [
+            {
+                targetRange: ds.originalRange,
+                targetSelectionRange: ds.nameOriginalRange,
+                targetUri: ds.uri,
+            },
+        ];
+    } else {
+        return {
+            range: ds.nameOriginalRange,
+            uri: ds.uri,
         };
     }
 }

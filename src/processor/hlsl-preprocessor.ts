@@ -5,7 +5,7 @@ import { ConditionLexer } from '../_generated/ConditionLexer';
 import { ConditionParser } from '../_generated/ConditionParser';
 import { HLSLI_EXTENSION, HLSL_EXTENSION } from '../core/constant';
 import { Snapshot } from '../core/snapshot';
-import { defaultRange, isIntervalContains } from '../helper/helper';
+import { isIntervalContains } from '../helper/helper';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
@@ -175,6 +175,7 @@ export class HlslPreprocessor {
             snapshot: this.snapshot,
             parent: parentIc,
             children: [],
+            uri,
             originalEndPosition: this.snapshot.getOriginalPosition(afterEndPosition, false),
         };
         if (parentIc) {
@@ -378,7 +379,7 @@ export class HlslPreprocessor {
             const beforeName = position + regexResult.groups.beforeName.length;
             const name = regexResult.groups.name;
             const match = regexResult[0];
-            const ic = this.snapshot.getIncludeContextAt(position);
+            const ic = this.snapshot.getIncludeContextDeepAt(position);
             const isVisible = !ic && !this.snapshot.isInMacroContext(position);
             this.createDefineStatement(
                 position,
@@ -407,12 +408,8 @@ export class HlslPreprocessor {
         snapshot: Snapshot,
         ic: IncludeContext | null
     ): DefineStatement {
-        const originalRange = isVisible
-            ? this.snapshot.getOriginalRange(position, position + match.length)
-            : defaultRange;
-        const nameOriginalRange = isVisible
-            ? this.snapshot.getOriginalRange(beforeName, beforeName + name.length)
-            : defaultRange;
+        const originalRange = this.snapshot.getOriginalRange(position, position + match.length);
+        const nameOriginalRange = this.snapshot.getOriginalRange(beforeName, beforeName + name.length);
         const ds: DefineStatement = {
             objectLike,
             position,
@@ -427,6 +424,7 @@ export class HlslPreprocessor {
             undefCodeCompletionPosition: null,
             isVisible,
             usages: [],
+            uri: ic?.uri ?? snapshot.uri,
         };
         this.addDefine(position, ds, snapshot);
         return ds;

@@ -138,6 +138,7 @@ class DshlPreprocessor {
                 snapshot: result.snapshot,
                 parent: null,
                 originalEndPosition: this.snapshot.getOriginalPosition(afterEndPosition, false),
+                uri: result.snapshot.uri,
             };
             for (const sr of result.snapshot.stringRanges) {
                 sr.startPosition += offset;

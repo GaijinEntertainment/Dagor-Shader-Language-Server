@@ -1,4 +1,4 @@
-import { Position } from 'vscode-languageserver';
+import { DocumentUri, Position } from 'vscode-languageserver';
 import { Snapshot } from '../../core/snapshot';
 import { IncludeStatement } from './include-statement';
 
@@ -11,4 +11,5 @@ export interface IncludeContext {
     includeStatement: IncludeStatement;
     parent: IncludeContext | null;
     children: IncludeContext[];
+    uri: DocumentUri;
 }

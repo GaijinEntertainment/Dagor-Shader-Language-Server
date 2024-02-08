@@ -1,4 +1,4 @@
-import { Position, Range } from 'vscode-languageserver';
+import { DocumentUri, Position, Range } from 'vscode-languageserver';
 import { DefineContext } from './define-context';
 
 export interface DefineStatement {
@@ -15,6 +15,7 @@ export interface DefineStatement {
     undefCodeCompletionPosition: Position | null;
     isVisible: boolean;
     usages: DefineContext[];
+    uri: DocumentUri;
 }
 
 export function toStringDefineStatementWithContent(ds: DefineStatement): string {
