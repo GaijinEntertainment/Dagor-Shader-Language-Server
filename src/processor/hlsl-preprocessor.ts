@@ -475,9 +475,9 @@ export class HlslPreprocessor {
                 continue;
             }
             const match = regexResult[0];
-            const includeRegex = /#[ \t]*include[ \t]*(?:"(?:\\"|[^"])*"|<[^>]*>)/;
+            const includeRegex = /#[ \t]*include[ \t]*(?:"(?<quotedPath>(?:\\"|[^"])*)"|<(?<angularPath>[^>]*)>)/;
             regexResult = includeRegex.exec(match);
-            if (regexResult && regexResult.groups) {
+            if (regexResult) {
                 position += offset + regexResult.index;
                 this.preprocessIncludeLight(regexResult, position);
                 continue;
