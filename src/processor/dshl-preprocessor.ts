@@ -2,6 +2,7 @@ import { DocumentUri, Position, Range } from 'vscode-languageserver';
 
 import { Snapshot } from '../core/snapshot';
 import { defaultRange } from '../helper/helper';
+import { Arguments } from '../interface/arguments';
 import { ElementRange } from '../interface/element-range';
 import { HlslBlock } from '../interface/hlsl-block';
 import { IfState } from '../interface/if-state';
@@ -10,7 +11,6 @@ import { IncludeResult } from '../interface/include/include-result';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
 import { getMacroDeclaration, hasMacroDeclarationBefore, isDeclarationAlreadyAdded } from '../interface/macro/macro';
-import { MacroArguments } from '../interface/macro/macro-arguments';
 import { MacroContext } from '../interface/macro/macro-context';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroParameter } from '../interface/macro/macro-parameter';
@@ -442,7 +442,7 @@ class DshlPreprocessor {
             if (!hasMacroDeclarationBefore(macro, containerMd.position)) {
                 continue;
             }
-            const ma = Preprocessor.getMacroArguments(identifierEndPosition, snapshot);
+            const ma = Preprocessor.getArguments(identifierEndPosition, snapshot);
             if (!ma) {
                 continue;
             }
@@ -461,7 +461,7 @@ class DshlPreprocessor {
         }
     }
 
-    private offsetPositions(nameOriginalRange: Range, md: MacroDeclaration, ma: MacroArguments): void {
+    private offsetPositions(nameOriginalRange: Range, md: MacroDeclaration, ma: Arguments): void {
         const contentStartPosition = md.contentOriginalRange.start;
         this.offsetPosition(nameOriginalRange.start, contentStartPosition);
         this.offsetPosition(nameOriginalRange.end, contentStartPosition);
@@ -501,7 +501,7 @@ class DshlPreprocessor {
             if (!hasMacroDeclarationBefore(macro, position)) {
                 continue;
             }
-            const ma = Preprocessor.getMacroArguments(identifierEndPosition, this.snapshot);
+            const ma = Preprocessor.getArguments(identifierEndPosition, this.snapshot);
             const mc = this.snapshot.getMacroContextDeepAt(position);
             if (!ma) {
                 continue;
@@ -537,7 +537,7 @@ class DshlPreprocessor {
         position: number,
         beforeEndPosition: number,
         md: MacroDeclaration,
-        ma: MacroArguments,
+        ma: Arguments,
         parentMc: MacroContext | null = null
     ): void {
         const pasteText = this.getMacroPasteText(md, ma);
@@ -547,7 +547,7 @@ class DshlPreprocessor {
         Preprocessor.addStringRanges(position, afterEndPosition, this.snapshot);
     }
 
-    private getMacroPasteText(md: MacroDeclaration, ma: MacroArguments): string {
+    private getMacroPasteText(md: MacroDeclaration, ma: Arguments): string {
         if (!ma.arguments.length) {
             return md.contentSnapshot.originalText;
         }

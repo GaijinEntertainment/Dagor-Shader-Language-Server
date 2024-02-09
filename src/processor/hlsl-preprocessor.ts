@@ -6,6 +6,7 @@ import { ConditionParser } from '../_generated/ConditionParser';
 import { HLSLI_EXTENSION, HLSL_EXTENSION } from '../core/constant';
 import { Snapshot } from '../core/snapshot';
 import { isIntervalContains } from '../helper/helper';
+import { Arguments } from '../interface/arguments';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
@@ -14,7 +15,6 @@ import { IfState } from '../interface/if-state';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
-import { MacroArguments } from '../interface/macro/macro-arguments';
 import { ShaderBlock } from '../interface/shader-block';
 import { invalidVersion } from '../interface/snapshot-version';
 import { TextEdit } from '../interface/text-edit';
@@ -707,17 +707,17 @@ export class HlslPreprocessor {
                 continue;
             }
             const identifierEndPosition = localPosition + identifier.length;
-            const ma = Preprocessor.getMacroArguments(identifierEndPosition, snapshot);
-            const objectLike = !ma;
+            const da = Preprocessor.getArguments(identifierEndPosition, snapshot);
+            const objectLike = !da;
             const ds =
                 dss.find(
-                    (ds) => ds.objectLike === objectLike && ds.parameters.length === (ma?.arguments?.length ?? 0)
+                    (ds) => ds.objectLike === objectLike && ds.parameters.length === (da?.arguments?.length ?? 0)
                 ) ?? null;
             if (!ds || expansions.includes(ds)) {
                 continue;
             }
 
-            const beforeEndPosition = ma ? ma.endPosition : identifierEndPosition;
+            const beforeEndPosition = da ? da.endPosition : identifierEndPosition;
             const macroSnapshot = new Snapshot(invalidVersion, '', '');
             snapshot.stringRanges.forEach((sr) => {
                 if (sr.startPosition >= localPosition && sr.endPosition <= beforeEndPosition) {
@@ -736,7 +736,7 @@ export class HlslPreprocessor {
                 defines,
                 [ds, ...expansions],
                 ds,
-                ma
+                da
             );
             textEdits.push(te);
             if (expansions.length === 0) {
@@ -746,6 +746,9 @@ export class HlslPreprocessor {
                     globalPosition,
                     globalPosition + identifier.length
                 );
+                if (da) {
+                    this.computeOriginalArgumentPositions(da, offset);
+                }
                 const isVisible =
                     expansions.length === 0 &&
                     !this.snapshot.isInIncludeContext(globalPosition) &&
@@ -758,7 +761,8 @@ export class HlslPreprocessor {
                     ds,
                     this.snapshot,
                     isVisible,
-                    te.newText
+                    te.newText,
+                    da
                 );
             }
             identifierRegex.lastIndex = beforeEndPosition;
@@ -769,6 +773,20 @@ export class HlslPreprocessor {
         return textEdits;
     }
 
+    private computeOriginalArgumentPositions(da: Arguments, offset: number): void {
+        da.argumentListOriginalRange = this.snapshot.getOriginalRange(
+            offset + da.argumentListPosition,
+            offset + da.argumentListEndPosition
+        );
+        for (const maa of da.arguments) {
+            maa.originalRange = this.snapshot.getOriginalRange(offset + maa.position, offset + maa.endPosition);
+            maa.trimmedOriginalStartPosition = this.snapshot.getOriginalPosition(
+                offset + maa.trimmedStartPosition,
+                true
+            );
+        }
+    }
+
     private expandSpecific(
         localPosition: number,
         globalPosition: number,
@@ -777,15 +795,15 @@ export class HlslPreprocessor {
         defines: DefineStatement[],
         expansions: DefineStatement[],
         ds: DefineStatement,
-        ma: MacroArguments | null
+        da: Arguments | null
     ): TextEdit {
         const beforeEndPosition = snapshot.text.length;
         snapshot.text = ds.content;
         Preprocessor.addStringRanges(0, snapshot.text.length, snapshot);
-        if (ma) {
+        if (da) {
             let parameterReplacements: ElementRange[] = [];
             if (ds.parameters.length) {
-                this.parameterReplacement(snapshot, ds, ma, parameterReplacements);
+                this.parameterReplacement(snapshot, ds, da, parameterReplacements);
             }
             this.concatenation(snapshot, parameterReplacements);
             parameterReplacements = this.mergeParameterReplacements(parameterReplacements);
@@ -802,7 +820,7 @@ export class HlslPreprocessor {
     private parameterReplacement(
         snapshot: Snapshot,
         ds: DefineStatement,
-        ma: MacroArguments,
+        da: Arguments,
         parameterReplacements: ElementRange[]
     ): void {
         const textEdits: TextEdit[] = [];
@@ -823,7 +841,7 @@ export class HlslPreprocessor {
             if (regexResult.groups) {
                 const parameterName = regexResult.groups.name;
                 const stringification = !!regexResult.groups.stringification;
-                const argument = ma ? ma.arguments[ds.parameters.indexOf(parameterName)].content : parameterName;
+                const argument = da ? da.arguments[ds.parameters.indexOf(parameterName)].content : parameterName;
                 const replacement = stringification ? this.stringify(argument) : argument;
                 const parameterAfterEndPosition = parameterStartPosition + replacement.length;
                 textEdits.push({
@@ -957,7 +975,8 @@ export class HlslPreprocessor {
         ds: DefineStatement,
         snapshot: Snapshot,
         isVisible: boolean,
-        expansion: string | null
+        expansion: string | null,
+        da: Arguments | null = null
     ): DefineContext {
         const dc: DefineContext = {
             define: ds,
@@ -967,6 +986,7 @@ export class HlslPreprocessor {
             afterEndPosition,
             nameOriginalRange,
             isVisible,
+            arguments: da,
         };
         snapshot.defineContexts.push(dc);
         ds.usages.push(dc);

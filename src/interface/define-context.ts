@@ -1,4 +1,5 @@
 import { Range } from 'vscode-languageserver';
+import { Arguments } from './arguments';
 import { DefineStatement } from './define-statement';
 
 export interface DefineContext {
@@ -9,4 +10,5 @@ export interface DefineContext {
     nameOriginalRange: Range;
     isVisible: boolean;
     expansion: string | null;
+    arguments: Arguments | null;
 }

@@ -5,17 +5,17 @@ import { DSHL_EXTENSION } from '../core/constant';
 import { getFileContent, getFileVersion } from '../core/file-cache-manager';
 import { Snapshot } from '../core/snapshot';
 import { getDocuments } from '../helper/server-helper';
+import { Arguments } from '../interface/arguments';
 import { ElementRange } from '../interface/element-range';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
-import { MacroArguments } from '../interface/macro/macro-arguments';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { invalidVersion } from '../interface/snapshot-version';
 import { TextEdit } from '../interface/text-edit';
+import { ArgumentsProcesor } from './arguments-processor';
 import { preprocessDshl } from './dshl-preprocessor';
 import { preprocessHlsl } from './hlsl-preprocessor';
-import { MacroArgumentsProcesor } from './macro-arguments-processor';
 
 export async function preprocess(snapshot: Snapshot): Promise<void> {
     return await new Preprocessor(snapshot).preprocess();
@@ -222,9 +222,9 @@ export class Preprocessor {
         return snapshot.stringRanges.some((sr) => sr.startPosition <= position && position < sr.endPosition);
     }
 
-    public static getMacroArguments(identifierEndPosition: number, snapshot: Snapshot): MacroArguments | null {
-        const map = new MacroArgumentsProcesor(snapshot);
-        return map.getMacroArguments(identifierEndPosition);
+    public static getArguments(identifierEndPosition: number, snapshot: Snapshot): Arguments | null {
+        const ap = new ArgumentsProcesor(snapshot);
+        return ap.getArguments(identifierEndPosition);
     }
 
     public static async getSnapshot(uri: DocumentUri, snapshot: Snapshot): Promise<Snapshot> {

@@ -105,7 +105,7 @@ export abstract class Server {
             // foldingRangeProvider: true, // TODO: disabled, because only works with DSHL macros, re-enable when the provider finds all ranges
             hoverProvider: true,
             implementationProvider: true,
-            inlayHintProvider: { documentSelector: [{ language: 'dshl' }] },
+            inlayHintProvider: { documentSelector: [{ language: 'dshl' }, { language: 'hlsl' }] },
             signatureHelpProvider: { triggerCharacters: ['(', ','] },
         };
     }
