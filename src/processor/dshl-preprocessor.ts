@@ -233,9 +233,9 @@ class DshlPreprocessor {
             if (this.isRoot) {
                 this.findShaderBlocks(contentSnapshot, contentOffset);
                 this.findHlslBlocks(contentSnapshot, contentOffset);
-                new HlslPreprocessor(this.snapshot).addHlslDirectivesInMacro(contentSnapshot, contentOffset);
                 this.addParameterUsages(macroParameters, content, contentOffset);
             }
+            new HlslPreprocessor(this.snapshot).addHlslDirectivesInMacro(contentSnapshot, contentOffset);
             this.createMacroDeclaration(
                 position,
                 originalRange,
@@ -334,7 +334,7 @@ class DshlPreprocessor {
 
     private createContentSnapshot(content: string, contentPosition: number): Snapshot {
         const originalMacroContent = this.isRoot ? this.getOriginalMacroContent(content, contentPosition) : content;
-        const contentSnapshot = new Snapshot(invalidVersion, '', originalMacroContent);
+        const contentSnapshot = new Snapshot(invalidVersion, this.snapshot.uri, originalMacroContent);
         if (this.isRoot) {
             contentSnapshot.stringRanges = this.getStringRanges(content, contentPosition);
             contentSnapshot.preprocessingOffsets = this.getPreprocessingOffsets(content, contentPosition);
@@ -591,7 +591,11 @@ class DshlPreprocessor {
             children: [],
             macroDeclaration: md,
         };
-        this.snapshot.macroContexts.push(mc);
+        if (parentMc) {
+            parentMc.children.push(mc);
+        } else {
+            this.snapshot.macroContexts.push(mc);
+        }
         return mc;
     }
 

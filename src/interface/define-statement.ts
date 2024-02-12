@@ -16,6 +16,7 @@ export interface DefineStatement {
     isVisible: boolean;
     usages: DefineContext[];
     uri: DocumentUri;
+    realDefine: DefineStatement | null;
 }
 
 export function toStringDefineStatementWithContent(ds: DefineStatement): string {

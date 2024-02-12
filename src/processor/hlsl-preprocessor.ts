@@ -15,6 +15,7 @@ import { IfState } from '../interface/if-state';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
+import { MacroContext } from '../interface/macro/macro-context';
 import { ShaderBlock } from '../interface/shader-block';
 import { invalidVersion } from '../interface/snapshot-version';
 import { TextEdit } from '../interface/text-edit';
@@ -142,7 +143,7 @@ export class HlslPreprocessor {
         const includeText = includeSnapshot.text;
         const afterEndPosition = position + includeText.length;
         Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, afterEndPosition, includeText, this.snapshot);
-        const ic = this.createIncludeContext(position, afterEndPosition, uri, parentIc, is);
+        const ic = this.createIncludeContext(position, afterEndPosition, uri, parentIc, is, includeSnapshot);
         if (ic) {
             Preprocessor.addStringRanges(position, afterEndPosition, this.snapshot);
         }
@@ -162,7 +163,8 @@ export class HlslPreprocessor {
         afterEndPosition: number,
         uri: DocumentUri | null,
         parentIc: IncludeContext | null,
-        is: IncludeStatement
+        is: IncludeStatement,
+        includeSnapshot: Snapshot
     ): IncludeContext | null {
         if (!uri) {
             return null;
@@ -172,7 +174,7 @@ export class HlslPreprocessor {
             localStartPosition: position,
             endPosition: afterEndPosition,
             includeStatement: is,
-            snapshot: this.snapshot,
+            snapshot: includeSnapshot,
             parent: parentIc,
             children: [],
             uri,
@@ -398,7 +400,8 @@ export class HlslPreprocessor {
             const name = regexResult.groups.name;
             const match = regexResult[0];
             const ic = this.snapshot.getIncludeContextDeepAt(position);
-            const isVisible = !ic && !this.snapshot.isInMacroContext(position);
+            const mc = this.snapshot.getMacroContextDeepAt(position);
+            const isVisible = !ic && !mc;
             this.createDefineStatement(
                 position,
                 beforeName,
@@ -409,7 +412,8 @@ export class HlslPreprocessor {
                 content,
                 isVisible,
                 this.snapshot,
-                ic
+                ic,
+                mc
             );
         }
     }
@@ -424,8 +428,11 @@ export class HlslPreprocessor {
         content: string,
         isVisible: boolean,
         snapshot: Snapshot,
-        ic: IncludeContext | null
+        ic: IncludeContext | null,
+        mc: MacroContext | null
     ): DefineStatement {
+        const realDefine =
+            mc?.macroDeclaration?.contentSnapshot?.defineStatements?.find((ds) => ds.name === name) ?? null;
         const originalRange = this.snapshot.getOriginalRange(position, position + match.length);
         const nameOriginalRange = this.snapshot.getOriginalRange(beforeName, beforeName + name.length);
         const ds: DefineStatement = {
@@ -442,7 +449,8 @@ export class HlslPreprocessor {
             undefCodeCompletionPosition: null,
             isVisible,
             usages: [],
-            uri: ic?.uri ?? snapshot.uri,
+            uri: mc?.macroDeclaration?.uri ?? ic?.uri ?? snapshot.uri,
+            realDefine,
         };
         this.addDefine(position, ds, snapshot);
         return ds;
@@ -536,14 +544,14 @@ export class HlslPreprocessor {
                 continue;
             }
             const functionDefineRegex =
-                /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)\((?<params>[ \t]*[a-zA-Z_]\w*(?:[ \t]*,[ \t]*[a-zA-Z_]\w*)*[ \t]*,?)?[ \t]*\).*?/;
+                /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)\((?<params>[ \t]*[a-zA-Z_]\w*(?:[ \t]*,[ \t]*[a-zA-Z_]\w*)*[ \t]*,?)?[ \t]*\).*/;
             regexResult = functionDefineRegex.exec(match);
             if (regexResult) {
                 position += offset + regexResult.index;
                 this.preprocessFunctionDefineLight(regexResult, position, snapshot);
                 continue;
             }
-            const objectDefineRegex = /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)[ \t]*.*?/;
+            const objectDefineRegex = /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)[ \t]*.*/;
             regexResult = objectDefineRegex.exec(match);
             if (regexResult) {
                 position += offset + regexResult.index;
@@ -586,14 +594,26 @@ export class HlslPreprocessor {
         const beforeName = position + (regexResult.groups?.beforeName?.length ?? 0);
         const name = regexResult.groups?.name ?? '';
         const match = regexResult[0];
-        this.createDefineStatement(position, beforeName, match, name, false, parameters, '', true, snapshot, null);
+        this.createDefineStatement(
+            position,
+            beforeName,
+            match,
+            name,
+            false,
+            parameters,
+            '',
+            true,
+            snapshot,
+            null,
+            null
+        );
     }
 
     private preprocessObjectDefineLight(regexResult: RegExpExecArray, position: number, snapshot: Snapshot): void {
         const beforeName = position + (regexResult.groups?.beforeName?.length ?? 0);
         const name = regexResult.groups?.name ?? '';
         const match = regexResult[0];
-        this.createDefineStatement(position, beforeName, match, name, true, [], '', true, snapshot, null);
+        this.createDefineStatement(position, beforeName, match, name, true, [], '', true, snapshot, null, null);
     }
 
     private evaluateCondition(condition: string, position: number): boolean {
@@ -631,9 +651,6 @@ export class HlslPreprocessor {
         } else {
             this.expandGlobalHlslBlocks();
             this.expandShaderHlslBlocks();
-            // for (const md of this.snapshot.macroDeclarations) {
-            //     // TODO: in macro statements
-            // }
         }
         Preprocessor.executeTextEdits(this.textEdits, this.snapshot, false);
     }
@@ -989,6 +1006,9 @@ export class HlslPreprocessor {
             arguments: da,
         };
         snapshot.defineContexts.push(dc);
+        if (ds.realDefine) {
+            ds.realDefine.usages.push(dc);
+        }
         ds.usages.push(dc);
         return dc;
     }

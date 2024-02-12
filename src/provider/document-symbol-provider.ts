@@ -47,7 +47,7 @@ function createDocumentSymbols(snapshot: Snapshot, uri: DocumentUri): DocumentSy
             children: md.contentSnapshot.defineStatements.map((ds) => defineToDocumentSymbol(ds)),
         });
     }
-    const dss = snapshot.defineStatements.filter((ds) => ds.isVisible);
+    const dss = snapshot.defineStatements.filter((ds) => ds.isVisible && !ds.realDefine);
     for (const ds of dss) {
         result.push(defineToDocumentSymbol(ds));
     }

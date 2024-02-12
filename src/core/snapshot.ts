@@ -73,7 +73,7 @@ export class Snapshot {
     public getOriginalPosition(position: number, start: boolean): Position {
         const ic = this.getIncludeContextDeepAt(position);
         const icc = this.getIncludeChain(ic);
-        position = this.getOriginalOffset(position, start);
+        position = this.getOriginalOffsetWithIncludeContext(position, start, icc);
         const originalTextOffsets = icc.length
             ? icc[icc.length - 1].snapshot.originalTextOffsets
             : this.originalTextOffsets;

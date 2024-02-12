@@ -85,13 +85,13 @@ function getDefineStatement(snapshot: Snapshot, params: DocumentHighlightParams)
         (ds) => ds.isVisible && rangeContains(ds.nameOriginalRange, params.position)
     );
     if (ds) {
-        return ds;
+        return ds.realDefine ?? ds;
     }
     const dc = snapshot.defineContexts.find(
         (dc) => dc.isVisible && rangeContains(dc.nameOriginalRange, params.position)
     );
     if (dc) {
-        return dc.define;
+        return dc.define.realDefine ?? dc.define;
     }
     return null;
 }
