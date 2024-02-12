@@ -725,10 +725,9 @@ export class HlslPreprocessor {
             }
             const identifierEndPosition = localPosition + identifier.length;
             const da = Preprocessor.getArguments(identifierEndPosition, snapshot);
-            const objectLike = !da;
             const ds =
                 dss.find(
-                    (ds) => ds.objectLike === objectLike && ds.parameters.length === (da?.arguments?.length ?? 0)
+                    (ds) => (!!da && !ds.objectLike && ds.parameters.length === da.arguments.length) || ds.objectLike
                 ) ?? null;
             if (!ds || expansions.includes(ds)) {
                 continue;
