@@ -50,6 +50,7 @@ import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
 import { ShaderStage } from '../interface/shader-stage';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
+import { getPredefineSnapshot } from '../processor/include-processor';
 import { getIncludeCompletionInfos } from '../processor/include-resolver';
 
 export async function completionProvider(
@@ -124,6 +125,15 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
 }
 
 function addDefines(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
+    const predefineSnapshot = getPredefineSnapshot();
+    if (predefineSnapshot) {
+        addCompletionItems(
+            result,
+            predefineSnapshot.defineStatements.map((ds) => ({ name: ds.name })),
+            CompletionItemKind.Constant,
+            'define'
+        );
+    }
     if (snapshot.uri.endsWith(HLSL_EXTENSION) || snapshot.uri.endsWith(HLSLI_EXTENSION)) {
         const defines = snapshot.defineStatements;
         addDefinesIfAvailable(result, defines, position);

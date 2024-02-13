@@ -15,12 +15,14 @@ import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { RangeWithChildren } from '../interface/range-with-children';
 import { ShaderBlock } from '../interface/shader-block';
 import { SnapshotVersion } from '../interface/snapshot-version';
+import { getPredefineSnapshot } from '../processor/include-processor';
 import { HLSLI_EXTENSION, HLSL_EXTENSION } from './constant';
 
 export class Snapshot {
     public readonly version: SnapshotVersion;
     public readonly uri: DocumentUri;
     public readonly originalText: string;
+    public readonly isPredefined: boolean;
     private originalTextOffsets: ElementRange[] = [];
     public text = '';
     public cleanedText = '';
@@ -42,10 +44,11 @@ export class Snapshot {
     public noCodeCompletionRanges: Range[] = [];
     public preprocessingOffsets: PreprocessingOffset[] = [];
 
-    public constructor(version: SnapshotVersion, uri: DocumentUri, text: string) {
+    public constructor(version: SnapshotVersion, uri: DocumentUri, text: string, isPredefined = false) {
         this.version = version;
         this.uri = uri;
         this.originalText = text;
+        this.isPredefined = isPredefined;
         this.computeOriginalTextOffsets();
     }
 
@@ -304,10 +307,14 @@ export class Snapshot {
     }
 
     public getDefineStatements(position: number): DefineStatement[] {
+        const result: DefineStatement[] = [];
+        const predefineSnapshot = getPredefineSnapshot();
+        if (predefineSnapshot) {
+            result.push(...predefineSnapshot.defineStatements);
+        }
         if (this.uri.endsWith(HLSL_EXTENSION) || this.uri.endsWith(HLSLI_EXTENSION)) {
-            return this.defineStatements.filter((ds) => this.isDefineAvailable(ds, position));
+            result.push(...this.defineStatements.filter((ds) => this.isDefineAvailable(ds, position)));
         } else {
-            const result: DefineStatement[] = [];
             const md = this.macroDeclarations.find((md) => isIntervalContains(md.position, md.endPosition, position));
             const definesSnapshot = md?.contentSnapshot ?? this;
             const hb =
@@ -328,8 +335,8 @@ export class Snapshot {
             if (md && hb) {
                 result.push(...this.getDefineStatementsInHlslBlocks(this.globalHlslBlocks, md.position, hb.stage));
             }
-            return result;
         }
+        return result;
     }
 
     private getDefineStatementsInHlslBlocks(

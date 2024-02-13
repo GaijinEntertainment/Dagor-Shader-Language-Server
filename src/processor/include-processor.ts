@@ -3,14 +3,18 @@ import * as path from 'path';
 import { getConfiguration } from '../core/configuration-manager';
 import { log, logShaderConfigs } from '../core/debug';
 import { getFileContent } from '../core/file-cache-manager';
+import { Snapshot } from '../core/snapshot';
 import { exists, getFolderContent } from '../helper/file-helper';
 import { getRootFolder, refreshInlayHints, showWarningMessage } from '../helper/server-helper';
+import { invalidVersion } from '../interface/snapshot-version';
+import { preprocess } from './preprocessor';
 
 export type GameFolder = string;
 export type ShaderConfig = string;
 
 export let includeFolders = new Map<GameFolder, Map<ShaderConfig, string[]>>();
 export let overrideIncludeFolders: string[] = [];
+export const predefines: Snapshot[] = [];
 
 let includesCollected = Promise.resolve();
 let shaderConfigVersion = 0;
@@ -36,6 +40,36 @@ export function getShaderConfigVersion(): number {
 export function increaseShaderConfigVersion(): void {
     shaderConfigVersion++;
     refreshInlayHints();
+}
+
+export async function collectPredefines(): Promise<void> {
+    const compilerPath = path.resolve(getRootFolder(), 'prog/tools/ShaderCompiler2');
+    if (await exists(compilerPath)) {
+        const folderContent = await getFolderContent(compilerPath);
+        for (const file of folderContent.filter(
+            (file) => file.isFile() && file.name.startsWith('predefines_') && file.name.endsWith('.hlsl')
+        )) {
+            const text = await getFileContent(path.resolve(compilerPath, file.name));
+            const key = file.name.substring(file.name.indexOf('_') + 1, file.name.indexOf('.'));
+            const snapshot = new Snapshot(invalidVersion, key, text, true);
+            await preprocess(snapshot);
+            predefines.push(snapshot);
+        }
+    }
+}
+
+export function getPredefineSnapshot(): Snapshot | null {
+    const platform = getConfiguration().launchOptions.platform;
+    let predefineSnapshot = predefines.find((p) => platform && platform.includes(p.uri));
+    if (predefineSnapshot) {
+        return predefineSnapshot;
+    }
+    const buildCommand = getConfiguration().launchOptions.buildCommand;
+    predefineSnapshot = predefines.find((p) => buildCommand && buildCommand.includes(p.uri));
+    if (predefineSnapshot) {
+        return predefineSnapshot;
+    }
+    return null;
 }
 
 class IncludeProcessor {

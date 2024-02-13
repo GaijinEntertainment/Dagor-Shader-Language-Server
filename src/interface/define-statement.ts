@@ -17,6 +17,7 @@ export interface DefineStatement {
     usages: DefineContext[];
     uri: DocumentUri;
     realDefine: DefineStatement | null;
+    isPredefined: boolean;
 }
 
 export function toStringDefineStatementWithContent(ds: DefineStatement): string {

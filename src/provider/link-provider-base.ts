@@ -33,7 +33,7 @@ export async function linkProviderBase(
         (dc) =>
             dc.isVisible && rangeContains(dc.nameOriginalRange, position) && (!implementation || !dc.define.objectLike)
     );
-    if (dc) {
+    if (dc && !dc.define.isPredefined) {
         return getDefineDeclarationLocation(dc.define.realDefine ?? dc.define, linkSupport);
     }
     if (implementation) {

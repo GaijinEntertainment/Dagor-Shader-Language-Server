@@ -20,6 +20,7 @@ import { ShaderBlock } from '../interface/shader-block';
 import { invalidVersion } from '../interface/snapshot-version';
 import { TextEdit } from '../interface/text-edit';
 import { ConditionVisitor } from './condition-visitor';
+import { getPredefineSnapshot } from './include-processor';
 import { getIncludedDocumentUri } from './include-resolver';
 import { Preprocessor } from './preprocessor';
 
@@ -451,6 +452,7 @@ export class HlslPreprocessor {
             usages: [],
             uri: mc?.macroDeclaration?.uri ?? ic?.uri ?? snapshot.uri,
             realDefine,
+            isPredefined: snapshot.isPredefined,
         };
         this.addDefine(position, ds, snapshot);
         return ds;
@@ -731,7 +733,7 @@ export class HlslPreprocessor {
                 .get(identifier)
                 ?.filter(
                     (ds) =>
-                        ds.endPosition <= globalPosition &&
+                        (ds.endPosition <= globalPosition || ds.isPredefined) &&
                         (ds.undefPosition == null || ds.undefPosition > globalPosition)
                 );
             if (!dss?.length) {
@@ -971,6 +973,10 @@ export class HlslPreprocessor {
                     .filter((h) => (h.stage === hb.stage || h.stage === null) && h.endPosition <= hb.endPosition)
                     .flatMap((h) => h.defineStatements)
             );
+        }
+        const predefineSnapshot = getPredefineSnapshot();
+        if (predefineSnapshot) {
+            result.push(...predefineSnapshot.defineStatements);
         }
         return result;
     }

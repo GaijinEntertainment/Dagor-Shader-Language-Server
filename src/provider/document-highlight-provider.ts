@@ -49,7 +49,7 @@ export async function documentHighlightProvider(
     const ds = getDefineStatement(snapshot, params);
     if (ds) {
         const result: DocumentHighlight[] = [];
-        if (ds.isVisible) {
+        if (ds.isVisible && !ds.isPredefined) {
             result.push({
                 range: ds.nameOriginalRange,
                 kind: DocumentHighlightKind.Text,
