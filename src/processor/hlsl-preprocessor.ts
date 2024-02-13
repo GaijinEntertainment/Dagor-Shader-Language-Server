@@ -205,16 +205,14 @@ export class HlslPreprocessor {
     private preprocessIf(regexResult: RegExpExecArray, offset: number): void {
         const ifState: IfState = { position: offset, condition: false };
         this.ifStack.push([ifState]);
-        if (!this.isAnyFalseAbove()) {
-            this.setCondition(regexResult, offset, ifState);
-        }
+        this.setCondition(regexResult, offset, ifState, !this.isAnyFalseAbove());
         this.snapshot.directives.push({ startPosition: offset, endPosition: offset + regexResult[0].length });
     }
 
     private preprocessIfdef(regexResult: RegExpExecArray, offset: number): void {
         const ifState: IfState = { position: offset, condition: false };
         this.ifStack.push([ifState]);
-        if (!this.isAnyFalseAbove() && regexResult.groups) {
+        if (regexResult.groups) {
             const position = offset + regexResult.index;
             const directive = regexResult.groups.directive;
             const condition = regexResult.groups.condition.trim();
@@ -233,11 +231,13 @@ export class HlslPreprocessor {
                     null
                 );
             }
-            let defined = !!ds;
-            if (directive === 'ifndef') {
-                defined = !defined;
+            if (!this.isAnyFalseAbove()) {
+                let defined = !!ds;
+                if (directive === 'ifndef') {
+                    defined = !defined;
+                }
+                ifState.condition = defined;
             }
-            ifState.condition = defined;
         }
         this.snapshot.directives.push({ startPosition: offset, endPosition: offset + regexResult[0].length });
     }
@@ -245,9 +245,7 @@ export class HlslPreprocessor {
     private preprocessElif(regexResult: RegExpExecArray, offset: number): void {
         const ifState: IfState = { position: offset, condition: false };
         HlslPreprocessor.addIfFoldingRange(offset, this.ifStack, this.snapshot);
-        if (!this.isAnyFalseAbove() && this.isAllFalseInTheSameLevel()) {
-            this.setCondition(regexResult, offset, ifState);
-        }
+        this.setCondition(regexResult, offset, ifState, !this.isAnyFalseAbove() && this.isAllFalseInTheSameLevel());
         HlslPreprocessor.addIfState(this.ifStack, ifState);
         this.snapshot.directives.push({ startPosition: offset, endPosition: offset + regexResult[0].length });
     }
@@ -269,7 +267,7 @@ export class HlslPreprocessor {
         this.ifStack.pop();
     }
 
-    private setCondition(regexResult: RegExpExecArray, offset: number, ifState: IfState): void {
+    private setCondition(regexResult: RegExpExecArray, offset: number, ifState: IfState, changeIfState: boolean): void {
         const position = offset + regexResult.index;
         const match = regexResult[0];
         const conditionPosition = position + (regexResult.groups?.beforeCondition?.length ?? 0);
@@ -290,7 +288,9 @@ export class HlslPreprocessor {
             this.expandAll(definesMap, defines, [], snapshot, conditionPosition);
             text = snapshot.text;
         }
-        ifState.condition = this.evaluateCondition(text, conditionPosition);
+        if (changeIfState) {
+            ifState.condition = this.evaluateCondition(text, conditionPosition);
+        }
     }
 
     private createDefinesMap(defines: DefineStatement[]): Map<string, DefineStatement[]> {
