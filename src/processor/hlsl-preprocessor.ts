@@ -106,7 +106,7 @@ export class HlslPreprocessor {
                 this.preprocessObjectDefine(regexResult, position);
                 return beforeEndPosition;
             }
-            const undefRegex = /#[ \t]*undef[ \t]+(?<name>[a-zA-Z_]\w*).*/;
+            const undefRegex = /(?<beforeName>#[ \t]*undef[ \t]+)(?<name>[a-zA-Z_]\w*).*/;
             regexResult = undefRegex.exec(match);
             if (regexResult) {
                 this.preprocessUndef(regexResult, position);
@@ -475,20 +475,34 @@ export class HlslPreprocessor {
         }
     }
 
-    private preprocessUndef(regexResult: RegExpExecArray, position: number): void {
+    private preprocessUndef(regexResult: RegExpExecArray, offset: number): void {
         if (regexResult.groups) {
+            const position = regexResult.index + offset;
             const name = regexResult.groups.name;
             const ic = this.snapshot.getIncludeContextAt(position);
-            this.snapshot.defineStatements
-                .filter((ds) => ds.name === name && ds.position <= position)
-                .forEach((ds) => {
-                    if (ds.undefPosition === null) {
-                        ds.undefPosition = position;
-                        ds.undefCodeCompletionPosition = ic
-                            ? ic.originalEndPosition
-                            : this.snapshot.getOriginalPosition(position, true);
-                    }
-                });
+            const dss = this.snapshot.defineStatements.filter((ds) => ds.name === name && ds.position <= position);
+            dss.forEach((ds) => {
+                if (ds.undefPosition === null) {
+                    ds.undefPosition = position;
+                    ds.undefCodeCompletionPosition = ic
+                        ? ic.originalEndPosition
+                        : this.snapshot.getOriginalPosition(position, true);
+                }
+            });
+            if (dss.length) {
+                const conditionPosition = position + regexResult.groups.beforeName.length;
+                const endPosition = conditionPosition + name.length;
+                HlslPreprocessor.createDefineContext(
+                    conditionPosition,
+                    endPosition,
+                    endPosition,
+                    this.snapshot.getOriginalRange(conditionPosition, endPosition),
+                    dss[0],
+                    this.snapshot,
+                    !ic && !this.snapshot.isInMacroContext(position),
+                    null
+                );
+            }
         }
     }
 
