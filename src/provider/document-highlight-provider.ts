@@ -49,7 +49,7 @@ export async function documentHighlightProvider(
     const ds = getDefineStatement(snapshot, params);
     if (ds) {
         const result: DocumentHighlight[] = [];
-        if (ds.isVisible && !ds.isPredefined) {
+        if (ds.isVisible && !ds.isPredefined && ds.uri === params.textDocument.uri) {
             result.push({
                 range: ds.nameOriginalRange,
                 kind: DocumentHighlightKind.Text,
@@ -81,7 +81,8 @@ function getMacro(snapshot: Snapshot, params: DocumentHighlightParams): Macro | 
 }
 
 function getDefineStatement(snapshot: Snapshot, params: DocumentHighlightParams): DefineStatement | null {
-    const ds = snapshot.defineStatements.find(
+    const macroSnapshot = getSnapshotForMacroDefinition(snapshot, params);
+    const ds = macroSnapshot.defineStatements.find(
         (ds) => ds.isVisible && rangeContains(ds.nameOriginalRange, params.position)
     );
     if (ds) {
@@ -94,6 +95,13 @@ function getDefineStatement(snapshot: Snapshot, params: DocumentHighlightParams)
         return dc.define.realDefine ?? dc.define;
     }
     return null;
+}
+
+function getSnapshotForMacroDefinition(snapshot: Snapshot, params: DocumentHighlightParams): Snapshot {
+    const md = snapshot.macroDeclarations.find(
+        (md) => md.uri === params.textDocument.uri && rangeContains(md.originalRange, params.position)
+    );
+    return md ? md.contentSnapshot : snapshot;
 }
 
 function getMacroParameter(snapshot: Snapshot, params: DocumentHighlightParams): MacroParameter | null {

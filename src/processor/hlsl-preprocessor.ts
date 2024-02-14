@@ -575,6 +575,8 @@ export class HlslPreprocessor {
                 continue;
             }
         }
+        const definesMap = this.createDefinesMap(snapshot.defineStatements);
+        this.expandAll(definesMap, snapshot.defineStatements, [], snapshot, offset, true);
     }
 
     private preprocessIncludeLight(regexResult: RegExpExecArray, position: number): void {
@@ -610,6 +612,8 @@ export class HlslPreprocessor {
         const beforeName = position + (regexResult.groups?.beforeName?.length ?? 0);
         const name = regexResult.groups?.name ?? '';
         const match = regexResult[0];
+        const isVisible =
+            !this.snapshot.getIncludeContextDeepAt(position) && !this.snapshot.getMacroContextDeepAt(position);
         this.createDefineStatement(
             position,
             beforeName,
@@ -618,7 +622,7 @@ export class HlslPreprocessor {
             false,
             parameters,
             '',
-            true,
+            isVisible,
             snapshot,
             null,
             null
@@ -629,7 +633,9 @@ export class HlslPreprocessor {
         const beforeName = position + (regexResult.groups?.beforeName?.length ?? 0);
         const name = regexResult.groups?.name ?? '';
         const match = regexResult[0];
-        this.createDefineStatement(position, beforeName, match, name, true, [], '', true, snapshot, null, null);
+        const isVisible =
+            !this.snapshot.getIncludeContextDeepAt(position) && !this.snapshot.getMacroContextDeepAt(position);
+        this.createDefineStatement(position, beforeName, match, name, true, [], '', isVisible, snapshot, null, null);
     }
 
     private evaluateCondition(condition: string, position: number): boolean {
