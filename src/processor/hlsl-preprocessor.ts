@@ -560,14 +560,14 @@ export class HlslPreprocessor {
                 continue;
             }
             const functionDefineRegex =
-                /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)\((?<params>[ \t]*[a-zA-Z_]\w*(?:[ \t]*,[ \t]*[a-zA-Z_]\w*)*[ \t]*,?)?[ \t]*\).*/;
+                /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)\((?<params>[ \t]*[a-zA-Z_]\w*(?:[ \t]*,[ \t]*[a-zA-Z_]\w*)*[ \t]*,?)?[ \t]*\)(?<content>.*)?/;
             regexResult = functionDefineRegex.exec(match);
             if (regexResult) {
                 position += offset + regexResult.index;
                 this.preprocessFunctionDefineLight(regexResult, position, snapshot);
                 continue;
             }
-            const objectDefineRegex = /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)[ \t]*.*/;
+            const objectDefineRegex = /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)[ \t]*(?<content>.*)?/;
             regexResult = objectDefineRegex.exec(match);
             if (regexResult) {
                 position += offset + regexResult.index;
@@ -612,6 +612,7 @@ export class HlslPreprocessor {
         const beforeName = position + (regexResult.groups?.beforeName?.length ?? 0);
         const name = regexResult.groups?.name ?? '';
         const match = regexResult[0];
+        const content = regexResult.groups?.content?.trim() ?? '';
         const isVisible =
             !this.snapshot.getIncludeContextDeepAt(position) && !this.snapshot.getMacroContextDeepAt(position);
         this.createDefineStatement(
@@ -621,7 +622,7 @@ export class HlslPreprocessor {
             name,
             false,
             parameters,
-            '',
+            content,
             isVisible,
             snapshot,
             null,
@@ -633,9 +634,22 @@ export class HlslPreprocessor {
         const beforeName = position + (regexResult.groups?.beforeName?.length ?? 0);
         const name = regexResult.groups?.name ?? '';
         const match = regexResult[0];
+        const content = regexResult.groups?.content?.trim() ?? '';
         const isVisible =
             !this.snapshot.getIncludeContextDeepAt(position) && !this.snapshot.getMacroContextDeepAt(position);
-        this.createDefineStatement(position, beforeName, match, name, true, [], '', isVisible, snapshot, null, null);
+        this.createDefineStatement(
+            position,
+            beforeName,
+            match,
+            name,
+            true,
+            [],
+            content,
+            isVisible,
+            snapshot,
+            null,
+            null
+        );
     }
 
     private evaluateCondition(condition: string, position: number): boolean {
