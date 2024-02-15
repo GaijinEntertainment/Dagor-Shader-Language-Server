@@ -1,8 +1,8 @@
 import { Snapshot } from '../core/snapshot';
-import { MacroArgument } from '../interface/macro/macro-argument';
-import { MacroArguments } from '../interface/macro/macro-arguments';
+import { Argument } from '../interface/argument';
+import { Arguments } from '../interface/arguments';
 
-export class MacroArgumentsProcesor {
+export class ArgumentsProcesor {
     private snapshot: Snapshot;
     private index = -1;
     private character = '';
@@ -14,13 +14,13 @@ export class MacroArgumentsProcesor {
     private argumentListStartPosition = -1;
     private argumentIdentifierPosition = -1;
     private argumentSeparatorPosition = -1;
-    private arguments: MacroArgument[] = [];
+    private arguments: Argument[] = [];
 
     public constructor(snapshot: Snapshot) {
         this.snapshot = snapshot;
     }
 
-    public getMacroArguments(identifierEndPosition: number): MacroArguments | null {
+    public getArguments(identifierEndPosition: number): Arguments | null {
         for (this.index = identifierEndPosition; this.index < this.snapshot.text.length; this.index++) {
             this.setCharacter(this.snapshot.text);
             if (this.isCharacterWhitespace()) {
@@ -37,6 +37,8 @@ export class MacroArgumentsProcesor {
                         this.argumentListStartPosition,
                         this.index
                     ),
+                    argumentListPosition: this.argumentListStartPosition,
+                    argumentListEndPosition: this.index,
                     endPosition: this.index + 1,
                     arguments: this.arguments,
                 };
@@ -85,6 +87,9 @@ export class MacroArgumentsProcesor {
                         this.argumentIdentifierPosition,
                         true
                     ),
+                    trimmedStartPosition: this.argumentIdentifierPosition,
+                    position: this.argumentSeparatorPosition,
+                    endPosition: this.index,
                 });
             }
         }

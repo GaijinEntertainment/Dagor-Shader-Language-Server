@@ -181,7 +181,22 @@ export class ConditionVisitor
     private evaluateOtherExpression(ctx: ExpressionContext): bigint | null {
         const identifier = ctx.IDENTIFIER();
         if (ctx.DEFINED()) {
-            return HlslPreprocessor.isDefined(identifier?.text ?? '', this.position, this.snapshot) ? 1n : 0n;
+            const ds = this.snapshot.getDefinition(identifier?.text ?? '', this.position);
+            if (ds) {
+                const position = this.position + (identifier?.symbol.startIndex ?? 0);
+                const endPosition = this.position + (identifier?.symbol.stopIndex ?? 0);
+                HlslPreprocessor.createDefineContext(
+                    position,
+                    endPosition,
+                    endPosition,
+                    this.snapshot.getOriginalRange(position, endPosition + 1),
+                    ds,
+                    this.snapshot,
+                    !this.snapshot.isInIncludeContext(this.position) && !this.snapshot.isInMacroContext(this.position),
+                    null
+                );
+            }
+            return ds ? 1n : 0n;
         }
         if (identifier) {
             return 0n;

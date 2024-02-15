@@ -14,6 +14,7 @@ import { HostDependent } from './interface/host-dependent';
 import {
     collectIncludeFolders,
     collectOverrideIncludeFolders,
+    collectPredefines,
     increaseShaderConfigVersion,
 } from './processor/include-processor';
 import { documentLinkResolveProvider } from './provider/document-link-resolve-provider';
@@ -43,6 +44,7 @@ export class ServerDesktop extends Server {
     }
 
     protected override async onInitialized(_ip: InitializedParams): Promise<void> {
+        await collectPredefines();
         await this.collectShaderIncludeFolders(getConfiguration().shaderConfigOverride);
     }
 

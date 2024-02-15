@@ -1,5 +1,5 @@
-export interface TextEdit {
-    position: number;
-    beforeEndPosition: number;
-    pasteText: string;
+import { ElementRange } from './element-range';
+
+export interface TextEdit extends ElementRange {
+    newText: string;
 }

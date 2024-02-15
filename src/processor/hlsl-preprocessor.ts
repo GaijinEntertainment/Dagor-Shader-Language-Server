@@ -1,21 +1,26 @@
 import { ANTLRInputStream, CommonTokenStream } from 'antlr4ts';
-import { DocumentUri } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
+import { DocumentUri, Range } from 'vscode-languageserver';
 
 import { ConditionLexer } from '../_generated/ConditionLexer';
 import { ConditionParser } from '../_generated/ConditionParser';
-import { getSnapshot } from '../core/document-manager';
-import { getFileContent } from '../core/file-cache-manager';
+import { HLSLI_EXTENSION, HLSL_EXTENSION } from '../core/constant';
 import { Snapshot } from '../core/snapshot';
+import { isIntervalContains } from '../helper/helper';
+import { Arguments } from '../interface/arguments';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
+import { HlslBlock } from '../interface/hlsl-block';
 import { IfState } from '../interface/if-state';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { IncludeType } from '../interface/include/include-type';
+import { MacroContext } from '../interface/macro/macro-context';
+import { ShaderBlock } from '../interface/shader-block';
 import { invalidVersion } from '../interface/snapshot-version';
+import { TextEdit } from '../interface/text-edit';
 import { ConditionVisitor } from './condition-visitor';
+import { getPredefineSnapshot } from './include-processor';
 import { getIncludedDocumentUri } from './include-resolver';
 import { Preprocessor } from './preprocessor';
 
@@ -25,8 +30,8 @@ export async function preprocessHlsl(snapshot: Snapshot): Promise<void> {
 
 export class HlslPreprocessor {
     private snapshot: Snapshot;
-    private ifStack: IfState[] = [];
-    private macroNames = '';
+    private ifStack: IfState[][] = [];
+    private textEdits: TextEdit[] = [];
 
     public constructor(snapshot: Snapshot) {
         this.snapshot = snapshot;
@@ -34,8 +39,7 @@ export class HlslPreprocessor {
 
     public async preprocess(): Promise<void> {
         await this.preprocessDirectives();
-        this.refreshMacroNames();
-        //HlslPreprocessor.expandMacros(0, this.snapshot.text.length, this.snapshot, this.macroNames);
+        this.expandDefines();
     }
 
     private async preprocessDirectives(): Promise<void> {
@@ -43,273 +47,609 @@ export class HlslPreprocessor {
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(this.snapshot.text))) {
             const position = regexResult.index;
+            if (Preprocessor.isInString(position, this.snapshot)) {
+                continue;
+            }
             const match = regexResult[0];
             const beforeEndPosition = position + match.length;
             const nextStartPosition = await this.preprocessDirective(position, beforeEndPosition, match);
-            // regex.lastIndex = nextStartPosition;
+            regex.lastIndex = nextStartPosition;
         }
+        Preprocessor.executeTextEdits(this.textEdits, this.snapshot, false);
     }
 
     private async preprocessDirective(position: number, beforeEndPosition: number, match: string): Promise<number> {
-        const regexResult = this.getIncludeRegexResult(match);
+        let regexResult = /#[ \t]*include[ \t]*(?:"(?<quotedPath>(?:\\"|[^"])*)"|<(?<angularPath>[^>]*)>)/.exec(match);
         if (regexResult) {
-            await this.preprocessInclude(regexResult, position);
-            if (this.ifStack.some((is) => !is.condition) || Preprocessor.isInString(position, this.snapshot)) {
+            return await this.preprocessInclude(regexResult, position);
+        }
+        const ifRegex = /(?<beforeCondition>^#[ \t]*if\b[ \t]*)(?<condition>.*)/;
+        regexResult = ifRegex.exec(match);
+        if (regexResult) {
+            this.preprocessIf(regexResult, position);
+            return beforeEndPosition;
+        }
+        const ifdefRegex = /(?<beforeCondition>#[ \t]*(?<directive>ifn?def\b)[ \t]*)(?<condition>.*)/;
+        regexResult = ifdefRegex.exec(match);
+        if (regexResult) {
+            this.preprocessIfdef(regexResult, position);
+            return beforeEndPosition;
+        }
+        const elifRegex = /(?<beforeCondition>^#[ \t]*elif\b[ \t]*)(?<condition>.*)/;
+        regexResult = elifRegex.exec(match);
+        if (regexResult) {
+            this.preprocessElif(regexResult, position);
+            return beforeEndPosition;
+        }
+        const elseRegex = /^#[ \t]*else\b.*/;
+        regexResult = elseRegex.exec(match);
+        if (regexResult) {
+            this.preprocessElse(position);
+            return beforeEndPosition;
+        }
+        const endifRegex = /^#[ \t]*endif\b.*/;
+        regexResult = endifRegex.exec(match);
+        if (regexResult) {
+            this.preprocessEndif(position);
+            return beforeEndPosition;
+        }
+        if (!this.isAnyFalseAbove(true)) {
+            const functionDefineRegex =
+                /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)\((?<params>[ \t]*[a-zA-Z_]\w*(?:[ \t]*,[ \t]*[a-zA-Z_]\w*)*[ \t]*,?)?[ \t]*\)(?<content>.*)?/;
+            regexResult = functionDefineRegex.exec(match);
+            if (regexResult) {
+                this.preprocessFunctionDefine(regexResult, position);
                 return beforeEndPosition;
             }
-            return position;
+            const objectDefineRegex = /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)[ \t]*(?<content>.*)?/;
+            regexResult = objectDefineRegex.exec(match);
+            if (regexResult) {
+                this.preprocessObjectDefine(regexResult, position);
+                return beforeEndPosition;
+            }
+            const undefRegex = /(?<beforeName>#[ \t]*undef[ \t]+)(?<name>[a-zA-Z_]\w*).*/;
+            regexResult = undefRegex.exec(match);
+            if (regexResult) {
+                this.preprocessUndef(regexResult, position);
+                return beforeEndPosition;
+            }
         }
-
-        // const is2 = this.getIfdefStatement(match, position);
-        // if (is2) {
-        //     this.ifStack.push(is2);
-        //     Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
-        //     return position;
-        // }
-        // const is4 = this.getIfStatement(match, position);
-        // if (is4) {
-        //     this.ifStack.push(is4);
-        //     Preprocessor.removeTextAndAddOffset(position, beforeEndPosition + is4.offset, this.snapshot);
-        //     return position;
-        // }
-        // const is5 = this.getElifStatement(match, position);
-        // if (is5) {
-        //     const oldIs = this.ifStack.pop();
-        //     if (oldIs && !oldIs.condition) {
-        //         Preprocessor.removeTextAndAddOffset(position, beforeEndPosition + is5.offset, this.snapshot);
-        //         this.ifStack.push(is5);
-        //         return oldIs.position;
-        //     } else {
-        //         Preprocessor.removeTextAndAddOffset(position, beforeEndPosition + is5.offset, this.snapshot);
-        //         this.ifStack.push(is5);
-        //         return position;
-        //     }
-        // }
-        // const es = this.getElseStatement(match, position);
-        // if (es) {
-        //     const oldIs = this.ifStack.pop();
-        //     if (oldIs && !oldIs.condition) {
-        //         Preprocessor.removeTextAndAddOffset(oldIs.position, beforeEndPosition, this.snapshot);
-        //         this.ifStack.push(es);
-        //         return oldIs.position;
-        //     } else {
-        //         Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
-        //         this.ifStack.push(es);
-        //         return position;
-        //     }
-        // }
-        // if (this.isEndifStatement(match)) {
-        //     const is3 = this.ifStack.pop();
-        //     if (is3 && !is3.condition) {
-        //         Preprocessor.removeTextAndAddOffset(is3.position, beforeEndPosition, this.snapshot);
-        //         return is3.position;
-        //     } else {
-        //         Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
-        //         return position;
-        //     }
-        // }
-        // const ds = this.getDefineStatement(match, position);
-        // if (ds) {
-        //     Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
-        //     return position;
-        // }
-        // if (this.isUndefStatement(match, position)) {
-        //     Preprocessor.removeTextAndAddOffset(position, beforeEndPosition, this.snapshot);
-        //     return position;
-        // }
         return beforeEndPosition;
     }
 
-    private getIncludeRegexResult(text: string): RegExpExecArray | null {
-        const regex = /#[ \t]*include[ \t]*(?:"(?<quotedPath>([^"]|\\")+)"|<(?<angularPath>[^>]+)>)/g;
-        return regex.exec(text);
-    }
-
-    private async preprocessInclude(regexResult: RegExpExecArray, offset: number): Promise<void> {
+    private async preprocessInclude(regexResult: RegExpExecArray, offset: number): Promise<number> {
         const position = offset + regexResult.index;
-        if (Preprocessor.isInString(position, this.snapshot)) {
-            return;
+        const match = regexResult[0];
+        const beforeEndPosition = position + match.length;
+        const path = regexResult.groups?.quotedPath ?? regexResult.groups?.angularPath ?? '';
+        const type = regexResult.groups?.quotedPath ? IncludeType.HLSL_QUOTED : IncludeType.HLSL_ANGULAR;
+        const mc = this.snapshot.isInMacroContext(position);
+        const parentIc = this.snapshot.getIncludeContextDeepAt(position);
+        const is = Preprocessor.createIncludeStatement(beforeEndPosition, type, path, mc, parentIc, this.snapshot);
+        if (this.isAnyFalseAbove(true)) {
+            return beforeEndPosition;
         }
-        if (regexResult.groups) {
-            const match = regexResult[0];
-            const beforeEndPosition = position + match.length;
-            const path = regexResult.groups.quotedPath ?? regexResult.groups.angularPath;
-            const type = regexResult.groups.quotedPath ? IncludeType.HLSL_QUOTED : IncludeType.HLSL_ANGULAR;
-            const mc = this.snapshot.isInMacroContext(position);
-            const parentIc = this.snapshot.getIncludeContextDeepAt(position);
-            const is = Preprocessor.createIncludeStatement(beforeEndPosition, type, path, mc, parentIc, this.snapshot);
-            if (this.ifStack.some((is) => !is.condition)) {
-                return;
-            }
-            //await HlslPreprocessor.includeContent(position, beforeEndPosition, is, parentIc, this.snapshot);
+        await this.includeContent(position, beforeEndPosition, is, parentIc);
+        return offset;
+    }
+
+    private async includeContent(
+        position: number,
+        beforeEndPosition: number,
+        is: IncludeStatement,
+        parentIc: IncludeContext | null
+    ): Promise<void> {
+        const uri = await getIncludedDocumentUri(is);
+        const includeSnapshot = await this.getInclude(uri, parentIc);
+        const includeText = includeSnapshot.text;
+        const afterEndPosition = position + includeText.length;
+        Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, afterEndPosition, includeText, this.snapshot);
+        const ic = this.createIncludeContext(position, afterEndPosition, uri, parentIc, is, includeSnapshot);
+        if (ic) {
+            Preprocessor.addStringRanges(position, afterEndPosition, this.snapshot);
         }
     }
 
-    private getIfStatement(text: string, position: number): IfState | null {
-        const regex = /#[ \t]*if\b(?<condition>.*)/;
-        let regexResult = regex.exec(this.snapshot.text.substring(position, position + text.length));
-        if (regexResult) {
-            this.refreshMacroNames();
-            const dcs = HlslPreprocessor.expandMacros(
-                position + regexResult.index,
-                position + regexResult.index + regexResult[0].length,
-                this.snapshot,
-                this.macroNames
-            );
-            const offset = dcs
-                .map((dc) => dc.afterEndPosition - dc.beforeEndPosition)
-                .reduce((prev, curr) => prev + curr, 0);
-            regexResult = regex.exec(this.snapshot.text.substring(position, position + text.length + offset));
-            if (regexResult && regexResult.groups) {
-                const condition = this.evaluateCondition(regexResult.groups.condition, position);
-                const is: IfState = {
-                    position: position,
-                    condition,
-                    already: condition,
-                    offset,
-                };
-                return is;
-            }
+    private async getInclude(uri: DocumentUri | null, parentIc: IncludeContext | null): Promise<Snapshot> {
+        if (!uri || this.isCircularInclude(parentIc, uri)) {
+            return new Snapshot(invalidVersion, '', '');
         }
-        return null;
+        const snapshot = await Preprocessor.getSnapshot(uri, this.snapshot);
+        new Preprocessor(snapshot).clean();
+        return snapshot;
     }
 
-    private getElifStatement(text: string, position: number): IfState | null {
-        const regex = /#[ \t]*elif\b(?<condition>.*)/;
-        let regexResult = regex.exec(this.snapshot.text.substring(position, position + text.length));
-        if (regexResult) {
-            this.refreshMacroNames();
-            const dcs = HlslPreprocessor.expandMacros(
-                position + regexResult.index,
-                position + regexResult.index + regexResult[0].length,
-                this.snapshot,
-                this.macroNames
-            );
-            const offset = dcs
-                .map((dc) => dc.afterEndPosition - dc.beforeEndPosition)
-                .reduce((prev, curr) => prev + curr, 0);
-            regexResult = regex.exec(this.snapshot.text.substring(position, position + text.length + offset));
-            if (regexResult && regexResult.groups) {
-                const last = this.ifStack[this.ifStack.length - 1];
-                const condition =
-                    !(last?.already ?? false) && this.evaluateCondition(regexResult.groups.condition, position);
-                const is: IfState = {
-                    position: last?.condition ?? true ? position : last.position,
-                    condition,
-                    already: last?.already || condition,
-                    offset,
-                };
-                return is;
-            }
-        }
-        return null;
-    }
-
-    private getElseStatement(text: string, position: number): IfState | null {
-        const regex = /#[ \t]*else\b.*/;
-        const regexResult = regex.exec(text);
-        if (regexResult) {
-            const last = this.ifStack[this.ifStack.length - 1];
-            const condition = !(last?.already ?? false);
-            const is: IfState = {
-                position: last?.condition ?? true ? position : last.position,
-                condition,
-                already: true,
-                offset: 0,
-            };
-            return is;
-        }
-        return null;
-    }
-
-    private isEndifStatement(text: string): boolean {
-        const regex = /#[ \t]*endif\b.*/;
-        return !!regex.exec(text);
-    }
-
-    private getIfdefStatement(text: string, position: number): IfState | null {
-        const regex = /#[ \t]*(?<directive>ifn?def\b)(?<condition>.*)/;
-        const regexResult = regex.exec(text);
-        if (regexResult && regexResult.groups) {
-            const directive = regexResult.groups.directive;
-            const condition = regexResult.groups.condition.trim();
-            let defined = HlslPreprocessor.isDefined(condition, regexResult.index + position, this.snapshot);
-            if (directive === 'ifndef') {
-                defined = !defined;
-            }
-            const is: IfState = {
-                position: regexResult.index + position,
-                condition: defined,
-                already: defined,
-                offset: 0,
-            };
-            return is;
-        }
-        return null;
-    }
-
-    private getDefineStatement(text: string, position: number): DefineStatement | null {
-        if (this.ifStack.some((is) => !is.condition)) {
+    private createIncludeContext(
+        position: number,
+        afterEndPosition: number,
+        uri: DocumentUri | null,
+        parentIc: IncludeContext | null,
+        is: IncludeStatement,
+        includeSnapshot: Snapshot
+    ): IncludeContext | null {
+        if (!uri) {
             return null;
         }
-        let regex = /#[ \t]*define[ \t]+?(?<name>[a-zA-Z_]\w*)[ \t]+?(?<content>.*)?/;
-        let regexResult = regex.exec(text);
-        if (regexResult && regexResult.groups) {
-            const name = regexResult.groups.name;
-            const content = regexResult.groups.content?.trim().replace(/[ \t]*#[ \t]*#[ \t]*/g, '') ?? '';
-            const ds: DefineStatement = {
-                objectLike: true,
-                position: regexResult.index + position,
-                name,
-                parameters: [],
-                content,
-                undefPosition: null,
-            };
-            this.snapshot.defineStatements.push(ds);
-            return ds;
+        const ic: IncludeContext = {
+            startPosition: position,
+            localStartPosition: position,
+            endPosition: afterEndPosition,
+            includeStatement: is,
+            snapshot: includeSnapshot,
+            parent: parentIc,
+            children: [],
+            uri,
+            originalEndPosition: this.snapshot.getOriginalPosition(afterEndPosition, false),
+        };
+        if (parentIc) {
+            parentIc.children.push(ic);
+        } else {
+            this.snapshot.includeContexts.push(ic);
         }
-        regex =
-            /#[ \t]*define[ \t]+(?<name>[a-zA-Z_]\w*)\((?<params>[ \t]*[a-zA-Z_]\w*([ \t]*,[ \t]*[a-zA-Z_]\w*)*[ \t]*,?)?[ \t]*\)(?<content>.*)?/;
-        regexResult = regex.exec(text);
-        if (regexResult && regexResult.groups) {
-            const name = regexResult.groups.name;
-            const content = regexResult.groups.content?.trim() ?? '';
-            const ds: DefineStatement = {
-                objectLike: false,
-                position: regexResult.index + position,
-                name,
-                parameters:
-                    regexResult.groups.params
-                        ?.replace(/[ \t]/g, '')
-                        .split(',')
-                        .filter((p) => p.length) ?? [],
-                content,
-                undefPosition: null,
-            };
-            this.snapshot.defineStatements.push(ds);
-            return ds;
-        }
-        return null;
+        return ic;
     }
 
-    private isUndefStatement(text: string, position: number): boolean {
-        if (this.ifStack.some((is) => !is.condition)) {
-            return false;
-        }
-        const regex = /#[ \t]*undef[ \t]+(?<name>[a-zA-Z_]\w*).*/;
-        const regexResult = regex.exec(text);
-        if (regexResult && regexResult.groups) {
-            if (this.ifStack.every((is) => is.condition)) {
-                const name = regexResult.groups.name;
-                this.snapshot.defineStatements
-                    .filter((ds) => ds.name === name && ds.position <= position)
-                    .forEach((ds) => {
-                        if (ds.undefPosition == null) ds.undefPosition = position;
-                    });
-            }
+    private isCircularInclude(ic: IncludeContext | null, uri: DocumentUri | null): boolean {
+        if (this.snapshot.uri === uri) {
             return true;
         }
+        let currentIc = ic;
+        while (currentIc) {
+            if (currentIc?.snapshot?.uri === uri) {
+                return true;
+            }
+            currentIc = currentIc.parent;
+        }
         return false;
+    }
+
+    private preprocessIf(regexResult: RegExpExecArray, offset: number): void {
+        const ifState: IfState = { position: offset, condition: false };
+        this.ifStack.push([ifState]);
+        this.setCondition(regexResult, offset, ifState, !this.isAnyFalseAbove());
+        this.snapshot.directives.push({ startPosition: offset, endPosition: offset + regexResult[0].length });
+    }
+
+    private preprocessIfdef(regexResult: RegExpExecArray, offset: number): void {
+        const ifState: IfState = { position: offset, condition: false };
+        this.ifStack.push([ifState]);
+        if (regexResult.groups) {
+            const position = offset + regexResult.index;
+            const directive = regexResult.groups.directive;
+            const condition = regexResult.groups.condition.trim();
+            const ds = this.snapshot.getDefinition(condition, position);
+            if (ds) {
+                const conditionPosition = position + (regexResult.groups.beforeCondition?.length ?? 0);
+                const endPosition = conditionPosition + condition.length;
+                HlslPreprocessor.createDefineContext(
+                    conditionPosition,
+                    endPosition,
+                    endPosition,
+                    this.snapshot.getOriginalRange(conditionPosition, endPosition),
+                    ds,
+                    this.snapshot,
+                    !this.snapshot.isInIncludeContext(position) && !this.snapshot.isInMacroContext(position),
+                    null
+                );
+            }
+            if (!this.isAnyFalseAbove()) {
+                let defined = !!ds;
+                if (directive === 'ifndef') {
+                    defined = !defined;
+                }
+                ifState.condition = defined;
+            }
+        }
+        this.snapshot.directives.push({ startPosition: offset, endPosition: offset + regexResult[0].length });
+    }
+
+    private preprocessElif(regexResult: RegExpExecArray, offset: number): void {
+        const ifState: IfState = { position: offset, condition: false };
+        HlslPreprocessor.addIfFoldingRange(offset, this.ifStack, this.snapshot);
+        this.setCondition(regexResult, offset, ifState, !this.isAnyFalseAbove() && this.isAllFalseInTheSameLevel());
+        HlslPreprocessor.addIfState(this.ifStack, ifState);
+        this.snapshot.directives.push({ startPosition: offset, endPosition: offset + regexResult[0].length });
+    }
+
+    private preprocessElse(offset: number): void {
+        const ifState: IfState = { position: offset, condition: false };
+        HlslPreprocessor.addIfFoldingRange(offset, this.ifStack, this.snapshot);
+        if (!this.isAnyFalseAbove() && this.isAllFalseInTheSameLevel()) {
+            ifState.condition = true;
+        }
+        HlslPreprocessor.addIfState(this.ifStack, ifState);
+    }
+
+    private preprocessEndif(position: number): void {
+        HlslPreprocessor.addIfFoldingRange(position, this.ifStack, this.snapshot);
+        if (!this.isAnyFalseAbove()) {
+            this.addDirectiveTextEdits(position);
+        }
+        this.ifStack.pop();
+    }
+
+    private setCondition(regexResult: RegExpExecArray, offset: number, ifState: IfState, changeIfState: boolean): void {
+        const position = offset + regexResult.index;
+        const match = regexResult[0];
+        const conditionPosition = position + (regexResult.groups?.beforeCondition?.length ?? 0);
+        const defines = this.snapshot.getDefineStatements(position);
+        let text = regexResult.groups?.condition ?? '';
+        if (defines.length) {
+            const snapshot = new Snapshot(invalidVersion, text, '');
+            snapshot.text = text;
+            const definesMap = this.createDefinesMap(defines);
+            this.snapshot.stringRanges.forEach((sr) => {
+                if (sr.endPosition >= position && sr.startPosition <= position + match.length) {
+                    snapshot.stringRanges.push({
+                        startPosition: sr.startPosition - position,
+                        endPosition: sr.endPosition - position,
+                    });
+                }
+            });
+            this.expandAll(definesMap, defines, [], snapshot, conditionPosition);
+            text = snapshot.text;
+        }
+        if (changeIfState) {
+            ifState.condition = this.evaluateCondition(text, conditionPosition);
+        }
+    }
+
+    private createDefinesMap(defines: DefineStatement[]): Map<string, DefineStatement[]> {
+        const definesMap = new Map<string, DefineStatement[]>();
+        for (const ds of defines) {
+            let dss = definesMap.get(ds.name);
+            if (!dss) {
+                dss = [];
+                definesMap.set(ds.name, dss);
+            }
+            dss.push(ds);
+        }
+        return definesMap;
+    }
+
+    private addDirectiveTextEdits(position: number): void {
+        if (this.ifStack.length) {
+            const ifStates = this.ifStack[this.ifStack.length - 1];
+            let lastPosition = -1;
+            for (const ifState of ifStates) {
+                if (ifState.condition) {
+                    if (lastPosition !== -1) {
+                        this.textEdits.push({
+                            startPosition: lastPosition,
+                            endPosition: ifState.position,
+                            newText: '',
+                        });
+                    }
+                    lastPosition = -1;
+                } else {
+                    if (lastPosition === -1) {
+                        lastPosition = ifState.position;
+                    }
+                }
+            }
+            if (lastPosition !== -1) {
+                this.textEdits.push({ startPosition: lastPosition, endPosition: position, newText: '' });
+            }
+        }
+    }
+
+    private isAnyFalseAbove(checkLastLevel = false): boolean {
+        const offset = checkLastLevel ? 0 : 1;
+        for (let i = 0; i < this.ifStack.length - offset; i++) {
+            const ifStates = this.ifStack[i];
+            const ifState = ifStates[ifStates.length - 1];
+            if (!ifState.condition) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private isAllFalseInTheSameLevel(): boolean {
+        if (this.ifStack.length) {
+            const ifStates = this.ifStack[this.ifStack.length - 1];
+            return !ifStates.some((ifState) => ifState.condition);
+        }
+        return true;
+    }
+
+    public static addIfFoldingRange(position: number, ifStack: IfState[][], snapshot: Snapshot): void {
+        const mc = snapshot.isInMacroContext(position);
+        const ic = snapshot.isInIncludeContext(position);
+        if (!mc && !ic && ifStack.length) {
+            const ifStates = ifStack[ifStack.length - 1];
+            if (ifStates.length) {
+                const ifState = ifStates[ifStates.length - 1];
+                const originalRange = snapshot.getOriginalRange(ifState.position, position);
+                snapshot.ifRanges.push(originalRange);
+            }
+        }
+    }
+
+    public static addIfState(ifStack: IfState[][], ifState: IfState): void {
+        if (ifStack.length) {
+            const ifStates = ifStack[ifStack.length - 1];
+            ifStates.push(ifState);
+        }
+    }
+
+    private preprocessObjectDefine(regexResult: RegExpExecArray, offset: number): void {
+        const content = regexResult.groups?.content?.trim().replace(/[ \t]*#[ \t]*#[ \t]*/g, '') ?? '';
+        this.preprocessDefine(regexResult, offset, true, [], content);
+    }
+
+    private preprocessFunctionDefine(regexResult: RegExpExecArray, offset: number): void {
+        const parameters =
+            regexResult.groups?.params
+                ?.replace(/[ \t]/g, '')
+                .split(',')
+                .filter((p) => p.length) ?? [];
+        const content = regexResult.groups?.content?.trim() ?? '';
+        this.preprocessDefine(regexResult, offset, false, parameters, content);
+    }
+
+    private preprocessDefine(
+        regexResult: RegExpExecArray,
+        offset: number,
+        objectLike: boolean,
+        parameters: string[],
+        content: string
+    ): void {
+        if (regexResult.groups) {
+            const position = regexResult.index + offset;
+            const beforeName = position + regexResult.groups.beforeName.length;
+            const name = regexResult.groups.name;
+            const match = regexResult[0];
+            const ic = this.snapshot.getIncludeContextDeepAt(position);
+            const mc = this.snapshot.getMacroContextDeepAt(position);
+            const isVisible = !ic && !mc;
+            this.createDefineStatement(
+                position,
+                beforeName,
+                match,
+                name,
+                objectLike,
+                parameters,
+                content,
+                isVisible,
+                this.snapshot,
+                ic,
+                mc
+            );
+        }
+    }
+
+    private createDefineStatement(
+        position: number,
+        beforeName: number,
+        match: string,
+        name: string,
+        objectLike: boolean,
+        parameters: string[],
+        content: string,
+        isVisible: boolean,
+        snapshot: Snapshot,
+        ic: IncludeContext | null,
+        mc: MacroContext | null
+    ): DefineStatement {
+        const realDefine =
+            mc?.macroDeclaration?.contentSnapshot?.defineStatements?.find((ds) => ds.name === name) ?? null;
+        const originalRange = this.snapshot.getOriginalRange(position, position + match.length);
+        const nameOriginalRange = this.snapshot.getOriginalRange(beforeName, beforeName + name.length);
+        const ds: DefineStatement = {
+            objectLike,
+            position,
+            endPosition: position + match.length,
+            originalRange,
+            nameOriginalRange,
+            name,
+            parameters,
+            content,
+            undefPosition: null,
+            codeCompletionPosition: ic ? ic.includeStatement.originalEndPosition : nameOriginalRange.end,
+            undefCodeCompletionPosition: null,
+            isVisible,
+            usages: [],
+            uri: mc?.macroDeclaration?.uri ?? ic?.uri ?? snapshot.uri,
+            realDefine,
+            isPredefined: snapshot.isPredefined,
+        };
+        this.addDefine(position, ds, snapshot);
+        return ds;
+    }
+
+    private addDefine(position: number, ds: DefineStatement, snapshot: Snapshot): void {
+        snapshot.defineStatements.push(ds);
+        const shaderBlock = snapshot.shaderBlocks.find(
+            (sb) => sb.startPosition <= position && position <= sb.endPosition
+        );
+        if (shaderBlock) {
+            this.addDefineToHlslBlock(position, shaderBlock.hlslBlocks, ds);
+        } else {
+            this.addDefineToHlslBlock(position, snapshot.globalHlslBlocks, ds);
+        }
+    }
+
+    private addDefineToHlslBlock(position: number, hlslBlocks: HlslBlock[], ds: DefineStatement): void {
+        const hb = hlslBlocks.find((hb) => hb.startPosition <= position && position <= hb.endPosition);
+        if (hb) {
+            hb.defineStatements.push(ds);
+        }
+    }
+
+    private preprocessUndef(regexResult: RegExpExecArray, offset: number): void {
+        if (regexResult.groups) {
+            const position = regexResult.index + offset;
+            const name = regexResult.groups.name;
+            const ic = this.snapshot.getIncludeContextAt(position);
+            const dss = this.snapshot.defineStatements.filter((ds) => ds.name === name && ds.position <= position);
+            dss.forEach((ds) => {
+                if (ds.undefPosition === null) {
+                    ds.undefPosition = position;
+                    ds.undefCodeCompletionPosition = ic
+                        ? ic.originalEndPosition
+                        : this.snapshot.getOriginalPosition(position, true);
+                }
+            });
+            if (dss.length) {
+                const conditionPosition = position + regexResult.groups.beforeName.length;
+                const endPosition = conditionPosition + name.length;
+                HlslPreprocessor.createDefineContext(
+                    conditionPosition,
+                    endPosition,
+                    endPosition,
+                    this.snapshot.getOriginalRange(conditionPosition, endPosition),
+                    dss[0],
+                    this.snapshot,
+                    !ic && !this.snapshot.isInMacroContext(position),
+                    null
+                );
+            }
+        }
+    }
+
+    public addHlslDirectivesInMacro(snapshot: Snapshot, offset: number): void {
+        const regex = /#.*/g;
+        let regexResult: RegExpExecArray | null;
+        while ((regexResult = regex.exec(snapshot.text))) {
+            let position = regexResult.index;
+            if (Preprocessor.isInString(position, snapshot)) {
+                continue;
+            }
+            const match = regexResult[0];
+            const includeRegex = /#[ \t]*include[ \t]*(?:"(?<quotedPath>(?:\\"|[^"])*)"|<(?<angularPath>[^>]*)>)/;
+            regexResult = includeRegex.exec(match);
+            if (regexResult) {
+                position += offset + regexResult.index;
+                this.preprocessIncludeLight(regexResult, position);
+                continue;
+            }
+            const ifRegex = /^#[ \t]*if\b.*/;
+            regexResult = ifRegex.exec(match);
+            if (regexResult) {
+                position += offset + regexResult.index;
+                this.preprocessIfIfdefLight(position);
+                continue;
+            }
+            const ifdefRegex = /#[ \t]*ifn?def\b.*/;
+            regexResult = ifdefRegex.exec(match);
+            if (regexResult) {
+                position += offset + regexResult.index;
+                this.preprocessIfIfdefLight(position);
+                continue;
+            }
+            const elifRegex = /^#[ \t]*elif\b.*/;
+            regexResult = elifRegex.exec(match);
+            if (regexResult) {
+                position += offset + regexResult.index;
+                this.preprocessElifElseLight(position);
+                continue;
+            }
+            const elseRegex = /^#[ \t]*else\b.*/;
+            regexResult = elseRegex.exec(match);
+            if (regexResult) {
+                position += offset + regexResult.index;
+                this.preprocessElifElseLight(position);
+                continue;
+            }
+            const endifRegex = /^#[ \t]*endif\b.*/;
+            regexResult = endifRegex.exec(match);
+            if (regexResult) {
+                position += offset + regexResult.index;
+                this.preprocessEndifLight(position);
+                continue;
+            }
+            const functionDefineRegex =
+                /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)\((?<params>[ \t]*[a-zA-Z_]\w*(?:[ \t]*,[ \t]*[a-zA-Z_]\w*)*[ \t]*,?)?[ \t]*\)(?<content>.*)?/;
+            regexResult = functionDefineRegex.exec(match);
+            if (regexResult) {
+                position += offset + regexResult.index;
+                this.preprocessFunctionDefineLight(regexResult, position, snapshot);
+                continue;
+            }
+            const objectDefineRegex = /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)[ \t]*(?<content>.*)?/;
+            regexResult = objectDefineRegex.exec(match);
+            if (regexResult) {
+                position += offset + regexResult.index;
+                this.preprocessObjectDefineLight(regexResult, position, snapshot);
+                continue;
+            }
+        }
+        const definesMap = this.createDefinesMap(snapshot.defineStatements);
+        this.expandAll(definesMap, snapshot.defineStatements, [], snapshot, offset, true);
+    }
+
+    private preprocessIncludeLight(regexResult: RegExpExecArray, position: number): void {
+        const match = regexResult[0];
+        const beforeEndPosition = position + match.length;
+        const path = regexResult.groups?.quotedPath ?? regexResult.groups?.angularPath ?? '';
+        const type = regexResult.groups?.quotedPath ? IncludeType.HLSL_QUOTED : IncludeType.HLSL_ANGULAR;
+        Preprocessor.createIncludeStatement(beforeEndPosition, type, path, false, null, this.snapshot);
+    }
+
+    private preprocessIfIfdefLight(position: number): void {
+        const ifState: IfState = { position, condition: false };
+        this.ifStack.push([ifState]);
+    }
+
+    private preprocessElifElseLight(position: number): void {
+        const ifState: IfState = { position, condition: false };
+        HlslPreprocessor.addIfFoldingRange(position, this.ifStack, this.snapshot);
+        HlslPreprocessor.addIfState(this.ifStack, ifState);
+    }
+
+    private preprocessEndifLight(position: number): void {
+        HlslPreprocessor.addIfFoldingRange(position, this.ifStack, this.snapshot);
+        this.ifStack.pop();
+    }
+
+    private preprocessFunctionDefineLight(regexResult: RegExpExecArray, position: number, snapshot: Snapshot): void {
+        const parameters =
+            regexResult.groups?.params
+                ?.replace(/[ \t]/g, '')
+                .split(',')
+                .filter((p) => p.length) ?? [];
+        const beforeName = position + (regexResult.groups?.beforeName?.length ?? 0);
+        const name = regexResult.groups?.name ?? '';
+        const match = regexResult[0];
+        const content = regexResult.groups?.content?.trim() ?? '';
+        const isVisible =
+            !this.snapshot.getIncludeContextDeepAt(position) && !this.snapshot.getMacroContextDeepAt(position);
+        this.createDefineStatement(
+            position,
+            beforeName,
+            match,
+            name,
+            false,
+            parameters,
+            content,
+            isVisible,
+            snapshot,
+            null,
+            null
+        );
+    }
+
+    private preprocessObjectDefineLight(regexResult: RegExpExecArray, position: number, snapshot: Snapshot): void {
+        const beforeName = position + (regexResult.groups?.beforeName?.length ?? 0);
+        const name = regexResult.groups?.name ?? '';
+        const match = regexResult[0];
+        const content = regexResult.groups?.content?.trim() ?? '';
+        const isVisible =
+            !this.snapshot.getIncludeContextDeepAt(position) && !this.snapshot.getMacroContextDeepAt(position);
+        this.createDefineStatement(
+            position,
+            beforeName,
+            match,
+            name,
+            true,
+            [],
+            content,
+            isVisible,
+            snapshot,
+            null,
+            null
+        );
     }
 
     private evaluateCondition(condition: string, position: number): boolean {
@@ -338,314 +678,377 @@ export class HlslPreprocessor {
         return parser;
     }
 
-    private refreshMacroNames(): void {
-        const mn = this.snapshot.defineStatements.map((ds) => ds.name);
-        const umn = [...new Set(mn)];
-        this.macroNames = umn.join('|');
-    }
-
-    public static async includeContent(
-        position: number,
-        beforeEndPosition: number,
-        is: IncludeStatement,
-        parentIc: IncludeContext | null,
-        snapshot: Snapshot
-    ): Promise<void> {
-        const uri = await getIncludedDocumentUri(is);
-        const includeText = await HlslPreprocessor.getIncludeText(uri, parentIc, snapshot);
-        const afterEndPosition = position + includeText.length;
-        Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, afterEndPosition, includeText, snapshot);
-        const ic = HlslPreprocessor.createIncludeContext(position, afterEndPosition, uri, parentIc, snapshot, is);
-        if (ic) {
-            Preprocessor.addStringRanges(position, afterEndPosition, snapshot);
-        }
-    }
-
-    private static createIncludeContext(
-        position: number,
-        afterEndPosition: number,
-        uri: DocumentUri | null,
-        parentIc: IncludeContext | null,
-        snapshot: Snapshot,
-        is: IncludeStatement
-    ): IncludeContext | null {
-        if (!uri) {
-            return null;
-        }
-        const ic: IncludeContext = {
-            startPosition: position,
-            localStartPosition: position,
-            endPosition: afterEndPosition,
-            includeStatement: is,
-            snapshot,
-            parent: parentIc,
-            children: [],
-        };
-        if (parentIc) {
-            parentIc.children.push(ic);
+    private expandDefines(): void {
+        this.textEdits = [];
+        if (this.snapshot.uri.endsWith(HLSL_EXTENSION) || this.snapshot.uri.endsWith(HLSLI_EXTENSION)) {
+            const definesMap = this.createDefinesMap(this.snapshot.defineStatements);
+            const tes = this.expandAll(definesMap, this.snapshot.defineStatements, [], this.snapshot, 0, true);
+            this.textEdits.push(...tes);
         } else {
-            snapshot.includeContexts.push(ic);
+            this.expandGlobalHlslBlocks();
+            this.expandShaderHlslBlocks();
         }
-        return ic;
+        Preprocessor.executeTextEdits(this.textEdits, this.snapshot, false);
     }
 
-    private static async getIncludeText(
-        uri: DocumentUri | null,
-        parentIc: IncludeContext | null,
-        snapshot: Snapshot
-    ): Promise<string> {
-        const circularInclude = HlslPreprocessor.isCircularInclude(parentIc, uri, snapshot);
-        return uri && !circularInclude ? await HlslPreprocessor.getText(uri) : '';
+    private expandGlobalHlslBlocks(): void {
+        this.expandHlslBlocks(this.snapshot.globalHlslBlocks, null);
     }
 
-    private static async getText(uri: DocumentUri): Promise<string> {
-        let includedSnapshot = await getSnapshot(uri);
-        if (includedSnapshot) {
-            return includedSnapshot.cleanedText;
-        } else {
-            const text = await getFileContent(URI.parse(uri).fsPath);
-            includedSnapshot = new Snapshot(invalidVersion, uri, text);
-            new Preprocessor(includedSnapshot).clean();
-            return includedSnapshot.cleanedText;
+    private expandShaderHlslBlocks(): void {
+        for (const sb of this.snapshot.shaderBlocks) {
+            this.expandHlslBlocks(sb.hlslBlocks, sb);
         }
     }
 
-    private static isCircularInclude(ic: IncludeContext | null, uri: DocumentUri | null, snapshot: Snapshot): boolean {
-        if (snapshot.uri === uri) {
-            return true;
-        }
-        let currentIc = ic;
-        while (currentIc) {
-            if (currentIc?.snapshot?.uri === uri) {
-                return true;
+    private expandHlslBlocks(hbs: HlslBlock[], sb: ShaderBlock | null): void {
+        for (const hb of hbs) {
+            const defines = this.getDefineStatementsInHlslBlock(hb, sb);
+            if (!defines.length) {
+                continue;
             }
-            currentIc = currentIc.parent;
+            const text = this.snapshot.text.substring(hb.startPosition, hb.endPosition);
+            const definesMap = this.createDefinesMap(defines);
+            const snapshot = new Snapshot(invalidVersion, text, '');
+            snapshot.text = text;
+            snapshot.stringRanges.push(
+                ...this.snapshot.stringRanges
+                    .filter((sr) => sr.startPosition >= hb.startPosition && sr.endPosition <= hb.endPosition)
+                    .map((sr) => ({
+                        startPosition: sr.startPosition - hb.startPosition,
+                        endPosition: sr.endPosition - hb.startPosition,
+                    }))
+            );
+            const tes = this.expandAll(definesMap, hb.defineStatements, [], snapshot, hb.startPosition, true);
+            tes.forEach((te) => {
+                te.startPosition += hb.startPosition;
+                te.endPosition += hb.startPosition;
+            });
+            this.textEdits.push(...tes);
         }
-        return false;
     }
 
-    public static isDefined(text: string, position: number, snapshot: Snapshot): boolean {
-        return !!snapshot.defineStatements.find(
-            (ds) =>
-                ds.name === text && ds.position <= position && (ds.undefPosition == null || ds.undefPosition > position)
-        );
-    }
-
-    public static expandMacros(
-        fromPosition: number,
-        toPosition: number,
+    private expandAll(
+        definesMap: Map<string, DefineStatement[]>,
+        defines: DefineStatement[],
+        expansions: DefineStatement[],
         snapshot: Snapshot,
-        macroNames: string
-    ): DefineContext[] {
-        if (!snapshot.defineStatements.length) {
-            return [];
-        }
-
-        const macroIdentifierRegex = new RegExp(`\\b(${macroNames})\\b`, 'g');
-        macroIdentifierRegex.lastIndex = fromPosition;
+        offset: number,
+        isTopLevel = false
+    ): TextEdit[] {
+        const textEdits: TextEdit[] = [];
+        const identifierRegex = /\b([a-zA-Z_]\w*)\b/g;
         let regexResult: RegExpExecArray | null;
-        const result: DefineContext[] = [];
-        while ((regexResult = macroIdentifierRegex.exec(snapshot.text.substring(0, toPosition)))) {
-            const identifierStartPosition = regexResult.index;
+        while ((regexResult = identifierRegex.exec(snapshot.text))) {
+            const localPosition = regexResult.index;
+            const globalPosition = localPosition + offset;
+            if (Preprocessor.isInString(localPosition, snapshot) || this.snapshot.isInDirective(globalPosition)) {
+                continue;
+            }
+            if (defines.some((ds) => isIntervalContains(ds.position, ds.endPosition, globalPosition))) {
+                continue;
+            }
             const identifier = regexResult[0];
-            const identifierEndPosition = identifierStartPosition + identifier.length;
-            macroIdentifierRegex.lastIndex = identifierEndPosition;
-
-            const ma = Preprocessor.getMacroArguments(identifierEndPosition, snapshot);
-            const objectLike = !ma;
-            const ds =
-                snapshot.defineStatements.find(
+            const dss = definesMap
+                .get(identifier)
+                ?.filter(
                     (ds) =>
-                        ds.name === identifier &&
-                        ds.position <= identifierStartPosition &&
-                        ds.objectLike === objectLike &&
-                        ds.parameters.length === (ma?.arguments?.length ?? 0) &&
-                        (ds.undefPosition == null || ds.undefPosition > identifierStartPosition)
+                        (ds.endPosition <= globalPosition || ds.isPredefined) &&
+                        (ds.undefPosition == null || ds.undefPosition > globalPosition)
+                );
+            if (!dss?.length) {
+                continue;
+            }
+            const identifierEndPosition = localPosition + identifier.length;
+            const da = Preprocessor.getArguments(identifierEndPosition, snapshot);
+            const ds =
+                dss.find(
+                    (ds) => (!!da && !ds.objectLike && ds.parameters.length === da.arguments.length) || ds.objectLike
                 ) ?? null;
-            if (!ds) {
+            if (!ds || expansions.includes(ds)) {
                 continue;
             }
-            const parentDc = snapshot.defineContextAt(identifierStartPosition);
-            if (HlslPreprocessor.isCircularDefineExpansion(parentDc, ds)) {
-                continue;
-            }
-            const beforeEndPosition = ma ? ma.endPosition : identifierEndPosition;
-            if (Preprocessor.isInString(identifierStartPosition, snapshot)) {
-                continue;
-            }
+
+            const beforeEndPosition = da ? da.endPosition : identifierEndPosition;
             const macroSnapshot = new Snapshot(invalidVersion, '', '');
-            macroSnapshot.text = ds.content;
-            Preprocessor.addStringRanges(0, macroSnapshot.text.length, macroSnapshot);
-            let parameterReplacements: ElementRange[] = [];
-            let dc: DefineContext | null = null;
-            if (!ds.objectLike) {
-                if (ds.parameters.length) {
-                    const parameterNames = ds.parameters.join('|');
-                    const macroParameterRegex = new RegExp(
-                        `(?<![^# \\t][ \\t]*#[ \\t]*)((?<stringification>#)[ \\t]*)?\\b(?<name>${parameterNames})\\b`,
-                        'g'
-                    );
-                    let regexResult: RegExpExecArray | null;
-                    while ((regexResult = macroParameterRegex.exec(macroSnapshot.text))) {
-                        const parameterStartPosition = regexResult.index;
-                        if (Preprocessor.isInString(parameterStartPosition, macroSnapshot)) {
-                            continue;
-                        }
-                        const parameterMatch = regexResult[0];
-                        const parameterBeforeEndPosition = parameterStartPosition + parameterMatch.length;
-                        if (regexResult.groups) {
-                            const parameterName = regexResult.groups.name;
-                            const stringification = !!regexResult.groups.stringification;
-                            const argument = ma
-                                ? ma.arguments[ds.parameters.indexOf(parameterName)].content
-                                : parameterName;
-                            const replacement = stringification ? HlslPreprocessor.stringify(argument) : argument;
-                            const parameterAfterEndPosition = parameterStartPosition + replacement.length;
-                            Preprocessor.changeTextAndAddOffset(
-                                parameterStartPosition,
-                                parameterBeforeEndPosition,
-                                parameterAfterEndPosition,
-                                replacement,
-                                macroSnapshot
-                            );
-                            Preprocessor.addStringRanges(
-                                parameterStartPosition,
-                                parameterAfterEndPosition,
-                                macroSnapshot
-                            );
-
-                            if (!stringification) {
-                                parameterReplacements.push({
-                                    startPosition: identifierStartPosition + parameterStartPosition,
-                                    endPosition: identifierStartPosition + parameterAfterEndPosition,
-                                });
-                            }
-                            macroParameterRegex.lastIndex = parameterAfterEndPosition;
-                        }
-                    }
+            snapshot.stringRanges.forEach((sr) => {
+                if (sr.startPosition >= localPosition && sr.endPosition <= beforeEndPosition) {
+                    macroSnapshot.stringRanges.push({
+                        startPosition: sr.startPosition - localPosition,
+                        endPosition: sr.endPosition - localPosition,
+                    });
                 }
-                const regex = /[ \t]*#[ \t]*#[ \t]*/g;
-                let regexResult: RegExpExecArray | null;
-                while ((regexResult = regex.exec(macroSnapshot.text))) {
-                    const position = regexResult.index;
-                    if (Preprocessor.isInString(position, macroSnapshot)) {
-                        continue;
-                    }
-                    const match = regexResult[0];
-                    const beforeEndPosition = position + match.length;
-                    Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, position, '', macroSnapshot);
-                    regex.lastIndex = position;
-                    for (const r of parameterReplacements) {
-                        if (position < r.startPosition) {
-                            r.startPosition -= match.length;
-                            r.endPosition -= match.length;
-                        }
-                    }
-                }
-                for (let i = 0; i < parameterReplacements.length; i++) {
-                    for (let j = 0; j < parameterReplacements.length; j++) {
-                        if (
-                            i !== j &&
-                            parameterReplacements[i].endPosition === parameterReplacements[j].startPosition
-                        ) {
-                            parameterReplacements[i].endPosition = parameterReplacements[j].endPosition;
-                            parameterReplacements[j].startPosition = -1;
-                            parameterReplacements[j].endPosition = -1;
-                        }
-                    }
-                }
-                parameterReplacements = parameterReplacements.filter((r) => r.startPosition >= 0);
-
-                const afterEndPosition = identifierStartPosition + macroSnapshot.text.length;
-                dc = {
-                    define: ds,
-                    startPosition: identifierStartPosition,
-                    beforeEndPosition,
-                    afterEndPosition,
-                    result: macroSnapshot.text,
-                    parent: parentDc,
-                    children: [],
-                };
-                result.push(dc);
-                Preprocessor.changeTextAndAddOffset(
-                    identifierStartPosition,
-                    beforeEndPosition,
-                    afterEndPosition,
-                    macroSnapshot.text,
-                    snapshot
+            });
+            macroSnapshot.text = snapshot.text.substring(localPosition, beforeEndPosition);
+            const te = this.expandSpecific(
+                localPosition,
+                globalPosition,
+                macroSnapshot,
+                definesMap,
+                defines,
+                [ds, ...expansions],
+                ds,
+                da
+            );
+            textEdits.push(te);
+            if (expansions.length === 0) {
+                const beforeEndPosition = globalPosition + te.newText.length;
+                const afterEndPosition = globalPosition + macroSnapshot.text.length;
+                const nameOriginalRange = this.snapshot.getOriginalRange(
+                    globalPosition,
+                    globalPosition + identifier.length
                 );
-                Preprocessor.addStringRanges(identifierStartPosition, afterEndPosition, snapshot);
-                snapshot.defineContexts.push(dc);
-                for (const replacement of parameterReplacements) {
-                    const dcs = HlslPreprocessor.expandMacros(
-                        replacement.startPosition,
-                        replacement.endPosition,
-                        snapshot,
-                        macroNames
-                    );
-                    const offset = dcs
-                        .map((dc) => dc.afterEndPosition - dc.beforeEndPosition)
-                        .reduce((prev, curr) => prev + curr, 0);
-                    for (const r of parameterReplacements) {
-                        r.startPosition += offset;
-                        r.endPosition += offset;
-                    }
+                if (da) {
+                    this.computeOriginalArgumentPositions(da, offset);
                 }
-                HlslPreprocessor.expandMacros(fromPosition, toPosition, snapshot, macroNames);
-            } else {
-                const afterEndPosition = identifierStartPosition + macroSnapshot.text.length;
-                dc = {
-                    define: ds,
-                    startPosition: identifierStartPosition,
+                const isVisible =
+                    expansions.length === 0 &&
+                    !this.snapshot.isInIncludeContext(globalPosition) &&
+                    !this.snapshot.isInMacroContext(globalPosition);
+                HlslPreprocessor.createDefineContext(
+                    globalPosition,
                     beforeEndPosition,
                     afterEndPosition,
-                    result: macroSnapshot.text,
-                    parent: parentDc,
-                    children: [],
-                };
-                result.push(dc);
-                Preprocessor.changeTextAndAddOffset(
-                    identifierStartPosition,
-                    beforeEndPosition,
-                    afterEndPosition,
-                    macroSnapshot.text,
-                    snapshot
+                    nameOriginalRange,
+                    ds,
+                    this.snapshot,
+                    isVisible,
+                    te.newText,
+                    da
                 );
-                Preprocessor.addStringRanges(identifierStartPosition, afterEndPosition, snapshot);
-                snapshot.defineContexts.push(dc);
             }
+            identifierRegex.lastIndex = beforeEndPosition;
+        }
+        if (!isTopLevel) {
+            Preprocessor.executeTextEdits(textEdits, snapshot, false);
+        }
+        return textEdits;
+    }
 
-            macroIdentifierRegex.lastIndex = dc?.afterEndPosition ?? identifierStartPosition;
-            toPosition += dc ? dc.afterEndPosition - dc.beforeEndPosition : 0;
+    private computeOriginalArgumentPositions(da: Arguments, offset: number): void {
+        da.argumentListOriginalRange = this.snapshot.getOriginalRange(
+            offset + da.argumentListPosition,
+            offset + da.argumentListEndPosition
+        );
+        for (const maa of da.arguments) {
+            maa.originalRange = this.snapshot.getOriginalRange(offset + maa.position, offset + maa.endPosition);
+            maa.trimmedOriginalStartPosition = this.snapshot.getOriginalPosition(
+                offset + maa.trimmedStartPosition,
+                true
+            );
+        }
+    }
+
+    private expandSpecific(
+        localPosition: number,
+        globalPosition: number,
+        snapshot: Snapshot,
+        definesMap: Map<string, DefineStatement[]>,
+        defines: DefineStatement[],
+        expansions: DefineStatement[],
+        ds: DefineStatement,
+        da: Arguments | null
+    ): TextEdit {
+        const beforeEndPosition = snapshot.text.length;
+        snapshot.text = ds.content;
+        Preprocessor.addStringRanges(0, snapshot.text.length, snapshot);
+        if (da) {
+            let parameterReplacements: ElementRange[] = [];
+            if (ds.parameters.length) {
+                this.parameterReplacement(snapshot, ds, da, parameterReplacements);
+            }
+            this.concatenation(snapshot, parameterReplacements);
+            parameterReplacements = this.mergeParameterReplacements(parameterReplacements);
+            this.expandParameters(globalPosition, snapshot, definesMap, defines, expansions, parameterReplacements);
+        }
+        this.expandAll(definesMap, defines, expansions, snapshot, globalPosition);
+        return {
+            newText: snapshot.text,
+            startPosition: localPosition,
+            endPosition: localPosition + beforeEndPosition,
+        };
+    }
+
+    private parameterReplacement(
+        snapshot: Snapshot,
+        ds: DefineStatement,
+        da: Arguments,
+        parameterReplacements: ElementRange[]
+    ): void {
+        const textEdits: TextEdit[] = [];
+        const parameterNames = ds.parameters.join('|');
+        const macroParameterRegex = new RegExp(
+            `(?<![^# \\t][ \\t]*#[ \\t]*)((?<stringification>#)[ \\t]*)?\\b(?<name>${parameterNames})\\b`,
+            'g'
+        );
+        let regexResult: RegExpExecArray | null;
+        let offset = 0;
+        while ((regexResult = macroParameterRegex.exec(snapshot.text))) {
+            const parameterStartPosition = regexResult.index;
+            if (Preprocessor.isInString(parameterStartPosition, snapshot)) {
+                continue;
+            }
+            const parameterMatch = regexResult[0];
+            const parameterBeforeEndPosition = parameterStartPosition + parameterMatch.length;
+            if (regexResult.groups) {
+                const parameterName = regexResult.groups.name;
+                const stringification = !!regexResult.groups.stringification;
+                const argument = da ? da.arguments[ds.parameters.indexOf(parameterName)].content : parameterName;
+                const replacement = stringification ? this.stringify(argument) : argument;
+                const parameterAfterEndPosition = parameterStartPosition + replacement.length;
+                textEdits.push({
+                    newText: replacement,
+                    startPosition: parameterStartPosition,
+                    endPosition: parameterBeforeEndPosition,
+                });
+                if (!stringification) {
+                    parameterReplacements.push({
+                        startPosition: offset + parameterStartPosition,
+                        endPosition: offset + parameterAfterEndPosition,
+                    });
+                }
+                offset += replacement.length - parameterName.length;
+            }
+        }
+        Preprocessor.executeTextEdits(textEdits, snapshot, true);
+    }
+
+    private concatenation(snapshot: Snapshot, parameterReplacements: ElementRange[]): void {
+        const textEdits: TextEdit[] = [];
+        const regex = /[ \t]*#[ \t]*#[ \t]*/g;
+        let regexResult: RegExpExecArray | null;
+        while ((regexResult = regex.exec(snapshot.text))) {
+            const position = regexResult.index;
+            if (Preprocessor.isInString(position, snapshot)) {
+                continue;
+            }
+            const match = regexResult[0];
+            const beforeEndPosition = position + match.length;
+            textEdits.push({
+                newText: '',
+                startPosition: position,
+                endPosition: beforeEndPosition,
+            });
+            for (const r of parameterReplacements) {
+                if (position < r.startPosition) {
+                    r.startPosition -= match.length;
+                    r.endPosition -= match.length;
+                }
+            }
+        }
+        Preprocessor.executeTextEdits(textEdits, snapshot, false);
+    }
+
+    private mergeParameterReplacements(parameterReplacements: ElementRange[]): ElementRange[] {
+        for (let i = 0; i < parameterReplacements.length; i++) {
+            for (let j = 0; j < parameterReplacements.length; j++) {
+                if (i !== j && parameterReplacements[i].endPosition === parameterReplacements[j].startPosition) {
+                    parameterReplacements[i].endPosition = parameterReplacements[j].endPosition;
+                    parameterReplacements[j].startPosition = -1;
+                    parameterReplacements[j].endPosition = -1;
+                }
+            }
+        }
+        return parameterReplacements.filter((r) => r.startPosition >= 0);
+    }
+
+    private expandParameters(
+        globalPosition: number,
+        snapshot: Snapshot,
+        definesMap: Map<string, DefineStatement[]>,
+        defines: DefineStatement[],
+        expansions: DefineStatement[],
+        parameterReplacements: ElementRange[]
+    ): void {
+        const textEdits: TextEdit[] = [];
+        for (const replacement of parameterReplacements) {
+            if (Preprocessor.isInString(replacement.startPosition, snapshot)) {
+                continue;
+            }
+            const replacementSnapshot = new Snapshot(invalidVersion, '', '');
+            replacementSnapshot.text = snapshot.text.substring(replacement.startPosition, replacement.endPosition);
+            const tes = this.expandAll(
+                definesMap,
+                defines,
+                expansions,
+                replacementSnapshot,
+                globalPosition + replacement.startPosition
+            );
+            tes.forEach((te) => {
+                te.startPosition += replacement.startPosition;
+                te.endPosition += replacement.startPosition;
+            });
+            textEdits.push(...tes);
+        }
+        Preprocessor.executeTextEdits(textEdits, snapshot, true);
+    }
+
+    private getDefineStatementsInHlslBlock(hb: HlslBlock, sb: ShaderBlock | null): DefineStatement[] {
+        const result = this.snapshot.globalHlslBlocks
+            .filter((h) => (h.stage === hb.stage || h.stage === null) && h.endPosition <= hb.endPosition)
+            .flatMap((h) => h.defineStatements);
+        if (sb) {
+            result.push(
+                ...sb.hlslBlocks
+                    .filter((h) => (h.stage === hb.stage || h.stage === null) && h.endPosition <= hb.endPosition)
+                    .flatMap((h) => h.defineStatements)
+            );
+        }
+        const predefineSnapshot = getPredefineSnapshot();
+        if (predefineSnapshot) {
+            result.push(...predefineSnapshot.defineStatements);
         }
         return result;
     }
 
-    private static stringify(argument: string): string {
+    private stringify(argument: string): string {
         const argumentSnapshot = new Snapshot(invalidVersion, '', '');
         argumentSnapshot.text = argument;
         Preprocessor.addStringRanges(0, argument.length, argumentSnapshot);
+        const textEdits: TextEdit[] = [];
         const regex = /"|\\/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(argumentSnapshot.text))) {
             const position = regexResult.index;
             const quote = regexResult[0] === '"';
             if (quote || Preprocessor.isInString(position, argumentSnapshot)) {
-                Preprocessor.changeTextAndAddOffset(position, position, position + 2, '\\', argumentSnapshot);
-                regex.lastIndex = position + 2;
+                textEdits.push({
+                    startPosition: position,
+                    endPosition: position,
+                    newText: '\\',
+                });
             }
         }
+        Preprocessor.executeTextEdits(textEdits, argumentSnapshot, false);
         return `"${argumentSnapshot.text}"`;
     }
 
-    private static isCircularDefineExpansion(dc: DefineContext | null, ds: DefineStatement | null): boolean {
-        let currentDc: DefineContext | null = dc;
-        while (currentDc) {
-            if (currentDc.define === ds) {
-                return true;
-            }
-            currentDc = currentDc.parent;
+    public static createDefineContext(
+        position: number,
+        beforeEndPosition: number,
+        afterEndPosition: number,
+        nameOriginalRange: Range,
+        ds: DefineStatement,
+        snapshot: Snapshot,
+        isVisible: boolean,
+        expansion: string | null,
+        da: Arguments | null = null
+    ): DefineContext {
+        const dc: DefineContext = {
+            define: ds,
+            expansion,
+            startPosition: position,
+            beforeEndPosition,
+            afterEndPosition,
+            nameOriginalRange,
+            isVisible,
+            arguments: da,
+        };
+        snapshot.defineContexts.push(dc);
+        if (ds.realDefine) {
+            ds.realDefine.usages.push(dc);
         }
-        return false;
+        ds.usages.push(dc);
+        return dc;
     }
 }

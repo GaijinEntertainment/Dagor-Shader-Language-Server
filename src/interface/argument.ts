@@ -1,7 +1,10 @@
 import { Position, Range } from 'vscode-languageserver';
 
-export interface MacroArgument {
+export interface Argument {
     content: string;
     originalRange: Range;
+    position: number;
+    endPosition: number;
     trimmedOriginalStartPosition: Position;
+    trimmedStartPosition: number;
 }

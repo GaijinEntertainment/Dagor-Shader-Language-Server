@@ -11,6 +11,7 @@ import {
 } from 'vscode-languageserver';
 
 import { getCapabilities } from '../core/capability-manager';
+import { HLSLI_EXTENSION, HLSL_EXTENSION } from '../core/constant';
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
 import {
@@ -24,7 +25,7 @@ import {
     dshlPrimitiveTypes,
     dshlProperties,
 } from '../helper/dshl-info';
-import { rangeContains } from '../helper/helper';
+import { isBeforeOrEqual, rangeContains } from '../helper/helper';
 import {
     hlslAttributes,
     hlslBufferTypes,
@@ -44,8 +45,12 @@ import {
     hlslVariables,
     hlslVectorMatrixStringTypes,
 } from '../helper/hlsl-info';
+import { DefineStatement } from '../interface/define-statement';
+import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
+import { ShaderStage } from '../interface/shader-stage';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
+import { getPredefineSnapshot } from '../processor/include-processor';
 import { getIncludeCompletionInfos } from '../processor/include-resolver';
 
 export async function completionProvider(
@@ -70,11 +75,11 @@ export async function completionProvider(
         return null;
     }
     const uri = params.textDocument.uri;
-    const hlsl = uri.endsWith('.hlsl') || uri.endsWith('.hlsli') || snapshot.isInHlslBlock(position);
+    const hlsl = uri.endsWith(HLSL_EXTENSION) || uri.endsWith(HLSLI_EXTENSION) || snapshot.isInHlslBlock(position);
     const result: CompletionItem[] = [];
     addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
     if (hlsl) {
-        addHlslItems(result);
+        addHlslItems(result, snapshot, position);
     } else {
         addDshlItems(result, snapshot, position);
     }
@@ -85,7 +90,8 @@ function isCursorInCommentOrString(snapshot: Snapshot, position: Position): bool
     return snapshot.noCodeCompletionRanges.some((r) => rangeContains(r, position));
 }
 
-function addHlslItems(result: CompletionItem[]): void {
+function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
+    addDefines(result, snapshot, position);
     addCompletionItems(result, hlslKeywords, CompletionItemKind.Keyword, 'keyword');
     addCompletionItems(result, hlslPreprocessorDirectives, CompletionItemKind.Keyword, 'preprocessor directive');
     addCompletionItems(
@@ -118,6 +124,68 @@ function addHlslItems(result: CompletionItem[]): void {
     }
 }
 
+function addDefines(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
+    const predefineSnapshot = getPredefineSnapshot();
+    if (predefineSnapshot) {
+        addCompletionItems(
+            result,
+            predefineSnapshot.defineStatements.map((ds) => ({ name: ds.name })),
+            CompletionItemKind.Constant,
+            'define'
+        );
+    }
+    if (snapshot.uri.endsWith(HLSL_EXTENSION) || snapshot.uri.endsWith(HLSLI_EXTENSION)) {
+        const defines = snapshot.defineStatements;
+        addDefinesIfAvailable(result, defines, position);
+    } else {
+        const md = snapshot.macroDeclarations.find((md) => rangeContains(md.contentOriginalRange, position));
+        const definesSnapshot = md?.contentSnapshot ?? snapshot;
+        addDefinesInDshl(result, definesSnapshot, position);
+        if (md) {
+            const hb = definesSnapshot.hlslBlocks.find((hb) => rangeContains(hb.originalRange, position)) ?? null;
+            if (hb) {
+                addDefinesInHlslBlocks(result, snapshot.globalHlslBlocks, md.originalRange.start, hb.stage);
+            }
+        }
+    }
+}
+
+function addDefinesInDshl(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
+    const hb = snapshot.hlslBlocks.find((hb) => rangeContains(hb.originalRange, position)) ?? null;
+    if (hb) {
+        const shaderBlock = snapshot.shaderBlocks.find((sb) => rangeContains(sb.originalRange, position));
+        if (shaderBlock) {
+            addDefinesInHlslBlocks(result, shaderBlock.hlslBlocks, position, hb.stage);
+        }
+        addDefinesInHlslBlocks(result, snapshot.globalHlslBlocks, position, hb.stage);
+    }
+}
+
+function addDefinesInHlslBlocks(
+    result: CompletionItem[],
+    hbs: HlslBlock[],
+    position: Position,
+    stage: ShaderStage | null
+): void {
+    const defines = hbs.filter((hb) => hb.stage === stage || hb.stage === null).flatMap((hb) => hb.defineStatements);
+    addDefinesIfAvailable(result, defines, position);
+}
+
+function addDefinesIfAvailable(result: CompletionItem[], dss: DefineStatement[], position: Position): void {
+    const defines: LanguageElementInfo[] = [];
+    for (const ds of dss) {
+        if (
+            isBeforeOrEqual(ds.codeCompletionPosition, position) &&
+            (!ds.undefCodeCompletionPosition || isBeforeOrEqual(position, ds.undefCodeCompletionPosition)) &&
+            !result.some((r) => r.label === ds.name && r.kind === CompletionItemKind.Constant) &&
+            !defines.some((d) => d.name === ds.name)
+        ) {
+            defines.push({ name: ds.name });
+        }
+    }
+    addCompletionItems(result, defines, CompletionItemKind.Constant, 'define');
+}
+
 function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
     addCompletionItems(result, dshlKeywords, CompletionItemKind.Keyword, 'keyword');
     addCompletionItems(result, dshlEnumValues, CompletionItemKind.Value, 'value');
@@ -136,14 +204,7 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
 
 function getMacros(snapshot: Snapshot, position: Position): LanguageElementInfo[] {
     return snapshot.macros
-        .filter((m) =>
-            m.declarations.some(
-                (md) =>
-                    md.codeCompletionPosition.line < position.line ||
-                    (md.codeCompletionPosition.line === position.line &&
-                        md.codeCompletionPosition.character <= position.character)
-            )
-        )
+        .filter((m) => m.declarations.some((md) => isBeforeOrEqual(md.codeCompletionPosition, position)))
         .map((m) => ({
             name: m.name,
         }));

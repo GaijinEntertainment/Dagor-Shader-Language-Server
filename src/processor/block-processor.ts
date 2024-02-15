@@ -1,7 +1,7 @@
 import { Snapshot } from '../core/snapshot';
 import { ElementRange } from '../interface/element-range';
 
-export class HlslBlockProcesor {
+export class BlockProcesor {
     private snapshot: Snapshot;
     private index = -1;
     private character = '';
@@ -16,7 +16,7 @@ export class HlslBlockProcesor {
         this.snapshot = snapshot;
     }
 
-    public getHlslBlock(startPosition: number): ElementRange | null {
+    public getBlock(startPosition: number, offset = 0): ElementRange | null {
         for (this.index = startPosition; this.index < this.snapshot.text.length; this.index++) {
             this.setCharacter(this.snapshot.text);
             if (this.isCharacterWhitespace()) {
@@ -27,8 +27,8 @@ export class HlslBlockProcesor {
                 this.blockStartPosition = this.index + 1;
             } else if (this.isBlockEnd()) {
                 return {
-                    startPosition: this.blockStartPosition,
-                    endPosition: this.index,
+                    startPosition: offset + this.blockStartPosition,
+                    endPosition: offset + this.index,
                 };
             } else if (this.insideBlock) {
                 this.handleCharacters();

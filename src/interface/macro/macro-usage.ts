@@ -1,13 +1,13 @@
 import { Range } from 'vscode-languageserver';
+import { Argument } from '../argument';
 import { Macro } from './macro';
-import { MacroArgument } from './macro-argument';
 import { MacroDeclaration } from './macro-declaration';
 
 export interface MacroUsage {
     nameOriginalRange: Range;
     parameterListOriginalRange: Range;
     isVisible: boolean;
-    arguments: MacroArgument[];
+    arguments: Argument[];
     macro: Macro;
     macroDeclaration: MacroDeclaration | null;
 }

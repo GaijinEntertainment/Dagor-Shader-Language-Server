@@ -3,6 +3,7 @@ import { DocumentUri, Position } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 
 import { getConfiguration } from '../core/configuration-manager';
+import { DSHL_EXTENSION, HLSLI_EXTENSION, HLSL_EXTENSION } from '../core/constant';
 import { log, logDocumentLinkResolveShaderConfig } from '../core/debug';
 import { exists, getFolderContent, isFile } from '../helper/file-helper';
 import { FileSystemItemInfo } from '../interface/file-system/file-system-item-info';
@@ -63,9 +64,9 @@ function filterLocalItems(fsi: FileSystemItemInfo, includerFileName: string, typ
         return false;
     }
     if (type === IncludeType.DSHL) {
-        return fsi.name.endsWith('.dshl');
+        return fsi.name.endsWith(DSHL_EXTENSION);
     } else {
-        return fsi.name.endsWith('.hlsl') || fsi.name.endsWith('.hlsli');
+        return fsi.name.endsWith(HLSL_EXTENSION) || fsi.name.endsWith(HLSLI_EXTENSION);
     }
 }
 
