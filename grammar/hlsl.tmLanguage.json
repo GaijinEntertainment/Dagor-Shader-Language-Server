@@ -353,7 +353,7 @@
                 {
                     "comment": "DAGOR NON-PRIMITIVE TYPE",
                     "name": "storage.type.dshl",
-                    "match": "@((tex|smp)(2d|3d|Array|Cube|CubeArray)?|shd|buf|cbuf|uav)\\b"
+                    "match": "@((tex|smp)(2d|3d|Array|Cube|CubeArray)?|shd|buf|cbuf|uav|sampler)\\b"
                 },
                 {
                     "comment": "VECTOR, MATRIX AND STRING TYPE",
