@@ -21,10 +21,10 @@ jobs:
               working-directory: ./grammar/antlr
             - name: Generate DSHL ANTLR lexer
               run: npx antlr4ts -o "../../src/_generated" "DshlLexer.g4"
-              working-directory: ./Dagor-Shader-Language-Server/grammar/antlr
+              working-directory: ./grammar/antlr
             - name: Generate DSHL ANTLR parser
               run: npx antlr4ts -o "../../src/_generated" -no-listener -visitor "DshlParser.g4"
-              working-directory: ./Dagor-Shader-Language-Server/grammar/antlr
+              working-directory: ./grammar/antlr
             - name: Build
               run: npm run build
             - name: ESLint
