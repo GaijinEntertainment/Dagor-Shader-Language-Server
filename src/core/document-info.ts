@@ -1,11 +1,16 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
+import { ANTLRInputStream, CommonTokenStream } from 'antlr4ts';
 import { URI } from 'vscode-uri';
+import { DshlLexer } from '../_generated/DshlLexer';
+import { DshlParser } from '../_generated/DshlParser';
 import { getDocuments, syncInitialization } from '../helper/server-helper';
 import { DocumentVersion } from '../interface/document-version';
 import { SnapshotVersion, invalidVersion } from '../interface/snapshot-version';
+import { DshlVisitor } from '../processor/dshl-visitor';
 import { getShaderConfigVersion, syncIncludeFoldersCollection } from '../processor/include-processor';
 import { preprocess } from '../processor/preprocessor';
+import { HLSLI_EXTENSION, HLSL_EXTENSION } from './constant';
 import { getFileVersion } from './file-cache-manager';
 import { Snapshot } from './snapshot';
 
@@ -96,9 +101,35 @@ export class DocumentInfo {
         await syncIncludeFoldersCollection();
         const snapshot = new Snapshot(this.analyzationInProgressVersion, this.document.uri, this.document.getText());
         await preprocess(snapshot);
+        this.analyzeSnapshot(snapshot);
         if (this.analyzedVersion <= snapshot.version) {
             this.analyzedVersion = snapshot.version;
             this.snapshot = snapshot;
         }
+    }
+
+    private analyzeSnapshot(snapshot: Snapshot): void {
+        if (this.document.uri.endsWith(HLSL_EXTENSION) || this.document.uri.endsWith(HLSLI_EXTENSION)) {
+            const lexer = this.createLexer(snapshot.text);
+            const parser = this.createParser(lexer);
+            const tree = parser.hlsl();
+            const visitor = new DshlVisitor(snapshot);
+            visitor.visit(tree);
+        }
+    }
+
+    private createLexer(text: string): DshlLexer {
+        //The ANTLRInputStream class is deprecated, however as far as I know this is the only way the TypeScript version of ANTLR accepts UTF-16 strings.
+        //The CharStreams.fromString method only accepts UTF-8 and other methods of the CharStreams class are not implemented in TypeScript.
+        const charStream = new ANTLRInputStream(text);
+        const lexer = new DshlLexer(charStream);
+        return lexer;
+    }
+
+    private createParser(lexer: DshlLexer): DshlParser {
+        const tokenStream = new CommonTokenStream(lexer);
+        const parser = new DshlParser(tokenStream);
+        parser.removeErrorListeners();
+        return parser;
     }
 }

@@ -27,5 +27,14 @@ export async function foldingRangesProvider(params: FoldingRangeParams): Promise
                 : undefined,
         });
     }
+    for (const ir of snapshot.foldingRanges) {
+        result.push({
+            startLine: ir.start.line,
+            endLine: ir.end.line - 1,
+            kind: getCapabilities().foldingRangeKinds.includes(FoldingRangeKind.Region)
+                ? FoldingRangeKind.Region
+                : undefined,
+        });
+    }
     return result;
 }

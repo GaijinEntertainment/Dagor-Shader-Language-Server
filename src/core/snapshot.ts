@@ -42,6 +42,7 @@ export class Snapshot {
     public globalHlslBlocks: HlslBlock[] = [];
     public hlslBlocks: HlslBlock[] = [];
     public noCodeCompletionRanges: Range[] = [];
+    public foldingRanges: Range[] = [];
     public preprocessingOffsets: PreprocessingOffset[] = [];
 
     public constructor(version: SnapshotVersion, uri: DocumentUri, text: string, isPredefined = false) {
