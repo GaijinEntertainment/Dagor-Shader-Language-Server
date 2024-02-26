@@ -10,13 +10,15 @@ dshl_function_call: IDENTIFIER LRB expression_list? RRB;
 
 dshl_macro_statement: (MACRO | DEFINE_MACRO_IF_NOT_DEFINED) IDENTIFIER LRB (
 		IDENTIFIER (COMMA IDENTIFIER)*
-	)? dshl_statement* ENDMACRO;
+	)? RRB dshl_statement* ENDMACRO;
 
 dshl_interval_declaration:
 	INTERVAL IDENTIFIER COLON (dshl_expression COMMA)* IDENTIFIER SEMICOLON;
 
 dshl_variable_declaration:
-	dshl_modifier* IDENTIFIER IDENTIFIER (ASSIGN dshl_expression)? dshl_modifier* SEMICOLON;
+	dshl_modifier* IDENTIFIER IDENTIFIER dshl_array_subscript? (
+		ASSIGN dshl_expression
+	)? dshl_modifier* SEMICOLON;
 
 dshl_statement:
 	ASSUME IDENTIFIER ASSIGN dshl_expression SEMICOLON
@@ -25,20 +27,39 @@ dshl_statement:
 	| RENDER_TRANS SEMICOLON
 	| NO_ABLEND SEMICOLON
 	| RENDER_STAGE IDENTIFIER SEMICOLON
+	| dshl_if_statemetn
+	| dshl_function_call SEMICOLON
+	| dshl_shader_declaration
+	| dshl_hlsl_block
+	| dshl_assignment
+	| dshl_block_block
+	| dshl_supports_statement
 	| dshl_statement_block
 	| dshl_variable_declaration
 	| dshl_interval_declaration
 	| dshl_macro_statement
-	| dshl_preshader;
+	| dshl_preshader
+	| dshl_function_call;
 
 dshl_assignment:
-	IDENTIFIER AT IDENTIFIER (
-		ASSIGN dshl_expression SEMICOLON
-		| COLON IDENTIFIER LRB IDENTIFIER RRB dshl_hlsl_block
+	IDENTIFIER ASSIGN dshl_expression SEMICOLON
+	| IDENTIFIER AT IDENTIFIER dshl_array_subscript? (
+		ASSIGN dshl_expression SEMICOLON?
+		| COLON IDENTIFIER LRB dshl_expression RRB dshl_hlsl_block SEMICOLON?
+		| ASSIGN IDENTIFIER dshl_hlsl_block SEMICOLON
 	);
 
+dshl_array_subscript: LSB dshl_expression? RSB;
+
+dshl_if_statemetn:
+	IF LRB dshl_expression RRB dshl_statement (
+		ELSE dshl_statement
+	)?;
+
+dshl_expression_list: dshl_expression (COMMA dshl_expression)*;
+
 dshl_shader_declaration:
-	SHADER IDENTIFIER (COMMA IDENTIFIER)? dshl_statement_block;
+	SHADER IDENTIFIER (COMMA IDENTIFIER)* dshl_statement_block;
 
 dshl_preshader: LRB IDENTIFIER RRB dshl_statement_block;
 
@@ -58,17 +79,18 @@ dshl_supports_statement: SUPPORTS IDENTIFIER SEMICOLON;
 dshl_expression:
 	(
 		literal
-		| function_call
-		| hlsl_identifier
-		| LCB expression_list RCB
+		| dshl_function_call
+		| SHADER
+		| IDENTIFIER
+		| LCB dshl_expression_list RCB
 	)
-	| LRB dshl_expression RRB
+	| LRB dshl_expression_list RRB
 	| dshl_expression (
 		INCREMENT
 		| DECREMENT
-		| array_subscript
-		| DOT hlsl_identifier
-		| DOT function_call
+		| dshl_array_subscript
+		| DOT IDENTIFIER
+		| DOT dshl_function_call
 	)
 	| (
 		INCREMENT
@@ -162,8 +184,8 @@ variable_declaration:
 	)*;
 
 variable_initialization:
-	hlsl_identifier (LSB expression RSB)* semantic* packoffset* register* (
-		ASSIGN expression
+	hlsl_identifier (AT IDENTIFIER)? (LSB expression RSB)* semantic* packoffset* register* (
+		(ASSIGN expression | statement_block)
 	)?;
 
 type_declaration:
@@ -174,7 +196,8 @@ type_keyowrd: STRUCT | ENUM CLASS | ENUM | CLASS | INTERFACE;
 namespace: NAMESPACE hlsl_identifier statement_block;
 
 struct_member_declaration:
-	interpolation_modifier* type hlsl_identifier SEMICOLON
+	//interpolation_modifier* type hlsl_identifier SEMICOLON
+	variable_declaration_statement
 	| function_definition;
 
 interpolation_modifier:
@@ -231,21 +254,26 @@ discard_satement: DISCARD SEMICOLON;
 do_statement:
 	do_attribute* DO statement WHILE LRB expression RRB SEMICOLON;
 
-do_attribute: LSB hlsl_identifier RSB; // fastopt
+do_attribute:
+	LSB hlsl_identifier RSB
+	| hlsl_identifier; // fastopt
 
 for_statement:
-	loop_attribute* FOR LRB expression_list? SEMICOLON expression_list? SEMICOLON expression_list?
-		RRB statement;
+	loop_attribute* FOR LRB variable_declaration? SEMICOLON expression_list? SEMICOLON
+		expression_list? RRB statement;
 
 loop_attribute:
-	LSB hlsl_identifier (LRB expression RRB)? RSB; // unroll(x), loop, fastopt, allow_uav_condition
+	LSB hlsl_identifier (LRB expression RRB)? RSB
+	| hlsl_identifier; // unroll(x), loop, fastopt, allow_uav_condition
 
 if_statement:
 	if_attribute* IF LRB expression RRB statement (
 		ELSE statement
 	)?;
 
-if_attribute: hlsl_identifier; // flatten, branch
+if_attribute:
+	LSB hlsl_identifier RSB
+	| hlsl_identifier; // flatten, branch
 
 switch_statement:
 	switch_attribute* SWITCH LRB expression RRB statement;
@@ -255,7 +283,8 @@ case: CASE expression COLON statement*;
 default: DEFAULT COLON statement*;
 
 switch_attribute:
-	hlsl_identifier; // flatten, branch, forcecase, call
+	LSB hlsl_identifier RSB
+	| hlsl_identifier; // flatten, branch, forcecase, call
 
 while_statement:
 	loop_attribute* WHILE LRB expression RRB statement;
@@ -263,7 +292,7 @@ while_statement:
 function_call:
 	hlsl_identifier (LAB expression_list? RAB)* LRB expression_list? RRB;
 
-expression_list: expression (COMMA expression)*;
+expression_list: expression (COMMA expression)* COMMA?;
 
 expression:
 	(
@@ -272,7 +301,7 @@ expression:
 		| hlsl_identifier
 		| LCB expression_list RCB
 	)
-	| LRB expression RRB
+	| LRB expression_list RRB
 	| expression (
 		INCREMENT
 		| DECREMENT
@@ -287,6 +316,7 @@ expression:
 		| SUBTRACT
 		| NOT
 		| BITWISE_NOT
+		| LRB IDENTIFIER RRB
 	) expression
 	| expression (MULTIPLY | DIVIDE | MODULO) expression
 	| expression (ADD | SUBTRACT) expression

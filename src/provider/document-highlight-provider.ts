@@ -6,6 +6,7 @@ import { rangeContains } from '../helper/helper';
 import { DefineStatement } from '../interface/define-statement';
 import { Macro } from '../interface/macro/macro';
 import { MacroParameter } from '../interface/macro/macro-parameter';
+import { VariableDeclaration } from '../interface/variable/variable-declaration';
 
 export async function documentHighlightProvider(
     params: DocumentHighlightParams
@@ -60,6 +61,25 @@ export async function documentHighlightProvider(
                 range: dc.nameOriginalRange,
                 kind: DocumentHighlightKind.Text,
             });
+        }
+        return result;
+    }
+    const vd = getVariableDeclaration(snapshot, params);
+    if (vd) {
+        const result: DocumentHighlight[] = [];
+        if (vd.isVisible && vd.uri === params.textDocument.uri) {
+            result.push({
+                range: vd.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        for (const vu of vd.usages) {
+            if (vu.isVisible) {
+                result.push({
+                    range: vu.originalRange,
+                    kind: DocumentHighlightKind.Text,
+                });
+            }
         }
         return result;
     }
@@ -119,4 +139,18 @@ function getMacroParameter(snapshot: Snapshot, params: DocumentHighlightParams):
                 mp.usages.some((mpu) => rangeContains(mpu.originalRange, params.position))
         ) ?? null
     );
+}
+
+function getVariableDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): VariableDeclaration | null {
+    const vd = snapshot.variableDeclarations.find(
+        (vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, params.position)
+    );
+    if (vd) {
+        return vd;
+    }
+    const vu = snapshot.variableUsages.find((vu) => vu.isVisible && rangeContains(vu.originalRange, params.position));
+    if (vu) {
+        return vu.declaration;
+    }
+    return null;
 }

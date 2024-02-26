@@ -15,6 +15,8 @@ import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { RangeWithChildren } from '../interface/range-with-children';
 import { ShaderBlock } from '../interface/shader-block';
 import { SnapshotVersion } from '../interface/snapshot-version';
+import { VariableDeclaration } from '../interface/variable/variable-declaration';
+import { VariableUsage } from '../interface/variable/variable-usage';
 import { getPredefineSnapshot } from '../processor/include-processor';
 import { HLSLI_EXTENSION, HLSL_EXTENSION } from './constant';
 
@@ -43,6 +45,8 @@ export class Snapshot {
     public hlslBlocks: HlslBlock[] = [];
     public noCodeCompletionRanges: Range[] = [];
     public foldingRanges: Range[] = [];
+    public variableDeclarations: VariableDeclaration[] = [];
+    public variableUsages: VariableUsage[] = [];
     public preprocessingOffsets: PreprocessingOffset[] = [];
 
     public constructor(version: SnapshotVersion, uri: DocumentUri, text: string, isPredefined = false) {

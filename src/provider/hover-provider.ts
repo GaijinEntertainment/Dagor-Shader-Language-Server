@@ -7,6 +7,7 @@ import { DefineContext } from '../interface/define-context';
 import { toStringDefineStatementWithContent } from '../interface/define-statement';
 import { toStringMacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroUsage, getBestMacroDeclaration } from '../interface/macro/macro-usage';
+import { VariableUsage } from '../interface/variable/variable-usage';
 
 export async function hoverProvider(params: HoverParams): Promise<Hover | undefined | null> {
     const snapshot = await getSnapshot(params.textDocument.uri);
@@ -27,6 +28,13 @@ export async function hoverProvider(params: HoverParams): Promise<Hover | undefi
         return {
             contents: createDefineHoverContent(dc),
             range: dc.nameOriginalRange,
+        };
+    }
+    const vu = snapshot.variableUsages.find((vu) => vu.isVisible && rangeContains(vu.originalRange, params.position));
+    if (vu) {
+        return {
+            contents: createVariableHoverContent(vu),
+            range: vu.originalRange,
         };
     }
     return null;
@@ -79,6 +87,25 @@ function getDefineValue(dc: DefineContext): string {
         } else {
             return `${define}\nExpands to:\n${dc.expansion}`;
         }
+    } else {
+        return '';
+    }
+}
+
+function createVariableHoverContent(vu: VariableUsage): MarkupContent {
+    return {
+        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
+        value: getVariableValue(vu),
+    };
+}
+
+function getVariableValue(vu: VariableUsage): string {
+    const vd = vu.declaration;
+    const declaration = `${vd.type} ${vd.name};`;
+    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
+        return `\`\`\`dshl\n${declaration}\n\`\`\``;
+    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
+        return declaration;
     } else {
         return '';
     }

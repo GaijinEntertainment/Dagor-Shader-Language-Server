@@ -1,6 +1,7 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { ANTLRInputStream, CommonTokenStream } from 'antlr4ts';
+import { ParseTree } from 'antlr4ts/tree/ParseTree';
 import { URI } from 'vscode-uri';
 import { DshlLexer } from '../_generated/DshlLexer';
 import { DshlParser } from '../_generated/DshlParser';
@@ -109,13 +110,16 @@ export class DocumentInfo {
     }
 
     private analyzeSnapshot(snapshot: Snapshot): void {
+        const lexer = this.createLexer(snapshot.text);
+        const parser = this.createParser(lexer);
+        let tree: ParseTree;
         if (this.document.uri.endsWith(HLSL_EXTENSION) || this.document.uri.endsWith(HLSLI_EXTENSION)) {
-            const lexer = this.createLexer(snapshot.text);
-            const parser = this.createParser(lexer);
-            const tree = parser.hlsl();
-            const visitor = new DshlVisitor(snapshot);
-            visitor.visit(tree);
+            tree = parser.hlsl();
+        } else {
+            tree = parser.dshl();
         }
+        const visitor = new DshlVisitor(snapshot);
+        visitor.visit(tree);
     }
 
     private createLexer(text: string): DshlLexer {
@@ -129,7 +133,7 @@ export class DocumentInfo {
     private createParser(lexer: DshlLexer): DshlParser {
         const tokenStream = new CommonTokenStream(lexer);
         const parser = new DshlParser(tokenStream);
-        parser.removeErrorListeners();
+        // parser.removeErrorListeners();
         return parser;
     }
 }

@@ -51,6 +51,16 @@ function createDocumentSymbols(snapshot: Snapshot, uri: DocumentUri): DocumentSy
     for (const ds of dss) {
         result.push(defineToDocumentSymbol(ds));
     }
+    const vds = snapshot.variableDeclarations.filter((vd) => vd.isVisible);
+    for (const vd of vds) {
+        result.push({
+            name: vd.name,
+            kind: SymbolKind.Variable,
+            range: vd.originalRange,
+            selectionRange: vd.nameOriginalRange,
+            detail: vd.type,
+        });
+    }
     return result;
 }
 

@@ -6,6 +6,7 @@ import { DefineStatement } from '../interface/define-statement';
 import { Macro } from '../interface/macro/macro';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroParameter } from '../interface/macro/macro-parameter';
+import { VariableDeclaration } from '../interface/variable/variable-declaration';
 
 export async function linkProviderBase(
     position: Position,
@@ -38,6 +39,16 @@ export async function linkProviderBase(
     }
     if (implementation) {
         return null;
+    }
+    const vd = snapshot.variableDeclarations.find(
+        (vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, position)
+    );
+    if (vd) {
+        return getVariableDeclarationLocation(vd, linkSupport);
+    }
+    const vu = snapshot.variableUsages.find((vu) => vu.isVisible && rangeContains(vu.originalRange, position));
+    if (vu) {
+        return getVariableDeclarationLocation(vu.declaration, linkSupport);
     }
     md = snapshot.macroDeclarations.find((md) => md.uri === uri && rangeContains(md.originalRange, position));
     if (md) {
@@ -103,6 +114,23 @@ function getParameterLocation(mp: MacroParameter, uri: DocumentUri, linkSupport:
         return {
             range: mp.originalRange,
             uri,
+        };
+    }
+}
+
+function getVariableDeclarationLocation(vd: VariableDeclaration, linkSupport: boolean): LocationLink[] | Location {
+    if (linkSupport) {
+        return [
+            {
+                targetRange: vd.originalRange,
+                targetSelectionRange: vd.nameOriginalRange,
+                targetUri: vd.uri,
+            },
+        ];
+    } else {
+        return {
+            range: vd.nameOriginalRange,
+            uri: vd.uri,
         };
     }
 }
