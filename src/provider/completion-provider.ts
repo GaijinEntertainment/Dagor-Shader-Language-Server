@@ -46,6 +46,7 @@ import {
     hlslVectorMatrixStringTypes,
 } from '../helper/hlsl-info';
 import { DefineStatement } from '../interface/define-statement';
+import { toStringFunctionParameters } from '../interface/function/function-declaration';
 import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
 import { ShaderStage } from '../interface/shader-stage';
@@ -195,7 +196,16 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     addCompletionItems(result, dshlNonPrimitiveShortTypes, CompletionItemKind.Class, 'type');
     addCompletionItems(result, dshlPrimitiveShortTypes, CompletionItemKind.Class, 'type');
     addCompletionItems(result, dshlProperties, CompletionItemKind.Property, 'property');
-    addCompletionItems(result, dshlFunctions, CompletionItemKind.Function, 'function');
+    result.push(
+        ...dshlFunctions.map<CompletionItem>((fi) =>
+            getCompletionItem(
+                fi,
+                CompletionItemKind.Function,
+                'function',
+                `(${toStringFunctionParameters(fi.parameters)})`
+            )
+        )
+    );
     addCompletionItems(result, getMacros(snapshot, position), CompletionItemKind.Constant, 'macro');
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, dshlSnippets, CompletionItemKind.Snippet, 'snippet');
@@ -232,19 +242,24 @@ function addCompletionItems(
     result: CompletionItem[],
     items: LanguageElementInfo[],
     kind: CompletionItemKind,
-    type = ''
+    type: string
 ): void {
     result.push(...items.map<CompletionItem>((item) => getCompletionItem(item, kind, type)));
 }
 
-function getCompletionItem(item: LanguageElementInfo, kind: CompletionItemKind, type = ''): CompletionItem {
+function getCompletionItem(
+    item: LanguageElementInfo,
+    kind: CompletionItemKind,
+    type: string,
+    parameters?: string
+): CompletionItem {
     return {
         label: item.name,
         kind: getKind(kind),
         detail: getDetail(item, type),
         sortText: item.sortName,
         filterText: item.filterText,
-        labelDetails: getLabelDetails(item),
+        labelDetails: getLabelDetails(item, parameters),
         documentation: getDocumentation(item),
         insertText: item.insertText,
         insertTextFormat: item.isSnippet ? InsertTextFormat.Snippet : undefined,
@@ -268,10 +283,11 @@ function getDetail(item: LanguageElementInfo, type: string): string {
     }
 }
 
-function getLabelDetails(item: LanguageElementInfo): CompletionItemLabelDetails | undefined {
+function getLabelDetails(item: LanguageElementInfo, parameters?: string): CompletionItemLabelDetails | undefined {
     return getCapabilities().completionLabelDetails
         ? {
               description: item.type,
+              detail: parameters,
           }
         : undefined;
 }
