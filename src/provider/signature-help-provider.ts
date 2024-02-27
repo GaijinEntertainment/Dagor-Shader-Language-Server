@@ -3,6 +3,9 @@ import { Position, SignatureHelp, SignatureHelpParams } from 'vscode-languageser
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
+import { toStringFunctionDeclaration } from '../interface/function/function-declaration';
+import { toStringFunctionParameter } from '../interface/function/function-parameter';
+import { FunctionUsage } from '../interface/function/function-usage';
 import { toStringMacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroUsage, getBestMacroDeclarationIndex } from '../interface/macro/macro-usage';
 
@@ -14,28 +17,48 @@ export async function signatureHelpProvider(params: SignatureHelpParams): Promis
     const mu = snapshot.macroUsages.find(
         (mu) => mu.isVisible && rangeContains(mu.parameterListOriginalRange, params.position)
     );
-    if (!mu || !mu.macro.declarations.length) {
-        return null;
-    }
-    return {
-        signatures: mu.macro.declarations.map((md) => ({
-            label: toStringMacroDeclaration(md),
-            parameters: md.parameters.map((mp) => ({
-                label: mp.name,
+    if (mu?.macro.declarations.length) {
+        return {
+            signatures: mu.macro.declarations.map((md) => ({
+                label: toStringMacroDeclaration(md),
+                parameters: md.parameters.map((mp) => ({
+                    label: mp.name,
+                })),
             })),
-        })),
-        activeSignature: getActiveSignature(mu, params),
-        activeParameter: getActiveParameter(mu, params.position),
-    };
+            activeSignature: getActiveSignature(mu, params),
+            activeParameter: getActiveParameter(mu, params.position),
+        };
+    }
+
+    const fu = snapshot.functionUsages.find(
+        (fu) => fu.isVisible && rangeContains(fu.parameterListOriginalRange, params.position)
+    );
+    if (fu) {
+        const fd = fu.declaration;
+        return {
+            signatures: [
+                {
+                    label: toStringFunctionDeclaration(fd),
+                    parameters: fd.parameters.map((fp) => ({
+                        label: toStringFunctionParameter(fp),
+                    })),
+                },
+            ],
+            activeSignature: 0,
+            activeParameter: getActiveParameter(fu, params.position),
+        };
+    }
+
+    return null;
 }
 
-function getActiveParameter(mu: MacroUsage, position: Position): number | undefined {
+function getActiveParameter(usage: MacroUsage | FunctionUsage, position: Position): number | undefined {
     if (!getCapabilities().signatureHelpActiveParameter) {
         return undefined;
     }
-    let activeParameter = mu.arguments.findIndex((ma) => rangeContains(ma.originalRange, position));
+    let activeParameter = usage.arguments.findIndex((ma) => rangeContains(ma.originalRange, position));
     if (activeParameter === -1) {
-        activeParameter = mu.arguments.length;
+        activeParameter = usage.arguments.length;
     }
     return activeParameter;
 }

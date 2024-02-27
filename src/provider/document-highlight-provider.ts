@@ -4,6 +4,7 @@ import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
 import { rangeContains } from '../helper/helper';
 import { DefineStatement } from '../interface/define-statement';
+import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { Macro } from '../interface/macro/macro';
 import { MacroParameter } from '../interface/macro/macro-parameter';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
@@ -83,6 +84,19 @@ export async function documentHighlightProvider(
         }
         return result;
     }
+    const fd = getFunctionDeclaration(snapshot, params);
+    if (fd) {
+        const result: DocumentHighlight[] = [];
+        for (const fu of fd.usages) {
+            if (fu.isVisible) {
+                result.push({
+                    range: fu.nameOriginalRange,
+                    kind: DocumentHighlightKind.Text,
+                });
+            }
+        }
+        return result;
+    }
     return null;
 }
 
@@ -151,6 +165,14 @@ function getVariableDeclaration(snapshot: Snapshot, params: DocumentHighlightPar
     const vu = snapshot.variableUsages.find((vu) => vu.isVisible && rangeContains(vu.originalRange, params.position));
     if (vu) {
         return vu.declaration;
+    }
+    return null;
+}
+
+function getFunctionDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): FunctionDeclaration | null {
+    const fu = snapshot.functionUsages.find((vu) => vu.isVisible && rangeContains(vu.originalRange, params.position));
+    if (fu) {
+        return fu.declaration;
     }
     return null;
 }

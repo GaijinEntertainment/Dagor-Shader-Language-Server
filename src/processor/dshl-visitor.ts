@@ -1,6 +1,7 @@
 import { AbstractParseTreeVisitor } from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import {
     Dshl_expressionContext,
+    Dshl_function_callContext,
     Dshl_hlsl_blockContext,
     Dshl_statement_blockContext,
     Dshl_variable_declarationContext,
@@ -10,6 +11,9 @@ import {
 } from '../_generated/DshlParser';
 import { DshlParserVisitor } from '../_generated/DshlParserVisitor';
 import { Snapshot } from '../core/snapshot';
+import { FunctionArgument } from '../interface/function/function-argument';
+import { FunctionDeclaration } from '../interface/function/function-declaration';
+import { FunctionUsage } from '../interface/function/function-usage';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { VariableUsage } from '../interface/variable/variable-usage';
 
@@ -110,6 +114,52 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+    }
+
+    public visitDshl_function_call(ctx: Dshl_function_callContext): void {
+        const name = ctx.IDENTIFIER();
+        const fd = this.snapshot.functionDeclarations.find((fd) => fd.name === name.text);
+        if (fd) {
+            const fu: FunctionUsage = {
+                declaration: fd,
+                arguments: this.getFunctionArguments(ctx, fd),
+                originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+                nameOriginalRange: this.snapshot.getOriginalRange(
+                    ctx.IDENTIFIER().symbol.startIndex,
+                    ctx.IDENTIFIER().symbol.stopIndex + 1
+                ),
+                parameterListOriginalRange: this.snapshot.getOriginalRange(
+                    ctx.LRB().symbol.startIndex + 1,
+                    ctx.RRB().symbol.stopIndex
+                ),
+                isVisible:
+                    !this.snapshot.isInIncludeContext(ctx.start.startIndex) &&
+                    !this.snapshot.isInMacroContext(ctx.start.startIndex),
+            };
+            fd.usages.push(fu);
+            this.snapshot.functionUsages.push(fu);
+        }
+        this.visitChildren(ctx);
+    }
+
+    private getFunctionArguments(ctx: Dshl_function_callContext, fd: FunctionDeclaration): FunctionArgument[] {
+        const expressions = ctx.expression_list()?.expression() ?? [];
+        const fas: FunctionArgument[] = [];
+        for (let i = 0; i < expressions.length && i < fd.parameters.length; i++) {
+            const expression = expressions[i];
+            const start =
+                i === 0 ? ctx.LRB().symbol.startIndex : ctx.expression_list()!.COMMA()[i - 1].symbol.stopIndex;
+            const end =
+                i === fd.parameters.length - 1 || ctx.expression_list()!.COMMA().length === i
+                    ? ctx.RRB().symbol.stopIndex
+                    : ctx.expression_list()!.COMMA()[i].symbol.startIndex - 1;
+            const fa: FunctionArgument = {
+                originalRange: this.snapshot.getOriginalRange(start, end + 1),
+                trimmedOriginalStartPosition: this.snapshot.getOriginalPosition(expression.start.startIndex, true),
+            };
+            fas.push(fa);
+        }
+        return fas;
     }
 
     protected defaultResult(): void {}
