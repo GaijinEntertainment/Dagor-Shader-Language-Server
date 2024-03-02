@@ -30,9 +30,7 @@ export async function signatureHelpProvider(params: SignatureHelpParams): Promis
         };
     }
 
-    const fu = snapshot.functionUsages.find(
-        (fu) => fu.isVisible && rangeContains(fu.parameterListOriginalRange, params.position)
-    );
+    const fu = snapshot.getFunctioneUsageParameterListAt(params.position);
     if (fu) {
         const fd = fu.declaration;
         return {

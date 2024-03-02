@@ -210,9 +210,7 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, dshlSnippets, CompletionItemKind.Snippet, 'snippet');
     }
-    const vds = snapshot.variableDeclarations.filter(
-        (vd) => vd.isVisible && isBeforeOrEqual(vd.nameOriginalRange.end, position)
-    );
+    const vds = snapshot.getVariableDeclarationsInScope(position);
     addCompletionItems(
         result,
         vds.map((vs) => ({ name: vs.name, type: vs.type })),

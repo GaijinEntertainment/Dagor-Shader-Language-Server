@@ -32,14 +32,14 @@ export async function hoverProvider(params: HoverParams): Promise<Hover | undefi
             range: dc.nameOriginalRange,
         };
     }
-    const vu = snapshot.variableUsages.find((vu) => vu.isVisible && rangeContains(vu.originalRange, params.position));
+    const vu = snapshot.getVariableUsageAt(params.position);
     if (vu) {
         return {
             contents: createVariableHoverContent(vu),
             range: vu.originalRange,
         };
     }
-    const fu = snapshot.functionUsages.find((fu) => fu.isVisible && rangeContains(fu.originalRange, params.position));
+    const fu = snapshot.getFunctioneUsageAt(params.position);
     if (fu) {
         return {
             contents: createFunctionHoverContent(fu),

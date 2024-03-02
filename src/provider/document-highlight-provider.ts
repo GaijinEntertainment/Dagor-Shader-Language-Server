@@ -156,13 +156,11 @@ function getMacroParameter(snapshot: Snapshot, params: DocumentHighlightParams):
 }
 
 function getVariableDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): VariableDeclaration | null {
-    const vd = snapshot.variableDeclarations.find(
-        (vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, params.position)
-    );
+    const vd = snapshot.getVariableDeclarationAt(params.position);
     if (vd) {
         return vd;
     }
-    const vu = snapshot.variableUsages.find((vu) => vu.isVisible && rangeContains(vu.originalRange, params.position));
+    const vu = snapshot.getVariableUsageAt(params.position);
     if (vu) {
         return vu.declaration;
     }
@@ -170,7 +168,7 @@ function getVariableDeclaration(snapshot: Snapshot, params: DocumentHighlightPar
 }
 
 function getFunctionDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): FunctionDeclaration | null {
-    const fu = snapshot.functionUsages.find((vu) => vu.isVisible && rangeContains(vu.originalRange, params.position));
+    const fu = snapshot.getFunctioneUsageAt(params.position);
     if (fu) {
         return fu.declaration;
     }

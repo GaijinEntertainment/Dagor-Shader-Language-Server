@@ -11,6 +11,7 @@ import {
 } from '../_generated/DshlParser';
 import { DshlParserVisitor } from '../_generated/DshlParserVisitor';
 import { Snapshot } from '../core/snapshot';
+import { Scope } from '../helper/scope';
 import { FunctionArgument } from '../interface/function/function-argument';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
@@ -19,10 +20,12 @@ import { VariableUsage } from '../interface/variable/variable-usage';
 
 export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlParserVisitor<void> {
     private snapshot: Snapshot;
+    private scope: Scope;
 
     public constructor(snapshot: Snapshot) {
         super();
         this.snapshot = snapshot;
+        this.scope = snapshot.rootScope;
     }
 
     private isVisible(position: number): boolean {
@@ -58,7 +61,19 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
             this.snapshot.foldingRanges.push(range);
         }
+        const scope: Scope = {
+            variableDeclarations: [],
+            variableUsages: [],
+            functionDeclarations: [],
+            functionUsages: [],
+            originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex),
+            children: [],
+            parent: this.scope,
+        };
+        this.scope.children.push(scope);
+        this.scope = scope;
         this.visitChildren(ctx);
+        this.scope = scope.parent!;
     }
 
     public visitDshl_hlsl_block(ctx: Dshl_hlsl_blockContext): void {
@@ -87,7 +102,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 !this.snapshot.isInMacroContext(ctx.start.startIndex),
             usages: [],
         };
-        this.snapshot.variableDeclarations.push(vd);
+        this.scope.variableDeclarations.push(vd);
         this.visitChildren(ctx);
     }
 
@@ -95,8 +110,9 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         const idenetifier = ctx.IDENTIFIER();
         if (idenetifier) {
             const position = idenetifier.symbol.startIndex;
-            const vd = this.snapshot.variableDeclarations.find(
-                (vd) => vd.name === idenetifier.text && position >= vd.nameEndPosition
+            const vd = this.snapshot.getVariableDeclarationFor(
+                idenetifier.text,
+                this.snapshot.getOriginalPosition(position, true)
             );
             if (vd) {
                 const vu: VariableUsage = {
@@ -109,7 +125,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                         !this.snapshot.isInIncludeContext(ctx.start.startIndex) &&
                         !this.snapshot.isInMacroContext(ctx.start.startIndex),
                 };
-                this.snapshot.variableUsages.push(vu);
+                this.scope.variableUsages.push(vu);
                 vd.usages.push(vu);
             }
         }
@@ -118,7 +134,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
 
     public visitDshl_function_call(ctx: Dshl_function_callContext): void {
         const name = ctx.IDENTIFIER();
-        const fd = this.snapshot.functionDeclarations.find((fd) => fd.name === name.text);
+        const fd = this.snapshot.rootScope.functionDeclarations.find((fd) => fd.name === name.text);
         if (fd) {
             const fu: FunctionUsage = {
                 declaration: fd,
@@ -137,7 +153,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     !this.snapshot.isInMacroContext(ctx.start.startIndex),
             };
             fd.usages.push(fu);
-            this.snapshot.functionUsages.push(fu);
+            this.scope.functionUsages.push(fu);
         }
         this.visitChildren(ctx);
     }

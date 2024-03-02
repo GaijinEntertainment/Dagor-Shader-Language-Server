@@ -27,12 +27,7 @@ export async function inlayHintProvider(params: InlayHintParams): Promise<InlayH
                 rangeContains(params.range, dc.nameOriginalRange.end))
     );
     addDefineArguments(result, dcs);
-    const fus = snapshot.functionUsages.filter(
-        (fu) =>
-            fu.isVisible &&
-            (rangeContains(params.range, fu.nameOriginalRange.start) ||
-                rangeContains(params.range, fu.nameOriginalRange.end))
-    );
+    const fus = snapshot.getFunctioneUsagesIn(params.range);
     addFunctionArguments(result, fus);
     return result;
 }

@@ -40,13 +40,11 @@ export async function linkProviderBase(
     if (implementation) {
         return null;
     }
-    const vd = snapshot.variableDeclarations.find(
-        (vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, position)
-    );
+    const vd = snapshot.getVariableDeclarationAt(position);
     if (vd) {
         return getVariableDeclarationLocation(vd, linkSupport);
     }
-    const vu = snapshot.variableUsages.find((vu) => vu.isVisible && rangeContains(vu.originalRange, position));
+    const vu = snapshot.getVariableUsageAt(position);
     if (vu) {
         return getVariableDeclarationLocation(vu.declaration, linkSupport);
     }

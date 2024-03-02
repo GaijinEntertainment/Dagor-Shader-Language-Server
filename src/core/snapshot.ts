@@ -1,11 +1,11 @@
 import { DocumentUri, Position, Range } from 'vscode-languageserver';
 
 import { dshlFunctions } from '../helper/dshl-info';
-import { defaultPosition, isIntervalContains, rangeContains } from '../helper/helper';
+import { defaultPosition, isBeforeOrEqual, isIntervalContains, rangeContains } from '../helper/helper';
+import { Scope } from '../helper/scope';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
-import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
 import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
@@ -48,10 +48,7 @@ export class Snapshot {
     public hlslBlocks: HlslBlock[] = [];
     public noCodeCompletionRanges: Range[] = [];
     public foldingRanges: Range[] = [];
-    public variableDeclarations: VariableDeclaration[] = [];
-    public variableUsages: VariableUsage[] = [];
-    public functionDeclarations: FunctionDeclaration[] = [];
-    public functionUsages: FunctionUsage[] = [];
+    public rootScope: Scope;
     public preprocessingOffsets: PreprocessingOffset[] = [];
 
     public constructor(version: SnapshotVersion, uri: DocumentUri, text: string, isPredefined = false) {
@@ -60,7 +57,22 @@ export class Snapshot {
         this.originalText = text;
         this.isPredefined = isPredefined;
         this.computeOriginalTextOffsets();
-        this.functionDeclarations = dshlFunctions.map((fi) => ({
+        const lastLine = this.originalTextOffsets[this.originalTextOffsets.length - 1];
+        this.rootScope = {
+            variableDeclarations: [],
+            variableUsages: [],
+            functionDeclarations: [],
+            functionUsages: [],
+            originalRange: {
+                start: defaultPosition,
+                end: {
+                    line: this.originalTextOffsets.length,
+                    character: lastLine.endPosition - lastLine.startPosition,
+                },
+            },
+            children: [],
+        };
+        this.rootScope.functionDeclarations = dshlFunctions.map((fi) => ({
             name: fi.name,
             type: fi.type,
             parameters: fi.parameters.map((p) => ({
@@ -380,5 +392,130 @@ export class Snapshot {
 
     public isInDirective(position: number): boolean {
         return this.directives.some((d) => isIntervalContains(d.startPosition, d.endPosition, position));
+    }
+
+    public getVariableUsageAt(position: Position): VariableUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const vu = scope.variableUsages.find((vu) => vu.isVisible && rangeContains(vu.originalRange, position));
+            if (vu) {
+                return vu;
+            }
+            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getFunctioneUsageAt(position: Position): FunctionUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const fu = scope.functionUsages.find((fu) => fu.isVisible && rangeContains(fu.originalRange, position));
+            if (fu) {
+                return fu;
+            }
+            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getFunctioneUsagesIn(range: Range): FunctionUsage[] {
+        const result: FunctionUsage[] = [];
+        this.addFunctionUsage(result, this.rootScope, range);
+        return result;
+    }
+
+    private addFunctionUsage(result: FunctionUsage[], scope: Scope, range: Range): void {
+        result.push(
+            ...scope.functionUsages.filter(
+                (fu) =>
+                    fu.isVisible &&
+                    (rangeContains(range, fu.originalRange.start) || rangeContains(range, fu.originalRange.end))
+            )
+        );
+        for (const child of scope.children) {
+            if (rangeContains(range, child.originalRange.start) || rangeContains(range, child.originalRange.end)) {
+                this.addFunctionUsage(result, child, range);
+            }
+        }
+    }
+
+    public getFunctioneUsageParameterListAt(position: Position): FunctionUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const fu = scope.functionUsages.find(
+                (fu) => fu.isVisible && rangeContains(fu.parameterListOriginalRange, position)
+            );
+            if (fu) {
+                return fu;
+            }
+            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getVariableDeclarationAt(position: Position): VariableDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const vd = scope.variableDeclarations.find(
+                (vd) => vd.isVisible && rangeContains(vd.originalRange, position)
+            );
+            if (vd) {
+                return vd;
+            }
+            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getVariableDeclarationFor(name: string, position: Position): VariableDeclaration | null {
+        let scope: Scope | null = this.getScopeAt(position);
+        while (scope) {
+            const vd = scope.variableDeclarations.find(
+                (vd) => isBeforeOrEqual(vd.nameOriginalRange.end, position) && vd.name === name
+            );
+            if (vd) {
+                return vd;
+            }
+            scope = scope.parent ?? null;
+        }
+        return null;
+    }
+
+    public getVariableDeclarationsInScope(position: Position): VariableDeclaration[] {
+        const result: VariableDeclaration[] = [];
+        let scope: Scope | null = this.getScopeAt(position);
+        while (scope) {
+            result.push(
+                ...scope.variableDeclarations.filter((vd) => isBeforeOrEqual(vd.nameOriginalRange.end, position))
+            );
+            scope = scope.parent ?? null;
+        }
+        return result;
+    }
+
+    public getAllVariableDeclarations(): VariableDeclaration[] {
+        const result: VariableDeclaration[] = [];
+        this.addVariableDeclarations(result, this.rootScope);
+        return result;
+    }
+
+    private addVariableDeclarations(result: VariableDeclaration[], scope: Scope): void {
+        result.push(...scope.variableDeclarations.filter((vd) => vd.isVisible));
+        for (const child of scope.children) {
+            this.addVariableDeclarations(result, child);
+        }
+    }
+
+    private getScopeAt(position: Position): Scope {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const child: Scope | null = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+            if (child) {
+                scope = child;
+            } else {
+                return scope;
+            }
+        }
+        return this.rootScope;
     }
 }
