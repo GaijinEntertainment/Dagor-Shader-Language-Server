@@ -7,6 +7,7 @@ import { DefineStatement } from '../interface/define-statement';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { Macro } from '../interface/macro/macro';
 import { MacroParameter } from '../interface/macro/macro-parameter';
+import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 
 export async function documentHighlightProvider(
@@ -97,6 +98,25 @@ export async function documentHighlightProvider(
         }
         return result;
     }
+    const sd = getShaderDeclaration(snapshot, params);
+    if (sd) {
+        const result: DocumentHighlight[] = [];
+        if (sd.isVisible && sd.uri === params.textDocument.uri) {
+            result.push({
+                range: sd.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        for (const vu of sd.usages) {
+            if (vu.isVisible) {
+                result.push({
+                    range: vu.originalRange,
+                    kind: DocumentHighlightKind.Text,
+                });
+            }
+        }
+        return result;
+    }
     return null;
 }
 
@@ -171,6 +191,18 @@ function getFunctionDeclaration(snapshot: Snapshot, params: DocumentHighlightPar
     const fu = snapshot.getFunctioneUsageAt(params.position);
     if (fu) {
         return fu.declaration;
+    }
+    return null;
+}
+
+function getShaderDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): ShaderDeclaration | null {
+    const sd = snapshot.getShaderDeclarationAt(params.position);
+    if (sd) {
+        return sd;
+    }
+    const su = snapshot.getShaderUsageAt(params.position);
+    if (su) {
+        return su.declaration;
     }
     return null;
 }

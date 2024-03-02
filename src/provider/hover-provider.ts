@@ -9,6 +9,8 @@ import { toStringFunctionDeclaration } from '../interface/function/function-decl
 import { FunctionUsage } from '../interface/function/function-usage';
 import { toStringMacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroUsage, getBestMacroDeclaration } from '../interface/macro/macro-usage';
+import { toStringShaderDeclaration } from '../interface/shader/shader-declaration';
+import { ShaderUsage } from '../interface/shader/shader-usage';
 import { VariableUsage } from '../interface/variable/variable-usage';
 
 export async function hoverProvider(params: HoverParams): Promise<Hover | undefined | null> {
@@ -44,6 +46,13 @@ export async function hoverProvider(params: HoverParams): Promise<Hover | undefi
         return {
             contents: createFunctionHoverContent(fu),
             range: fu.nameOriginalRange,
+        };
+    }
+    const su = snapshot.getShaderUsageAt(params.position);
+    if (su) {
+        return {
+            contents: createShaderHoverContent(su),
+            range: su.originalRange,
         };
     }
     return null;
@@ -132,6 +141,25 @@ function getFunctionValue(fu: FunctionUsage): string {
     const declaration = toStringFunctionDeclaration(fd);
     if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
         return `\`\`\`hlsl\n${declaration}\n\`\`\``;
+    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
+        return declaration;
+    } else {
+        return '';
+    }
+}
+
+function createShaderHoverContent(su: ShaderUsage): MarkupContent {
+    return {
+        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
+        value: getShaderValue(su),
+    };
+}
+
+function getShaderValue(su: ShaderUsage): string {
+    const sd = su.declaration;
+    const declaration = toStringShaderDeclaration(sd);
+    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
+        return `\`\`\`dshl\n${declaration}\n\`\`\``;
     } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
         return declaration;
     } else {

@@ -217,6 +217,13 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
         CompletionItemKind.Variable,
         'variable'
     );
+    const sds = snapshot.getShaderDeclarationsInScope(position);
+    addCompletionItems(
+        result,
+        sds.map((sd) => ({ name: sd.name, type: 'shader' })),
+        CompletionItemKind.Module,
+        'shader'
+    );
 }
 
 function getMacros(snapshot: Snapshot, position: Position): LanguageElementInfo[] {

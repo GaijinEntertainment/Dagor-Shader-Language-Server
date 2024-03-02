@@ -6,6 +6,7 @@ import { DefineStatement } from '../interface/define-statement';
 import { Macro } from '../interface/macro/macro';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroParameter } from '../interface/macro/macro-parameter';
+import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 
 export async function linkProviderBase(
@@ -36,6 +37,14 @@ export async function linkProviderBase(
     );
     if (dc && !dc.define.isPredefined) {
         return getDefineDeclarationLocation(dc.define.realDefine ?? dc.define, linkSupport);
+    }
+    const sd = snapshot.getShaderDeclarationAt(position);
+    if (sd) {
+        return getShaderDeclarationLocation(sd, linkSupport);
+    }
+    const su = snapshot.getShaderUsageAt(position);
+    if (su) {
+        return getShaderDeclarationLocation(su.declaration, linkSupport);
     }
     if (implementation) {
         return null;
@@ -129,6 +138,23 @@ function getVariableDeclarationLocation(vd: VariableDeclaration, linkSupport: bo
         return {
             range: vd.nameOriginalRange,
             uri: vd.uri,
+        };
+    }
+}
+
+function getShaderDeclarationLocation(sd: ShaderDeclaration, linkSupport: boolean): LocationLink[] | Location {
+    if (linkSupport) {
+        return [
+            {
+                targetRange: sd.originalRange,
+                targetSelectionRange: sd.nameOriginalRange,
+                targetUri: sd.uri,
+            },
+        ];
+    } else {
+        return {
+            range: sd.nameOriginalRange,
+            uri: sd.uri,
         };
     }
 }

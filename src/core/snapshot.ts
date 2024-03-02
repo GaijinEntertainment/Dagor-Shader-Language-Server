@@ -17,6 +17,8 @@ import { MacroUsage } from '../interface/macro/macro-usage';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { RangeWithChildren } from '../interface/range-with-children';
 import { ShaderBlock } from '../interface/shader-block';
+import { ShaderDeclaration } from '../interface/shader/shader-declaration';
+import { ShaderUsage } from '../interface/shader/shader-usage';
 import { SnapshotVersion } from '../interface/snapshot-version';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { VariableUsage } from '../interface/variable/variable-usage';
@@ -59,6 +61,8 @@ export class Snapshot {
         this.computeOriginalTextOffsets();
         const lastLine = this.originalTextOffsets[this.originalTextOffsets.length - 1];
         this.rootScope = {
+            shaderDeclarations: [],
+            shaderUsages: [],
             variableDeclarations: [],
             variableUsages: [],
             functionDeclarations: [],
@@ -406,6 +410,18 @@ export class Snapshot {
         return null;
     }
 
+    public getShaderUsageAt(position: Position): ShaderUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const vu = scope.shaderUsages.find((vu) => vu.isVisible && rangeContains(vu.originalRange, position));
+            if (vu) {
+                return vu;
+            }
+            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
     public getFunctioneUsageAt(position: Position): FunctionUsage | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
@@ -467,6 +483,20 @@ export class Snapshot {
         return null;
     }
 
+    public getShaderDeclarationAt(position: Position): ShaderDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const sd = scope.shaderDeclarations.find(
+                (sd) => sd.isVisible && rangeContains(sd.nameOriginalRange, position)
+            );
+            if (sd) {
+                return sd;
+            }
+            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
     public getVariableDeclarationFor(name: string, position: Position): VariableDeclaration | null {
         let scope: Scope | null = this.getScopeAt(position);
         while (scope) {
@@ -481,12 +511,38 @@ export class Snapshot {
         return null;
     }
 
+    public getShaderDeclarationFor(name: string, position: Position): ShaderDeclaration | null {
+        let scope: Scope | null = this.getScopeAt(position);
+        while (scope) {
+            const sd = scope.shaderDeclarations.find(
+                (sd) => isBeforeOrEqual(sd.nameOriginalRange.end, position) && sd.name === name
+            );
+            if (sd) {
+                return sd;
+            }
+            scope = scope.parent ?? null;
+        }
+        return null;
+    }
+
     public getVariableDeclarationsInScope(position: Position): VariableDeclaration[] {
         const result: VariableDeclaration[] = [];
         let scope: Scope | null = this.getScopeAt(position);
         while (scope) {
             result.push(
                 ...scope.variableDeclarations.filter((vd) => isBeforeOrEqual(vd.nameOriginalRange.end, position))
+            );
+            scope = scope.parent ?? null;
+        }
+        return result;
+    }
+
+    public getShaderDeclarationsInScope(position: Position): ShaderDeclaration[] {
+        const result: ShaderDeclaration[] = [];
+        let scope: Scope | null = this.getScopeAt(position);
+        while (scope) {
+            result.push(
+                ...scope.shaderDeclarations.filter((vd) => isBeforeOrEqual(vd.nameOriginalRange.end, position))
             );
             scope = scope.parent ?? null;
         }

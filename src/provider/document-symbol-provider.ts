@@ -9,6 +9,7 @@ import {
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
+import { Scope } from '../helper/scope';
 import {
     DefineStatement,
     toStringDefineStatementHeader,
@@ -51,9 +52,13 @@ function createDocumentSymbols(snapshot: Snapshot, uri: DocumentUri): DocumentSy
     for (const ds of dss) {
         result.push(defineToDocumentSymbol(ds));
     }
-    const vds = snapshot.getAllVariableDeclarations();
-    for (const vd of vds) {
-        result.push({
+    addScopedElements(result, snapshot.rootScope);
+    return result;
+}
+
+function addScopedElements(dss: DocumentSymbol[], scope: Scope): void {
+    for (const vd of scope.variableDeclarations) {
+        dss.push({
             name: vd.name,
             kind: SymbolKind.Variable,
             range: vd.originalRange,
@@ -61,7 +66,24 @@ function createDocumentSymbols(snapshot: Snapshot, uri: DocumentUri): DocumentSy
             detail: vd.type,
         });
     }
-    return result;
+    for (const childScope of scope.children) {
+        if (childScope.shaderDeclarations.length) {
+            const sdss: DocumentSymbol[] = [];
+            dss.push({
+                name: childScope.shaderDeclarations.map((sd) => sd.name).join(', '),
+                kind: SymbolKind.Module,
+                range: childScope.shaderDeclarations[0].originalRange,
+                selectionRange: childScope.shaderDeclarations[0].originalRange,
+                detail: 'shader',
+                children: sdss,
+            });
+            for (const shaderChildScope of childScope.children) {
+                addScopedElements(sdss, shaderChildScope);
+            }
+        } else {
+            addScopedElements(dss, childScope);
+        }
+    }
 }
 
 function defineToDocumentSymbol(ds: DefineStatement): DocumentSymbol {
@@ -92,6 +114,32 @@ function createSymbolInformations(snapshot: Snapshot, uri: DocumentUri): SymbolI
     }
     const dss = snapshot.defineStatements.filter((ds) => ds.isVisible);
     addDefines(result, dss, uri);
+    const vds = snapshot.getAllVariableDeclarations();
+    for (const vd of vds) {
+        result.push({
+            name: vd.name,
+            kind: SymbolKind.Variable,
+            containerName: vd.name,
+            location: {
+                range: vd.originalRange,
+                uri: vd.uri,
+            },
+        });
+    }
+    for (const scope of snapshot.rootScope.children) {
+        if (scope.shaderDeclarations.length) {
+            const name = scope.shaderDeclarations.map((sd) => sd.name).join(', ');
+            result.push({
+                name,
+                kind: SymbolKind.Module,
+                containerName: name,
+                location: {
+                    uri: scope.shaderDeclarations[0].uri,
+                    range: scope.shaderDeclarations[0].originalRange,
+                },
+            });
+        }
+    }
     return result;
 }
 
