@@ -473,7 +473,7 @@ export class Snapshot {
         let scope: Scope | null = this.rootScope;
         while (scope) {
             const vd = scope.variableDeclarations.find(
-                (vd) => vd.isVisible && rangeContains(vd.originalRange, position)
+                (vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, position)
             );
             if (vd) {
                 return vd;
