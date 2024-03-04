@@ -137,7 +137,7 @@ class DshlPreprocessor {
                 includeStatement: result.includeStatement,
                 snapshot: result.snapshot,
                 parent: null,
-                originalEndPosition: this.snapshot.getOriginalPosition(afterEndPosition, false),
+                originalRange: this.snapshot.getOriginalRange(result.position, afterEndPosition),
                 uri: result.snapshot.uri,
             };
             for (const sr of result.snapshot.stringRanges) {
@@ -543,7 +543,7 @@ class DshlPreprocessor {
         const pasteText = this.getMacroPasteText(md, ma);
         const afterEndPosition = position + pasteText.length;
         Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, afterEndPosition, pasteText, this.snapshot);
-        this.createMacroContext(position, afterEndPosition, md, parentMc);
+        this.createMacroContext(position, beforeEndPosition, afterEndPosition, md, parentMc);
         Preprocessor.addStringRanges(position, afterEndPosition, this.snapshot);
     }
 
@@ -580,6 +580,7 @@ class DshlPreprocessor {
 
     private createMacroContext(
         position: number,
+        beforeEndPosition: number,
         afterEndPosition: number,
         md: MacroDeclaration,
         parentMc: MacroContext | null
@@ -587,6 +588,7 @@ class DshlPreprocessor {
         const mc: MacroContext = {
             startPosition: position,
             endPosition: afterEndPosition,
+            originalRange: this.snapshot.getOriginalRange(position, beforeEndPosition),
             parent: parentMc,
             children: [],
             macroDeclaration: md,

@@ -307,6 +307,10 @@ export class Snapshot {
         return this.macroContexts.some((mc) => mc.startPosition <= position && position < mc.endPosition);
     }
 
+    public getMacroContextAt(position: number): MacroContext | null {
+        return this.macroContexts.find((mc) => isIntervalContains(mc.startPosition, mc.endPosition, position)) ?? null;
+    }
+
     public getMacroContextDeepAt(position: number): MacroContext | null {
         for (const mc of this.macroContexts) {
             const result = this.getMacroContext(mc, position);
@@ -392,6 +396,13 @@ export class Snapshot {
 
     private isDefineAvailable(ds: DefineStatement, position: number): boolean {
         return ds.endPosition <= position && (!ds.undefPosition || position <= ds.undefPosition);
+    }
+
+    public getDefineContextAt(position: number): DefineContext | null {
+        return (
+            this.defineContexts.find((dc) => isIntervalContains(dc.startPosition, dc.afterEndPosition, position)) ??
+            null
+        );
     }
 
     public isInDirective(position: number): boolean {

@@ -1,4 +1,5 @@
 import { AbstractParseTreeVisitor } from 'antlr4ts/tree/AbstractParseTreeVisitor';
+import { Range } from 'vscode-languageserver';
 import {
     Dshl_expressionContext,
     Dshl_function_callContext,
@@ -71,7 +72,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             variableUsages: [],
             functionDeclarations: [],
             functionUsages: [],
-            originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex),
+            originalRange: this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1), // this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
             children: [],
             parent: this.scope,
         };
@@ -79,6 +80,22 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         this.scope = scope;
         this.visitChildren(ctx);
         this.scope = scope.parent!;
+    }
+
+    private getRange(startPosition: number, endPosition: number): Range {
+        const ic = this.snapshot.getIncludeContextAt(startPosition);
+        if (ic) {
+            return ic.originalRange;
+        }
+        const mc = this.snapshot.getMacroContextAt(startPosition);
+        if (mc) {
+            return mc.originalRange;
+        }
+        const dc = this.snapshot.getDefineContextAt(startPosition);
+        if (dc) {
+            return dc.originalRange;
+        }
+        return this.snapshot.getOriginalRange(startPosition, endPosition);
     }
 
     public visitDshl_hlsl_block(ctx: Dshl_hlsl_blockContext): void {

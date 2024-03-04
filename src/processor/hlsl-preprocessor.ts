@@ -179,7 +179,7 @@ export class HlslPreprocessor {
             parent: parentIc,
             children: [],
             uri,
-            originalEndPosition: this.snapshot.getOriginalPosition(afterEndPosition, false),
+            originalRange: this.snapshot.getOriginalRange(position, afterEndPosition),
         };
         if (parentIc) {
             parentIc.children.push(ic);
@@ -221,11 +221,13 @@ export class HlslPreprocessor {
             if (ds) {
                 const conditionPosition = position + (regexResult.groups.beforeCondition?.length ?? 0);
                 const endPosition = conditionPosition + condition.length;
+                const originalRange = this.snapshot.getOriginalRange(conditionPosition, endPosition);
                 HlslPreprocessor.createDefineContext(
                     conditionPosition,
                     endPosition,
                     endPosition,
-                    this.snapshot.getOriginalRange(conditionPosition, endPosition),
+                    originalRange,
+                    originalRange,
                     ds,
                     this.snapshot,
                     !this.snapshot.isInIncludeContext(position) && !this.snapshot.isInMacroContext(position),
@@ -487,18 +489,20 @@ export class HlslPreprocessor {
                 if (ds.undefPosition === null) {
                     ds.undefPosition = position;
                     ds.undefCodeCompletionPosition = ic
-                        ? ic.originalEndPosition
+                        ? ic.originalRange.end
                         : this.snapshot.getOriginalPosition(position, true);
                 }
             });
             if (dss.length) {
                 const conditionPosition = position + regexResult.groups.beforeName.length;
                 const endPosition = conditionPosition + name.length;
+                const originalRange = this.snapshot.getOriginalRange(conditionPosition, endPosition);
                 HlslPreprocessor.createDefineContext(
                     conditionPosition,
                     endPosition,
                     endPosition,
-                    this.snapshot.getOriginalRange(conditionPosition, endPosition),
+                    originalRange,
+                    originalRange,
                     dss[0],
                     this.snapshot,
                     !ic && !this.snapshot.isInMacroContext(position),
@@ -798,6 +802,7 @@ export class HlslPreprocessor {
                     globalPosition,
                     globalPosition + identifier.length
                 );
+                const originalRange = this.snapshot.getOriginalRange(globalPosition, afterEndPosition);
                 if (da) {
                     this.computeOriginalArgumentPositions(da, offset);
                 }
@@ -809,6 +814,7 @@ export class HlslPreprocessor {
                     globalPosition,
                     beforeEndPosition,
                     afterEndPosition,
+                    originalRange,
                     nameOriginalRange,
                     ds,
                     this.snapshot,
@@ -1027,6 +1033,7 @@ export class HlslPreprocessor {
         position: number,
         beforeEndPosition: number,
         afterEndPosition: number,
+        originalRange: Range,
         nameOriginalRange: Range,
         ds: DefineStatement,
         snapshot: Snapshot,
@@ -1040,6 +1047,7 @@ export class HlslPreprocessor {
             startPosition: position,
             beforeEndPosition,
             afterEndPosition,
+            originalRange,
             nameOriginalRange,
             isVisible,
             arguments: da,
