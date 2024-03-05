@@ -18,7 +18,7 @@ import { Scope } from '../helper/scope';
 import { FunctionArgument } from '../interface/function/function-argument';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
-import { IntervalDeclaration } from '../interface/interval/interval-declaration';
+import { IntervalDeclaration } from '../interface/interval-declaration';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';

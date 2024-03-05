@@ -10,7 +10,7 @@ import { FunctionUsage } from '../interface/function/function-usage';
 import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
-import { IntervalDeclaration } from '../interface/interval/interval-declaration';
+import { IntervalDeclaration } from '../interface/interval-declaration';
 import { Macro } from '../interface/macro/macro';
 import { MacroContext } from '../interface/macro/macro-context';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';

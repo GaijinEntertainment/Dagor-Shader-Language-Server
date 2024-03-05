@@ -1,5 +1,5 @@
 import { DocumentUri, Range } from 'vscode-languageserver';
-import { IntervalDeclaration } from '../interval/interval-declaration';
+import { IntervalDeclaration } from '../interval-declaration';
 import { VariableUsage } from './variable-usage';
 
 export interface VariableDeclaration {
