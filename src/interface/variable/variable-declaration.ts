@@ -1,4 +1,5 @@
 import { DocumentUri, Range } from 'vscode-languageserver';
+import { IntervalDeclaration } from '../interval/interval-declaration';
 import { VariableUsage } from './variable-usage';
 
 export interface VariableDeclaration {
@@ -10,4 +11,10 @@ export interface VariableDeclaration {
     usages: VariableUsage[];
     isVisible: boolean;
     uri: DocumentUri;
+    interval?: IntervalDeclaration;
+}
+
+export function getVariableTypeWithInterval(vd: VariableDeclaration): string {
+    const interval = vd.interval ? 'interval ' : '';
+    return interval + vd.type;
 }

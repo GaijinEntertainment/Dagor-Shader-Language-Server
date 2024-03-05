@@ -57,6 +57,10 @@ export async function linkProviderBase(
     if (vu) {
         return getVariableDeclarationLocation(vu.declaration, linkSupport);
     }
+    const id = snapshot.getIntervalDeclarationAt(position);
+    if (id) {
+        return getVariableDeclarationLocation(id.variable, linkSupport);
+    }
     md = snapshot.macroDeclarations.find((md) => md.uri === uri && rangeContains(md.originalRange, position));
     if (md) {
         const mp = md.parameters.find((mp) =>

@@ -10,6 +10,7 @@ import { FunctionUsage } from '../interface/function/function-usage';
 import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
+import { IntervalDeclaration } from '../interface/interval/interval-declaration';
 import { Macro } from '../interface/macro/macro';
 import { MacroContext } from '../interface/macro/macro-context';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
@@ -502,6 +503,20 @@ export class Snapshot {
             );
             if (sd) {
                 return sd;
+            }
+            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getIntervalDeclarationAt(position: Position): IntervalDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const id = scope.variableDeclarations.find(
+                (vd) => vd.interval && vd.interval.isVisible && rangeContains(vd.interval.nameOriginalRange, position)
+            )?.interval;
+            if (id) {
+                return id;
             }
             scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
         }

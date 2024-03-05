@@ -4,6 +4,7 @@ import {
     Dshl_expressionContext,
     Dshl_function_callContext,
     Dshl_hlsl_blockContext,
+    Dshl_interval_declarationContext,
     Dshl_shader_declarationContext,
     Dshl_statement_blockContext,
     Dshl_variable_declarationContext,
@@ -17,6 +18,7 @@ import { Scope } from '../helper/scope';
 import { FunctionArgument } from '../interface/function/function-argument';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
+import { IntervalDeclaration } from '../interface/interval/interval-declaration';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
@@ -72,7 +74,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             variableUsages: [],
             functionDeclarations: [],
             functionUsages: [],
-            originalRange: this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1), // this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+            originalRange: this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
             children: [],
             parent: this.scope,
         };
@@ -146,6 +148,8 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     };
                     this.scope.variableUsages.push(vu);
                     vd.usages.push(vu);
+                    this.visitChildren(ctx);
+                    return;
                 }
                 const sd = this.snapshot.getShaderDeclarationFor(idenetifier.text, originalPosition);
                 if (sd) {
@@ -159,6 +163,8 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     };
                     this.scope.shaderUsages.push(su);
                     sd.usages.push(su);
+                    this.visitChildren(ctx);
+                    return;
                 }
             }
         }
@@ -242,6 +248,29 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         }
         this.visitChildren(ctx);
         this.scope = scope.parent!;
+    }
+
+    public visitDshl_interval_declaration(ctx: Dshl_interval_declarationContext): void {
+        if (this.isVisible(ctx.start.startIndex)) {
+            const idenetifier = ctx.IDENTIFIER(0);
+            const position = idenetifier.symbol.startIndex;
+            const originalPosition = this.snapshot.getOriginalPosition(position, true);
+            const vd = this.snapshot.getVariableDeclarationFor(idenetifier.text, originalPosition);
+            if (vd) {
+                const id: IntervalDeclaration = {
+                    originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+                    nameOriginalRange: this.snapshot.getOriginalRange(
+                        idenetifier.symbol.startIndex,
+                        idenetifier.symbol.stopIndex + 1
+                    ),
+                    uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
+                    isVisible: this.isVisible(ctx.start.startIndex),
+                    variable: vd,
+                };
+                vd.interval = id;
+            }
+        }
+        this.visitChildren(ctx);
     }
 
     protected defaultResult(): void {}

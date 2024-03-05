@@ -11,7 +11,7 @@ import { toStringMacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroUsage, getBestMacroDeclaration } from '../interface/macro/macro-usage';
 import { toStringShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
-import { VariableUsage } from '../interface/variable/variable-usage';
+import { VariableDeclaration } from '../interface/variable/variable-declaration';
 
 export async function hoverProvider(params: HoverParams): Promise<Hover | undefined | null> {
     const snapshot = await getSnapshot(params.textDocument.uri);
@@ -34,10 +34,17 @@ export async function hoverProvider(params: HoverParams): Promise<Hover | undefi
             range: dc.nameOriginalRange,
         };
     }
+    const id = snapshot.getIntervalDeclarationAt(params.position);
+    if (id) {
+        return {
+            contents: createVariableHoverContent(id.variable),
+            range: id.nameOriginalRange,
+        };
+    }
     const vu = snapshot.getVariableUsageAt(params.position);
     if (vu) {
         return {
-            contents: createVariableHoverContent(vu),
+            contents: createVariableHoverContent(vu.declaration),
             range: vu.originalRange,
         };
     }
@@ -110,15 +117,14 @@ function getDefineValue(dc: DefineContext): string {
     }
 }
 
-function createVariableHoverContent(vu: VariableUsage): MarkupContent {
+function createVariableHoverContent(vd: VariableDeclaration): MarkupContent {
     return {
         kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
-        value: getVariableValue(vu),
+        value: getVariableValue(vd),
     };
 }
 
-function getVariableValue(vu: VariableUsage): string {
-    const vd = vu.declaration;
+function getVariableValue(vd: VariableDeclaration): string {
     const declaration = `${vd.type} ${vd.name};`;
     if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
         return `\`\`\`dshl\n${declaration}\n\`\`\``;

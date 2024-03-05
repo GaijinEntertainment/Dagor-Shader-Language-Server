@@ -51,6 +51,7 @@ import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
 import { ShaderStage } from '../interface/shader-stage';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
+import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
 import { getPredefineSnapshot } from '../processor/include-processor';
 import { getIncludeCompletionInfos } from '../processor/include-resolver';
 
@@ -213,7 +214,7 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     const vds = snapshot.getVariableDeclarationsInScope(position);
     addCompletionItems(
         result,
-        vds.map((vs) => ({ name: vs.name, type: vs.type })),
+        vds.map((vd) => ({ name: vd.name, type: getVariableTypeWithInterval(vd) })),
         CompletionItemKind.Variable,
         'variable'
     );

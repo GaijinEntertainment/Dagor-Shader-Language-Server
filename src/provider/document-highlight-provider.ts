@@ -75,6 +75,12 @@ export async function documentHighlightProvider(
                 kind: DocumentHighlightKind.Text,
             });
         }
+        if (vd.interval && vd.interval.isVisible && vd.interval.uri === params.textDocument.uri) {
+            result.push({
+                range: vd.interval.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
         for (const vu of vd.usages) {
             if (vu.isVisible) {
                 result.push({
@@ -107,10 +113,10 @@ export async function documentHighlightProvider(
                 kind: DocumentHighlightKind.Text,
             });
         }
-        for (const vu of sd.usages) {
-            if (vu.isVisible) {
+        for (const su of sd.usages) {
+            if (su.isVisible) {
                 result.push({
-                    range: vu.originalRange,
+                    range: su.originalRange,
                     kind: DocumentHighlightKind.Text,
                 });
             }
@@ -183,6 +189,10 @@ function getVariableDeclaration(snapshot: Snapshot, params: DocumentHighlightPar
     const vu = snapshot.getVariableUsageAt(params.position);
     if (vu) {
         return vu.declaration;
+    }
+    const id = snapshot.getIntervalDeclarationAt(params.position);
+    if (id) {
+        return id.variable;
     }
     return null;
 }

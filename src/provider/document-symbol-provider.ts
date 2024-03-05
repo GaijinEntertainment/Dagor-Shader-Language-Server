@@ -19,6 +19,7 @@ import {
     toStringMacroDeclarationHeader,
     toStringMacroDeclarationParameterList,
 } from '../interface/macro/macro-declaration';
+import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
 
 export async function documentSymbolProvider(
     params: DocumentSymbolParams
@@ -63,7 +64,7 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope): void {
             kind: SymbolKind.Variable,
             range: vd.originalRange,
             selectionRange: vd.nameOriginalRange,
-            detail: vd.type,
+            detail: getVariableTypeWithInterval(vd),
         });
     }
     for (const childScope of scope.children) {
