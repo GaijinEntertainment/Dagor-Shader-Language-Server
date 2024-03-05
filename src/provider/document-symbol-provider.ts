@@ -10,6 +10,7 @@ import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
 import { Scope } from '../helper/scope';
+import { toStringBlockType } from '../interface/block/block-declaration';
 import {
     DefineStatement,
     toStringDefineStatementHeader,
@@ -59,16 +60,18 @@ function createDocumentSymbols(snapshot: Snapshot, uri: DocumentUri): DocumentSy
 
 function addScopedElements(dss: DocumentSymbol[], scope: Scope): void {
     for (const vd of scope.variableDeclarations) {
-        dss.push({
-            name: vd.name,
-            kind: SymbolKind.Variable,
-            range: vd.originalRange,
-            selectionRange: vd.nameOriginalRange,
-            detail: getVariableTypeWithInterval(vd),
-        });
+        if (vd.isVisible) {
+            dss.push({
+                name: vd.name,
+                kind: SymbolKind.Variable,
+                range: vd.originalRange,
+                selectionRange: vd.nameOriginalRange,
+                detail: getVariableTypeWithInterval(vd),
+            });
+        }
     }
     for (const childScope of scope.children) {
-        if (childScope.shaderDeclarations.length) {
+        if (childScope.shaderDeclarations.length && childScope.shaderDeclarations[0].isVisible) {
             const sdss: DocumentSymbol[] = [];
             dss.push({
                 name: childScope.shaderDeclarations.map((sd) => sd.name).join(', '),
@@ -80,6 +83,21 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope): void {
             });
             for (const shaderChildScope of childScope.children) {
                 addScopedElements(sdss, shaderChildScope);
+            }
+        } else if (childScope.blockDeclaration) {
+            if (childScope.blockDeclaration.isVisible) {
+                const sdss: DocumentSymbol[] = [];
+                dss.push({
+                    name: childScope.blockDeclaration.name,
+                    kind: SymbolKind.Module,
+                    range: childScope.blockDeclaration.originalRange,
+                    selectionRange: childScope.blockDeclaration.originalRange,
+                    detail: toStringBlockType(childScope.blockDeclaration),
+                    children: sdss,
+                });
+                for (const shaderChildScope of childScope.children) {
+                    addScopedElements(sdss, shaderChildScope);
+                }
             }
         } else {
             addScopedElements(dss, childScope);

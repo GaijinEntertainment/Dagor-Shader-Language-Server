@@ -2,6 +2,7 @@ import { DocumentUri, Location, LocationLink, Position } from 'vscode-languagese
 
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
+import { BlockDeclaration } from '../interface/block/block-declaration';
 import { DefineStatement } from '../interface/define-statement';
 import { Macro } from '../interface/macro/macro';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
@@ -45,6 +46,14 @@ export async function linkProviderBase(
     const su = snapshot.getShaderUsageAt(position);
     if (su) {
         return getShaderDeclarationLocation(su.declaration, linkSupport);
+    }
+    const bd = snapshot.getBlockDeclarationAt(position);
+    if (bd) {
+        return getBlockDeclarationLocation(bd, linkSupport);
+    }
+    const bu = snapshot.getBlockUsageAt(position);
+    if (bu) {
+        return getBlockDeclarationLocation(bu.declaration, linkSupport);
     }
     if (implementation) {
         return null;
@@ -159,6 +168,23 @@ function getShaderDeclarationLocation(sd: ShaderDeclaration, linkSupport: boolea
         return {
             range: sd.nameOriginalRange,
             uri: sd.uri,
+        };
+    }
+}
+
+function getBlockDeclarationLocation(bd: BlockDeclaration, linkSupport: boolean): LocationLink[] | Location {
+    if (linkSupport) {
+        return [
+            {
+                targetRange: bd.originalRange,
+                targetSelectionRange: bd.nameOriginalRange,
+                targetUri: bd.uri,
+            },
+        ];
+    } else {
+        return {
+            range: bd.nameOriginalRange,
+            uri: bd.uri,
         };
     }
 }

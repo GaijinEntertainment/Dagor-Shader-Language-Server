@@ -45,6 +45,7 @@ import {
     hlslVariables,
     hlslVectorMatrixStringTypes,
 } from '../helper/hlsl-info';
+import { toStringBlockType } from '../interface/block/block-declaration';
 import { DefineStatement } from '../interface/define-statement';
 import { toStringFunctionParameters } from '../interface/function/function-declaration';
 import { HlslBlock } from '../interface/hlsl-block';
@@ -224,6 +225,13 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
         sds.map((sd) => ({ name: sd.name, type: 'shader' })),
         CompletionItemKind.Module,
         'shader'
+    );
+    const bds = snapshot.getBlockDeclarationsInScope(position);
+    addCompletionItems(
+        result,
+        bds.map((bd) => ({ name: bd.name, type: toStringBlockType(bd) })),
+        CompletionItemKind.Module,
+        'block'
     );
 }
 

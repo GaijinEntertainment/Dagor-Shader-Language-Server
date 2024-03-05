@@ -1,4 +1,6 @@
 import { Range } from 'vscode-languageserver';
+import { BlockDeclaration } from '../interface/block/block-declaration';
+import { BlockUsage } from '../interface/block/block-usage';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
@@ -13,6 +15,8 @@ export interface Scope {
     variableUsages: VariableUsage[];
     functionDeclarations: FunctionDeclaration[];
     functionUsages: FunctionUsage[];
+    blockDeclaration?: BlockDeclaration;
+    blockUsages: BlockUsage[];
     originalRange: Range;
     parent?: Scope;
     children: Scope[];

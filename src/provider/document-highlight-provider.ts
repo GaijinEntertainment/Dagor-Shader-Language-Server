@@ -3,6 +3,7 @@ import { DocumentHighlight, DocumentHighlightKind, DocumentHighlightParams } fro
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
 import { rangeContains } from '../helper/helper';
+import { BlockDeclaration } from '../interface/block/block-declaration';
 import { DefineStatement } from '../interface/define-statement';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { Macro } from '../interface/macro/macro';
@@ -123,6 +124,25 @@ export async function documentHighlightProvider(
         }
         return result;
     }
+    const bd = getBlockDeclaration(snapshot, params);
+    if (bd) {
+        const result: DocumentHighlight[] = [];
+        if (bd.isVisible && bd.uri === params.textDocument.uri) {
+            result.push({
+                range: bd.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        for (const su of bd.usages) {
+            if (su.isVisible) {
+                result.push({
+                    range: su.originalRange,
+                    kind: DocumentHighlightKind.Text,
+                });
+            }
+        }
+        return result;
+    }
     return null;
 }
 
@@ -198,7 +218,7 @@ function getVariableDeclaration(snapshot: Snapshot, params: DocumentHighlightPar
 }
 
 function getFunctionDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): FunctionDeclaration | null {
-    const fu = snapshot.getFunctioneUsageAt(params.position);
+    const fu = snapshot.getFunctionUsageAt(params.position);
     if (fu) {
         return fu.declaration;
     }
@@ -213,6 +233,18 @@ function getShaderDeclaration(snapshot: Snapshot, params: DocumentHighlightParam
     const su = snapshot.getShaderUsageAt(params.position);
     if (su) {
         return su.declaration;
+    }
+    return null;
+}
+
+function getBlockDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): BlockDeclaration | null {
+    const bd = snapshot.getBlockDeclarationAt(params.position);
+    if (bd) {
+        return bd;
+    }
+    const bu = snapshot.getBlockUsageAt(params.position);
+    if (bu) {
+        return bu.declaration;
     }
     return null;
 }

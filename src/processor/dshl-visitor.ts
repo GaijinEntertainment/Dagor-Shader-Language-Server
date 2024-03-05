@@ -1,12 +1,15 @@
+import { ParserRuleContext } from 'antlr4ts';
 import { AbstractParseTreeVisitor } from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import { Range } from 'vscode-languageserver';
 import {
+    Dshl_block_blockContext,
     Dshl_expressionContext,
     Dshl_function_callContext,
     Dshl_hlsl_blockContext,
     Dshl_interval_declarationContext,
     Dshl_shader_declarationContext,
     Dshl_statement_blockContext,
+    Dshl_supports_statementContext,
     Dshl_variable_declarationContext,
     State_objectContext,
     Statement_blockContext,
@@ -15,6 +18,8 @@ import {
 import { DshlParserVisitor } from '../_generated/DshlParserVisitor';
 import { Snapshot } from '../core/snapshot';
 import { Scope } from '../helper/scope';
+import { BlockDeclaration } from '../interface/block/block-declaration';
+import { BlockUsage } from '../interface/block/block-usage';
 import { FunctionArgument } from '../interface/function/function-argument';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
@@ -67,17 +72,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
             this.snapshot.foldingRanges.push(range);
         }
-        const scope: Scope = {
-            shaderDeclarations: [],
-            shaderUsages: [],
-            variableDeclarations: [],
-            variableUsages: [],
-            functionDeclarations: [],
-            functionUsages: [],
-            originalRange: this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
-            children: [],
-            parent: this.scope,
-        };
+        const scope = this.createScope(ctx);
         this.scope.children.push(scope);
         this.scope = scope;
         this.visitChildren(ctx);
@@ -109,40 +104,38 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
     }
 
     public visitDshl_variable_declaration(ctx: Dshl_variable_declarationContext): void {
-        if (this.isVisible(ctx.start.startIndex)) {
-            const type = ctx.IDENTIFIER(0);
-            const idenetifier = ctx.IDENTIFIER(1);
-            const vd: VariableDeclaration = {
-                type: type.text,
-                name: idenetifier.text,
-                nameEndPosition: ctx.stop!.stopIndex + 1,
-                originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
-                nameOriginalRange: this.snapshot.getOriginalRange(
-                    idenetifier.symbol.startIndex,
-                    idenetifier.symbol.stopIndex + 1
-                ),
-                uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
-                isVisible: this.isVisible(ctx.start.startIndex),
-                usages: [],
-            };
-            this.scope.variableDeclarations.push(vd);
-        }
+        const type = ctx.IDENTIFIER(0);
+        const identifier = ctx.IDENTIFIER(1);
+        const vd: VariableDeclaration = {
+            type: type.text,
+            name: identifier.text,
+            nameEndPosition: ctx.stop!.stopIndex + 1,
+            originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+            nameOriginalRange: this.snapshot.getOriginalRange(
+                identifier.symbol.startIndex,
+                identifier.symbol.stopIndex + 1
+            ),
+            uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
+            isVisible: this.isVisible(ctx.start.startIndex),
+            usages: [],
+        };
+        this.scope.variableDeclarations.push(vd);
         this.visitChildren(ctx);
     }
 
     public visitDshl_expression?(ctx: Dshl_expressionContext): void {
         if (this.isVisible(ctx.start.startIndex)) {
-            const idenetifier = ctx.IDENTIFIER();
-            if (idenetifier) {
-                const position = idenetifier.symbol.startIndex;
+            const identifier = ctx.IDENTIFIER();
+            if (identifier) {
+                const position = identifier.symbol.startIndex;
                 const originalPosition = this.snapshot.getOriginalPosition(position, true);
-                const vd = this.snapshot.getVariableDeclarationFor(idenetifier.text, originalPosition);
+                const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
                 if (vd) {
                     const vu: VariableUsage = {
                         declaration: vd,
                         originalRange: this.snapshot.getOriginalRange(
-                            idenetifier.symbol.startIndex,
-                            idenetifier.symbol.stopIndex + 1
+                            identifier.symbol.startIndex,
+                            identifier.symbol.stopIndex + 1
                         ),
                         isVisible: this.isVisible(ctx.start.startIndex),
                     };
@@ -151,13 +144,13 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     this.visitChildren(ctx);
                     return;
                 }
-                const sd = this.snapshot.getShaderDeclarationFor(idenetifier.text, originalPosition);
+                const sd = this.snapshot.getShaderDeclarationFor(identifier.text, originalPosition);
                 if (sd) {
                     const su: ShaderUsage = {
                         declaration: sd,
                         originalRange: this.snapshot.getOriginalRange(
-                            idenetifier.symbol.startIndex,
-                            idenetifier.symbol.stopIndex + 1
+                            identifier.symbol.startIndex,
+                            identifier.symbol.stopIndex + 1
                         ),
                         isVisible: this.isVisible(ctx.start.startIndex),
                     };
@@ -218,17 +211,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
     }
 
     public visitDshl_shader_declaration(ctx: Dshl_shader_declarationContext): void {
-        const scope: Scope = {
-            shaderDeclarations: [],
-            shaderUsages: [],
-            variableDeclarations: [],
-            variableUsages: [],
-            functionDeclarations: [],
-            functionUsages: [],
-            originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex),
-            children: [],
-            parent: this.scope,
-        };
+        const scope = this.createScope(ctx);
         this.scope.children.push(scope);
         this.scope = scope;
         for (const shader of ctx.IDENTIFIER()) {
@@ -252,16 +235,16 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
 
     public visitDshl_interval_declaration(ctx: Dshl_interval_declarationContext): void {
         if (this.isVisible(ctx.start.startIndex)) {
-            const idenetifier = ctx.IDENTIFIER(0);
-            const position = idenetifier.symbol.startIndex;
+            const identifier = ctx.IDENTIFIER(0);
+            const position = identifier.symbol.startIndex;
             const originalPosition = this.snapshot.getOriginalPosition(position, true);
-            const vd = this.snapshot.getVariableDeclarationFor(idenetifier.text, originalPosition);
+            const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
             if (vd) {
                 const id: IntervalDeclaration = {
                     originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
                     nameOriginalRange: this.snapshot.getOriginalRange(
-                        idenetifier.symbol.startIndex,
-                        idenetifier.symbol.stopIndex + 1
+                        identifier.symbol.startIndex,
+                        identifier.symbol.stopIndex + 1
                     ),
                     uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
                     isVisible: this.isVisible(ctx.start.startIndex),
@@ -271,6 +254,66 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+    }
+
+    public visitDshl_block_block(ctx: Dshl_block_blockContext): void {
+        const scope = this.createScope(ctx);
+        this.scope.children.push(scope);
+        this.scope = scope;
+        const type = ctx.IDENTIFIER(0);
+        const identifier = ctx.IDENTIFIER(1);
+        const bd: BlockDeclaration = {
+            type: type.text,
+            name: identifier.text,
+            originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+            nameOriginalRange: this.snapshot.getOriginalRange(
+                identifier.symbol.startIndex,
+                identifier.symbol.stopIndex + 1
+            ),
+            uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
+            isVisible: this.isVisible(ctx.start.startIndex),
+            usages: [],
+        };
+        this.scope.blockDeclaration = bd;
+        this.visitChildren(ctx);
+        this.scope = scope.parent!;
+    }
+
+    public visitDshl_supports_statement(ctx: Dshl_supports_statementContext): void {
+        if (this.isVisible(ctx.start.startIndex)) {
+            const identifier = ctx.IDENTIFIER();
+            const position = identifier.symbol.startIndex;
+            const originalPosition = this.snapshot.getOriginalPosition(position, true);
+            const bd = this.snapshot.getBlockDeclarationFor(identifier.text, originalPosition);
+            if (bd) {
+                const bu: BlockUsage = {
+                    originalRange: this.snapshot.getOriginalRange(
+                        identifier.symbol.startIndex,
+                        identifier.symbol.stopIndex + 1
+                    ),
+                    isVisible: this.isVisible(ctx.start.startIndex),
+                    declaration: bd,
+                };
+                bd.usages.push(bu);
+                this.scope.blockUsages.push(bu);
+            }
+        }
+        this.visitChildren(ctx);
+    }
+
+    private createScope(ctx: ParserRuleContext): Scope {
+        return {
+            shaderDeclarations: [],
+            shaderUsages: [],
+            variableDeclarations: [],
+            variableUsages: [],
+            functionDeclarations: [],
+            functionUsages: [],
+            blockUsages: [],
+            originalRange: this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+            children: [],
+            parent: this.scope,
+        };
     }
 
     protected defaultResult(): void {}

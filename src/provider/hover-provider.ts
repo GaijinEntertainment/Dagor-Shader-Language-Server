@@ -3,6 +3,8 @@ import { Hover, HoverParams, MarkupContent, MarkupKind } from 'vscode-languagese
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
+import { toStringBlockDeclaration } from '../interface/block/block-declaration';
+import { BlockUsage } from '../interface/block/block-usage';
 import { DefineContext } from '../interface/define-context';
 import { toStringDefineStatementWithContent } from '../interface/define-statement';
 import { toStringFunctionDeclaration } from '../interface/function/function-declaration';
@@ -48,7 +50,7 @@ export async function hoverProvider(params: HoverParams): Promise<Hover | undefi
             range: vu.originalRange,
         };
     }
-    const fu = snapshot.getFunctioneUsageAt(params.position);
+    const fu = snapshot.getFunctionUsageAt(params.position);
     if (fu) {
         return {
             contents: createFunctionHoverContent(fu),
@@ -60,6 +62,13 @@ export async function hoverProvider(params: HoverParams): Promise<Hover | undefi
         return {
             contents: createShaderHoverContent(su),
             range: su.originalRange,
+        };
+    }
+    const bu = snapshot.getBlockUsageAt(params.position);
+    if (bu) {
+        return {
+            contents: createBlockHoverContent(bu),
+            range: bu.originalRange,
         };
     }
     return null;
@@ -164,6 +173,25 @@ function createShaderHoverContent(su: ShaderUsage): MarkupContent {
 function getShaderValue(su: ShaderUsage): string {
     const sd = su.declaration;
     const declaration = toStringShaderDeclaration(sd);
+    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
+        return `\`\`\`dshl\n${declaration}\n\`\`\``;
+    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
+        return declaration;
+    } else {
+        return '';
+    }
+}
+
+function createBlockHoverContent(bu: BlockUsage): MarkupContent {
+    return {
+        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
+        value: getBlockValue(bu),
+    };
+}
+
+function getBlockValue(bu: BlockUsage): string {
+    const sd = bu.declaration;
+    const declaration = toStringBlockDeclaration(sd);
     if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
         return `\`\`\`dshl\n${declaration}\n\`\`\``;
     } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {

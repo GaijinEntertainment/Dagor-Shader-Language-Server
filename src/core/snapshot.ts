@@ -3,6 +3,8 @@ import { DocumentUri, Position, Range } from 'vscode-languageserver';
 import { dshlFunctions } from '../helper/dshl-info';
 import { defaultPosition, isBeforeOrEqual, isIntervalContains, rangeContains } from '../helper/helper';
 import { Scope } from '../helper/scope';
+import { BlockDeclaration } from '../interface/block/block-declaration';
+import { BlockUsage } from '../interface/block/block-usage';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
@@ -68,6 +70,7 @@ export class Snapshot {
             variableUsages: [],
             functionDeclarations: [],
             functionUsages: [],
+            blockUsages: [],
             originalRange: {
                 start: defaultPosition,
                 end: {
@@ -434,12 +437,24 @@ export class Snapshot {
         return null;
     }
 
-    public getFunctioneUsageAt(position: Position): FunctionUsage | null {
+    public getFunctionUsageAt(position: Position): FunctionUsage | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
             const fu = scope.functionUsages.find((fu) => fu.isVisible && rangeContains(fu.originalRange, position));
             if (fu) {
                 return fu;
+            }
+            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getBlockUsageAt(position: Position): BlockUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const bu = scope.blockUsages.find((bu) => bu.isVisible && rangeContains(bu.originalRange, position));
+            if (bu) {
+                return bu;
             }
             scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
         }
@@ -523,6 +538,21 @@ export class Snapshot {
         return null;
     }
 
+    public getBlockDeclarationAt(position: Position): BlockDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            if (
+                scope.blockDeclaration &&
+                scope.blockDeclaration.isVisible &&
+                rangeContains(scope.blockDeclaration.nameOriginalRange, position)
+            ) {
+                return scope.blockDeclaration;
+            }
+            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
     public getVariableDeclarationFor(name: string, position: Position): VariableDeclaration | null {
         let scope: Scope | null = this.getScopeAt(position);
         while (scope) {
@@ -551,6 +581,20 @@ export class Snapshot {
         return null;
     }
 
+    public getBlockDeclarationFor(name: string, position: Position): BlockDeclaration | null {
+        let scope: Scope | null = this.getScopeAt(position);
+        while (scope) {
+            const bd = scope.children
+                .map((s) => s.blockDeclaration)
+                .find((bd) => bd && bd.name === name && isBeforeOrEqual(bd.nameOriginalRange.end, position));
+            if (bd) {
+                return bd;
+            }
+            scope = scope.parent ?? null;
+        }
+        return null;
+    }
+
     public getVariableDeclarationsInScope(position: Position): VariableDeclaration[] {
         const result: VariableDeclaration[] = [];
         let scope: Scope | null = this.getScopeAt(position);
@@ -570,6 +614,19 @@ export class Snapshot {
             result.push(
                 ...scope.shaderDeclarations.filter((vd) => isBeforeOrEqual(vd.nameOriginalRange.end, position))
             );
+            scope = scope.parent ?? null;
+        }
+        return result;
+    }
+
+    public getBlockDeclarationsInScope(position: Position): BlockDeclaration[] {
+        const result: BlockDeclaration[] = [];
+        let scope: Scope | null = this.getScopeAt(position);
+        while (scope) {
+            const bds = scope.children
+                .map((s) => s.blockDeclaration)
+                .filter((bd) => bd && isBeforeOrEqual(bd.nameOriginalRange.end, position)) as BlockDeclaration[];
+            result.push(...bds);
             scope = scope.parent ?? null;
         }
         return result;
