@@ -79,6 +79,7 @@ export class Snapshot {
                 },
             },
             children: [],
+            isVisible: true,
         };
         this.rootScope.functionDeclarations = dshlFunctions.map((fi) => ({
             name: fi.name,
@@ -420,7 +421,7 @@ export class Snapshot {
             if (vu) {
                 return vu;
             }
-            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
         }
         return null;
     }
@@ -432,7 +433,7 @@ export class Snapshot {
             if (vu) {
                 return vu;
             }
-            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
         }
         return null;
     }
@@ -444,7 +445,7 @@ export class Snapshot {
             if (fu) {
                 return fu;
             }
-            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
         }
         return null;
     }
@@ -456,7 +457,7 @@ export class Snapshot {
             if (bu) {
                 return bu;
             }
-            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
         }
         return null;
     }

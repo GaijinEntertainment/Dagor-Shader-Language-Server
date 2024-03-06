@@ -44,9 +44,9 @@ dshl_statement:
 dshl_assignment:
 	IDENTIFIER ASSIGN dshl_expression SEMICOLON
 	| IDENTIFIER AT IDENTIFIER dshl_array_subscript? (
-		ASSIGN dshl_expression SEMICOLON?
+		ASSIGN IDENTIFIER dshl_hlsl_block SEMICOLON?
 		| COLON IDENTIFIER LRB dshl_expression RRB dshl_hlsl_block SEMICOLON?
-		| ASSIGN IDENTIFIER dshl_hlsl_block SEMICOLON
+		| ASSIGN dshl_expression SEMICOLON?
 	);
 
 dshl_array_subscript: LSB dshl_expression? RSB;
@@ -198,7 +198,8 @@ namespace: NAMESPACE hlsl_identifier statement_block;
 struct_member_declaration:
 	//interpolation_modifier* type hlsl_identifier SEMICOLON
 	variable_declaration_statement
-	| function_definition;
+	| function_call
+	| function_header;
 
 interpolation_modifier:
 	hlsl_identifier; //linear, centroid, nointerpolation, noperspective, sample

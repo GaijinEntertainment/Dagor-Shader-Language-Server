@@ -20,4 +20,5 @@ export interface Scope {
     originalRange: Range;
     parent?: Scope;
     children: Scope[];
+    isVisible: boolean;
 }

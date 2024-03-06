@@ -2,6 +2,7 @@ import { ParserRuleContext } from 'antlr4ts';
 import { AbstractParseTreeVisitor } from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import { Range } from 'vscode-languageserver';
 import {
+    Dshl_assignmentContext,
     Dshl_block_blockContext,
     Dshl_expressionContext,
     Dshl_function_callContext,
@@ -301,6 +302,28 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         this.visitChildren(ctx);
     }
 
+    public visitDshl_assignment(ctx: Dshl_assignmentContext): void {
+        if (this.isVisible(ctx.start.startIndex) && ctx.dshl_hlsl_block() && ctx.ASSIGN()) {
+            const identifier = ctx.IDENTIFIER(2);
+            const position = identifier.symbol.startIndex;
+            const originalPosition = this.snapshot.getOriginalPosition(position, true);
+            const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
+            if (vd) {
+                const vu: VariableUsage = {
+                    declaration: vd,
+                    originalRange: this.snapshot.getOriginalRange(
+                        identifier.symbol.startIndex,
+                        identifier.symbol.stopIndex + 1
+                    ),
+                    isVisible: this.isVisible(ctx.start.startIndex),
+                };
+                this.scope.variableUsages.push(vu);
+                vd.usages.push(vu);
+            }
+        }
+        this.visitChildren(ctx);
+    }
+
     private createScope(ctx: ParserRuleContext): Scope {
         return {
             shaderDeclarations: [],
@@ -313,6 +336,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             originalRange: this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
             children: [],
             parent: this.scope,
+            isVisible: this.isVisible(ctx.start.startIndex),
         };
     }
 
