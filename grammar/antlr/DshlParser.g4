@@ -27,7 +27,7 @@ dshl_statement:
 	| RENDER_TRANS SEMICOLON
 	| NO_ABLEND SEMICOLON
 	| RENDER_STAGE IDENTIFIER SEMICOLON
-	| dshl_if_statemetn
+	| dshl_if_statement
 	| dshl_function_call SEMICOLON
 	| dshl_shader_declaration
 	| dshl_hlsl_block
@@ -51,7 +51,7 @@ dshl_assignment:
 
 dshl_array_subscript: LSB dshl_expression? RSB;
 
-dshl_if_statemetn:
+dshl_if_statement:
 	IF LRB dshl_expression RRB dshl_statement (
 		ELSE dshl_statement
 	)?;
