@@ -558,7 +558,7 @@ export class Snapshot {
         let scope: Scope | null = this.getScopeAt(position);
         while (scope) {
             const vd = scope.variableDeclarations.find(
-                (vd) => isBeforeOrEqual(vd.nameOriginalRange.end, position) && vd.name === name
+                (vd) => isBeforeOrEqual(vd.originalRange.end, position) && vd.name === name
             );
             if (vd) {
                 return vd;
