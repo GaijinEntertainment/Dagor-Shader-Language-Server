@@ -21,7 +21,7 @@ dshl_variable_declaration:
 	)? dshl_modifier* SEMICOLON;
 
 dshl_statement:
-	ASSUME IDENTIFIER ASSIGN dshl_expression SEMICOLON
+	dshl_assume_statement
 	| DONT_RENDER SEMICOLON
 	| NO_DYNSTCODE SEMICOLON
 	| RENDER_TRANS SEMICOLON
@@ -40,6 +40,9 @@ dshl_statement:
 	| dshl_macro_statement
 	| dshl_preshader
 	| dshl_function_call;
+
+dshl_assume_statement:
+	ASSUME IDENTIFIER ASSIGN dshl_expression SEMICOLON;
 
 dshl_assignment:
 	IDENTIFIER ASSIGN dshl_expression SEMICOLON
