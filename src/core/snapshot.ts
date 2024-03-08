@@ -72,7 +72,7 @@ export class Snapshot {
             functionUsages: [],
             blockUsages: [],
             originalRange: {
-                start: defaultPosition,
+                start: { line: 0, character: 0 },
                 end: {
                     line: this.originalTextOffsets.length,
                     character: lastLine.endPosition - lastLine.startPosition,
@@ -492,7 +492,7 @@ export class Snapshot {
             if (fu) {
                 return fu;
             }
-            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
         }
         return null;
     }
@@ -506,7 +506,7 @@ export class Snapshot {
             if (vd) {
                 return vd;
             }
-            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
         }
         return null;
     }
@@ -520,7 +520,7 @@ export class Snapshot {
             if (sd) {
                 return sd;
             }
-            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
         }
         return null;
     }
@@ -534,7 +534,7 @@ export class Snapshot {
             if (id) {
                 return id;
             }
-            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
         }
         return null;
     }
@@ -549,13 +549,13 @@ export class Snapshot {
             ) {
                 return scope.blockDeclaration;
             }
-            scope = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
         }
         return null;
     }
 
-    public getVariableDeclarationFor(name: string, position: Position): VariableDeclaration | null {
-        let scope: Scope | null = this.getScopeAt(position);
+    public getVariableDeclarationFor(name: string, position: Position, onlyRoot = false): VariableDeclaration | null {
+        let scope: Scope | null = onlyRoot ? this.rootScope : this.getScopeAt(position);
         while (scope) {
             const vd = scope.variableDeclarations.find(
                 (vd) => isBeforeOrEqual(vd.originalRange.end, position) && vd.name === name
@@ -563,13 +563,16 @@ export class Snapshot {
             if (vd) {
                 return vd;
             }
+            if (onlyRoot) {
+                return null;
+            }
             scope = scope.parent ?? null;
         }
         return null;
     }
 
-    public getShaderDeclarationFor(name: string, position: Position): ShaderDeclaration | null {
-        let scope: Scope | null = this.getScopeAt(position);
+    public getShaderDeclarationFor(name: string, position: Position, onlyRoot = false): ShaderDeclaration | null {
+        let scope: Scope | null = onlyRoot ? this.rootScope : this.getScopeAt(position);
         while (scope) {
             const sd = scope.shaderDeclarations.find(
                 (sd) => isBeforeOrEqual(sd.nameOriginalRange.end, position) && sd.name === name
@@ -577,19 +580,25 @@ export class Snapshot {
             if (sd) {
                 return sd;
             }
+            if (onlyRoot) {
+                return null;
+            }
             scope = scope.parent ?? null;
         }
         return null;
     }
 
-    public getBlockDeclarationFor(name: string, position: Position): BlockDeclaration | null {
-        let scope: Scope | null = this.getScopeAt(position);
+    public getBlockDeclarationFor(name: string, position: Position, onlyRoot = false): BlockDeclaration | null {
+        let scope: Scope | null = onlyRoot ? this.rootScope : this.getScopeAt(position);
         while (scope) {
             const bd = scope.children
                 .map((s) => s.blockDeclaration)
                 .find((bd) => bd && bd.name === name && isBeforeOrEqual(bd.nameOriginalRange.end, position));
             if (bd) {
                 return bd;
+            }
+            if (onlyRoot) {
+                return null;
             }
             scope = scope.parent ?? null;
         }
@@ -649,7 +658,8 @@ export class Snapshot {
     private getScopeAt(position: Position): Scope {
         let scope: Scope | null = this.rootScope;
         while (scope) {
-            const child: Scope | null = scope.children.find((c) => rangeContains(c.originalRange, position)) ?? null;
+            const child: Scope | null =
+                scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
             if (child) {
                 scope = child;
             } else {

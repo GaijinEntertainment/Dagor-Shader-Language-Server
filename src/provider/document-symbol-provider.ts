@@ -39,26 +39,15 @@ export async function documentSymbolProvider(
 
 function createDocumentSymbols(snapshot: Snapshot, uri: DocumentUri): DocumentSymbol[] {
     const result: DocumentSymbol[] = [];
-    const mds = snapshot.macroDeclarations.filter((md) => md.uri === uri);
-    for (const md of mds) {
-        result.push({
-            name: md.name,
-            kind: SymbolKind.Constant,
-            range: md.originalRange,
-            selectionRange: md.nameOriginalRange,
-            detail: toStringMacroDeclarationParameterList(md),
-            children: md.contentSnapshot.defineStatements.map((ds) => defineToDocumentSymbol(ds)),
-        });
-    }
     const dss = snapshot.defineStatements.filter((ds) => ds.isVisible && !ds.realDefine);
     for (const ds of dss) {
         result.push(defineToDocumentSymbol(ds));
     }
-    addScopedElements(result, snapshot.rootScope);
+    addScopedElements(result, snapshot.rootScope, uri);
     return result;
 }
 
-function addScopedElements(dss: DocumentSymbol[], scope: Scope): void {
+function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri): void {
     for (const vd of scope.variableDeclarations) {
         if (vd.isVisible) {
             dss.push({
@@ -82,7 +71,7 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope): void {
                 children: sdss,
             });
             for (const shaderChildScope of childScope.children) {
-                addScopedElements(sdss, shaderChildScope);
+                addScopedElements(sdss, shaderChildScope, uri);
             }
         } else if (childScope.blockDeclaration) {
             if (childScope.blockDeclaration.isVisible) {
@@ -96,11 +85,28 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope): void {
                     children: sdss,
                 });
                 for (const shaderChildScope of childScope.children) {
-                    addScopedElements(sdss, shaderChildScope);
+                    addScopedElements(sdss, shaderChildScope, uri);
+                }
+            }
+        } else if (childScope.macroDeclaration) {
+            if (childScope.macroDeclaration.uri === uri) {
+                const sdss = childScope.macroDeclaration.contentSnapshot.defineStatements.map((ds) =>
+                    defineToDocumentSymbol(ds)
+                );
+                dss.push({
+                    name: childScope.macroDeclaration.name,
+                    kind: SymbolKind.Constant,
+                    range: childScope.macroDeclaration.originalRange,
+                    selectionRange: childScope.macroDeclaration.nameOriginalRange,
+                    detail: toStringMacroDeclarationParameterList(childScope.macroDeclaration),
+                    children: sdss,
+                });
+                for (const shaderChildScope of childScope.children) {
+                    addScopedElements(sdss, shaderChildScope, uri);
                 }
             }
         } else {
-            addScopedElements(dss, childScope);
+            addScopedElements(dss, childScope, uri);
         }
     }
 }

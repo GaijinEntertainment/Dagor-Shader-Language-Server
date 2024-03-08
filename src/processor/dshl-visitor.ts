@@ -1,7 +1,7 @@
 import { ParserRuleContext } from 'antlr4ts';
 import { AbstractParseTreeVisitor } from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode';
-import { Range } from 'vscode-languageserver';
+import { Position, Range } from 'vscode-languageserver';
 import {
     Dshl_assignmentContext,
     Dshl_assume_statementContext,
@@ -35,11 +35,15 @@ import { VariableUsage } from '../interface/variable/variable-usage';
 export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlParserVisitor<void> {
     private snapshot: Snapshot;
     private scope: Scope;
+    private rootSnapshot?: Snapshot;
+    private contentStartPosition?: Position;
 
-    public constructor(snapshot: Snapshot) {
+    public constructor(snapshot: Snapshot, rootSnapshot?: Snapshot, contentStartPosition?: Position) {
         super();
         this.snapshot = snapshot;
         this.scope = snapshot.rootScope;
+        this.rootSnapshot = rootSnapshot;
+        this.contentStartPosition = contentStartPosition;
     }
 
     private isVisible(position: number): boolean {
@@ -138,6 +142,17 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     this.createVariableUsage(vd, identifier, visible);
                     this.visitChildren(ctx);
                     return;
+                } else if (this.rootSnapshot && this.contentStartPosition) {
+                    const vd = this.rootSnapshot.getVariableDeclarationFor(
+                        identifier.text,
+                        this.contentStartPosition,
+                        true
+                    );
+                    if (vd) {
+                        this.createVariableUsage(vd, identifier, visible);
+                        this.visitChildren(ctx);
+                        return;
+                    }
                 }
                 const sd = this.snapshot.getShaderDeclarationFor(identifier.text, originalPosition);
                 if (sd) {
@@ -153,6 +168,22 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     sd.usages.push(su);
                     this.visitChildren(ctx);
                     return;
+                } else if (this.rootSnapshot && this.contentStartPosition) {
+                    const sd = this.snapshot.getShaderDeclarationFor(identifier.text, this.contentStartPosition, true);
+                    if (sd) {
+                        const su: ShaderUsage = {
+                            declaration: sd,
+                            originalRange: this.snapshot.getOriginalRange(
+                                identifier.symbol.startIndex,
+                                identifier.symbol.stopIndex + 1
+                            ),
+                            isVisible: visible,
+                        };
+                        this.scope.shaderUsages.push(su);
+                        sd.usages.push(su);
+                        this.visitChildren(ctx);
+                        return;
+                    }
                 }
             }
         }
@@ -163,7 +194,9 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         const visible = this.isVisible(ctx.start.startIndex);
         if (visible) {
             const name = ctx.IDENTIFIER();
-            const fd = this.snapshot.rootScope.functionDeclarations.find((fd) => fd.name === name.text);
+            const fd = (this.rootSnapshot ?? this.snapshot).rootScope.functionDeclarations.find(
+                (fd) => fd.name === name.text
+            );
             if (fd) {
                 const fu: FunctionUsage = {
                     declaration: fd,
@@ -294,6 +327,20 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 };
                 bd.usages.push(bu);
                 this.scope.blockUsages.push(bu);
+            } else if (this.rootSnapshot && this.contentStartPosition) {
+                const bd = this.snapshot.getBlockDeclarationFor(identifier.text, this.contentStartPosition, true);
+                if (bd) {
+                    const bu: BlockUsage = {
+                        originalRange: this.snapshot.getOriginalRange(
+                            identifier.symbol.startIndex,
+                            identifier.symbol.stopIndex + 1
+                        ),
+                        isVisible: visible,
+                        declaration: bd,
+                    };
+                    bd.usages.push(bu);
+                    this.scope.blockUsages.push(bu);
+                }
             }
         }
         this.visitChildren(ctx);
@@ -308,6 +355,15 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
             if (vd) {
                 this.createVariableUsage(vd, identifier, visible);
+            } else if (this.rootSnapshot && this.contentStartPosition) {
+                const vd = this.rootSnapshot.getVariableDeclarationFor(
+                    identifier.text,
+                    this.contentStartPosition,
+                    true
+                );
+                if (vd) {
+                    this.createVariableUsage(vd, identifier, visible);
+                }
             }
         }
         this.visitChildren(ctx);
@@ -322,6 +378,15 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
             if (vd) {
                 this.createVariableUsage(vd, identifier, visible);
+            } else if (this.rootSnapshot && this.contentStartPosition) {
+                const vd = this.rootSnapshot.getVariableDeclarationFor(
+                    identifier.text,
+                    this.contentStartPosition,
+                    true
+                );
+                if (vd) {
+                    this.createVariableUsage(vd, identifier, visible);
+                }
             }
         }
         this.visitChildren(ctx);

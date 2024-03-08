@@ -1,7 +1,7 @@
-import { DocumentUri, Position, Range } from 'vscode-languageserver';
+import { DocumentUri, Range } from 'vscode-languageserver';
 
 import { Snapshot } from '../core/snapshot';
-import { defaultRange } from '../helper/helper';
+import { defaultRange, offsetPosition } from '../helper/helper';
 import { Arguments } from '../interface/arguments';
 import { ElementRange } from '../interface/element-range';
 import { HlslBlock } from '../interface/hlsl-block';
@@ -463,23 +463,14 @@ class DshlPreprocessor {
 
     private offsetPositions(nameOriginalRange: Range, md: MacroDeclaration, ma: Arguments): void {
         const contentStartPosition = md.contentOriginalRange.start;
-        this.offsetPosition(nameOriginalRange.start, contentStartPosition);
-        this.offsetPosition(nameOriginalRange.end, contentStartPosition);
-        this.offsetPosition(ma.argumentListOriginalRange.start, contentStartPosition);
-        this.offsetPosition(ma.argumentListOriginalRange.end, contentStartPosition);
+        offsetPosition(nameOriginalRange.start, contentStartPosition);
+        offsetPosition(nameOriginalRange.end, contentStartPosition);
+        offsetPosition(ma.argumentListOriginalRange.start, contentStartPosition);
+        offsetPosition(ma.argumentListOriginalRange.end, contentStartPosition);
         for (const maa of ma.arguments) {
-            this.offsetPosition(maa.originalRange.start, contentStartPosition);
-            this.offsetPosition(maa.originalRange.end, contentStartPosition);
-            this.offsetPosition(maa.trimmedOriginalStartPosition, contentStartPosition);
-        }
-    }
-
-    private offsetPosition(position: Position, offset: Position): void {
-        if (position.line === 0) {
-            position.line = offset.line;
-            position.character += offset.character;
-        } else {
-            position.line += offset.line;
+            offsetPosition(maa.originalRange.start, contentStartPosition);
+            offsetPosition(maa.originalRange.end, contentStartPosition);
+            offsetPosition(maa.trimmedOriginalStartPosition, contentStartPosition);
         }
     }
 

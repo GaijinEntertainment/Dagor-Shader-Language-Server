@@ -25,3 +25,12 @@ export function isBeforeOrEqual(p1: Position, p2: Position): boolean {
 export function isIntervalContains(startPosition: number, endPosition: number, position: number): boolean {
     return startPosition <= position && position <= endPosition;
 }
+
+export function offsetPosition(position: Position, offset: Position): void {
+    if (position.line === 0) {
+        position.line = offset.line;
+        position.character += offset.character;
+    } else {
+        position.line += offset.line;
+    }
+}

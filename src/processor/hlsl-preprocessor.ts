@@ -796,13 +796,13 @@ export class HlslPreprocessor {
             );
             textEdits.push(te);
             if (expansions.length === 0) {
-                const beforeEndPosition = globalPosition + te.newText.length;
-                const afterEndPosition = globalPosition + macroSnapshot.text.length;
+                const globalBeforeEndPosition = globalPosition + (beforeEndPosition - localPosition);
+                const globalAfterEndPosition = globalPosition + macroSnapshot.text.length;
                 const nameOriginalRange = this.snapshot.getOriginalRange(
                     globalPosition,
                     globalPosition + identifier.length
                 );
-                const originalRange = this.snapshot.getOriginalRange(globalPosition, afterEndPosition);
+                const originalRange = this.snapshot.getOriginalRange(globalPosition, globalBeforeEndPosition);
                 if (da) {
                     this.computeOriginalArgumentPositions(da, offset);
                 }
@@ -812,8 +812,8 @@ export class HlslPreprocessor {
                     !this.snapshot.isInMacroContext(globalPosition);
                 HlslPreprocessor.createDefineContext(
                     globalPosition,
-                    beforeEndPosition,
-                    afterEndPosition,
+                    globalBeforeEndPosition,
+                    globalBeforeEndPosition,
                     originalRange,
                     nameOriginalRange,
                     ds,
