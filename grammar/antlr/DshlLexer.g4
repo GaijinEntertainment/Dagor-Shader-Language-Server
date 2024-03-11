@@ -1,8 +1,20 @@
 lexer grammar DshlLexer;
 
-//ASSERT: '##assert';
-
-PREPROCESSOR: '#' ~[\r\n]* -> channel(HIDDEN);
+ASSERT: '##assert';
+PREPROCESSOR:
+	'#' ' '* ('#' ' '*)? (
+		'if'
+		| 'elif'
+		| 'else'
+		| 'endif'
+		| 'ifdef'
+		| 'ifndef'
+		| 'define'
+		| 'undef'
+		| 'pragma'
+		| 'include'
+		| 'error'
+	) ~[\r\n]* -> channel(HIDDEN);
 NEW_LINE: ('\r\n' | '\r' | '\n') -> channel(HIDDEN);
 SPACE: ' ' -> channel(HIDDEN);
 TAB: '\t' -> channel(HIDDEN);

@@ -21,8 +21,7 @@ dshl_variable_declaration:
 	)? dshl_modifier* SEMICOLON;
 
 dshl_statement:
-	dshl_assume_statement
-	| DONT_RENDER SEMICOLON
+	DONT_RENDER SEMICOLON
 	| NO_DYNSTCODE SEMICOLON
 	| RENDER_TRANS SEMICOLON
 	| NO_ABLEND SEMICOLON
@@ -31,6 +30,7 @@ dshl_statement:
 	| dshl_function_call SEMICOLON
 	| dshl_shader_declaration
 	| dshl_hlsl_block
+	| dshl_assume_statement
 	| dshl_assignment
 	| dshl_block_block
 	| dshl_supports_statement
@@ -39,7 +39,8 @@ dshl_statement:
 	| dshl_interval_declaration
 	| dshl_macro_statement
 	| dshl_preshader
-	| dshl_function_call;
+	| dshl_function_call
+	| IDENTIFIER;
 
 dshl_assume_statement:
 	ASSUME IDENTIFIER ASSIGN dshl_expression SEMICOLON;
@@ -122,8 +123,8 @@ hlsl:
 		| shader_constant
 		| function_declaration
 		| function_definition
-		| variable_declaration_statement
-		| type_declaration_statement
+		| statement
+		| SEMICOLON
 	)*;
 
 function_declaration: function_header SEMICOLON;
@@ -164,14 +165,16 @@ operator:
 
 template: TEMPLATE (LAB template_parameter_list? RAB);
 
-template_parameter_list: (CLASS | TYPENAME) hlsl_identifier (
+template_parameter_list:
+	variable_declaration
+	| (CLASS | TYPENAME) hlsl_identifier (
 		COMMA (CLASS | TYPENAME) hlsl_identifier
 	)*;
 
 parameter_list: parameter (COMMA parameter)*;
 
 parameter:
-	input_modifier* type hlsl_identifier semantic* (
+	input_modifier* type hlsl_identifier semantic* hlsl_identifier* (
 		COLON interpolation_modifier
 	)* (ASSIGN expression)?;
 
@@ -187,12 +190,12 @@ variable_declaration:
 	)*;
 
 variable_initialization:
-	hlsl_identifier (AT IDENTIFIER)? (LSB expression RSB)* semantic* packoffset* register* (
+	hlsl_identifier (AT IDENTIFIER)? array_subscript* semantic* packoffset* register* (
 		(ASSIGN expression | statement_block)
 	)?;
 
 type_declaration:
-	template? type_keyowrd hlsl_identifier LCB struct_member_declaration* RCB;
+	template? type_keyowrd hlsl_identifier? LCB struct_member_declaration* RCB;
 
 type_keyowrd: STRUCT | ENUM CLASS | ENUM | CLASS | INTERFACE;
 
@@ -202,7 +205,9 @@ struct_member_declaration:
 	//interpolation_modifier* type hlsl_identifier SEMICOLON
 	variable_declaration_statement
 	| function_call
-	| function_header;
+	| function_header
+	| expression_list
+	| type_declaration_statement;
 
 interpolation_modifier:
 	hlsl_identifier; //linear, centroid, nointerpolation, noperspective, sample
@@ -212,9 +217,10 @@ typedef: TYPEDEF const* type hlsl_identifier;
 const: hlsl_identifier; // const
 
 state_object:
-	type hlsl_identifier (AT hlsl_identifier)? ASSIGN LCB (
+	type hlsl_identifier (AT hlsl_identifier)? ASSIGN? LCB (
 		expression_list
-	) RCB SEMICOLON;
+		| variable_declaration_statement+
+	) RCB SEMICOLON?;
 
 shader_constant:
 	type hlsl_identifier register* statement_block SEMICOLON;
@@ -237,11 +243,15 @@ statement:
 	| default
 	| while_statement
 	| expression_statement
+	| expression_list_statement
+	| function_call
 	| SEMICOLON;
 
 statement_block: LCB statement* RCB;
 
 expression_statement: expression SEMICOLON;
+
+expression_list_statement: expression_list SEMICOLON;
 
 variable_declaration_statement: variable_declaration SEMICOLON;
 
@@ -263,8 +273,10 @@ do_attribute:
 	| hlsl_identifier; // fastopt
 
 for_statement:
-	loop_attribute* FOR LRB variable_declaration? SEMICOLON expression_list? SEMICOLON
-		expression_list? RRB statement;
+	loop_attribute* FOR LRB (
+		variable_declaration
+		| expression_list
+	)? SEMICOLON expression_list? SEMICOLON expression_list? RRB statement;
 
 loop_attribute:
 	LSB hlsl_identifier (LRB expression RRB)? RSB
@@ -294,15 +306,16 @@ while_statement:
 	loop_attribute* WHILE LRB expression RRB statement;
 
 function_call:
-	hlsl_identifier (LAB expression_list? RAB)* LRB expression_list? RRB;
+	(hlsl_identifier | ASSERT) (LAB expression_list? RAB)* LRB expression_list? RRB;
 
-expression_list: expression (COMMA expression)* COMMA?;
+expression_list: expression+ (COMMA expression+)* COMMA?;
 
 expression:
 	(
 		literal
 		| function_call
 		| hlsl_identifier
+		| COLON COLON hlsl_identifier
 		| LCB expression_list RCB
 	)
 	| LRB expression_list RRB
@@ -356,7 +369,7 @@ register:
 
 clipplanes: hlsl_identifier LRB expression RRB; // clipplanes
 
-array_subscript: LSB expression RSB;
+array_subscript: LSB expression? RSB;
 
 type:
 	hlsl_identifier (LAB expression_list? RAB)* array_subscript*;
