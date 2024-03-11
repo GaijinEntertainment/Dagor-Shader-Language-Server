@@ -25,12 +25,8 @@
             "comment": "BLOCK",
             "begin": "{",
             "end": "}",
-            "beginCaptures": {
-                "0": { "name": "punctuation.hlsl" }
-            },
-            "endCaptures": {
-                "0": { "name": "punctuation.hlsl" }
-            },
+            "beginCaptures": { "0": { "name": "punctuation.hlsl" } },
+            "endCaptures": { "0": { "name": "punctuation.hlsl" } },
             "patterns": [{ "include": "$self" }]
         },
         "comment": {
@@ -40,22 +36,14 @@
                     "name": "comment.block.hlsl",
                     "begin": "/\\*",
                     "end": "\\*/",
-                    "patterns": [
-                        {
-                            "include": "#line-continuation"
-                        }
-                    ]
+                    "patterns": [{ "include": "#line-continuation" }]
                 },
                 {
                     "comment": "SINGLE LINE COMMENT",
                     "name": "comment.line.double-slash.hlsl",
                     "begin": "//",
                     "end": "(?<!\\\\)(?=\n)",
-                    "patterns": [
-                        {
-                            "include": "#line-continuation"
-                        }
-                    ]
+                    "patterns": [{ "include": "#line-continuation" }]
                 }
             ]
         },
@@ -66,22 +54,14 @@
                     "name": "string.quoted.double.hlsl",
                     "begin": "\"",
                     "end": "(\"|(?<!\\\\)(?=\n))",
-                    "patterns": [
-                        {
-                            "include": "#character-escape"
-                        }
-                    ]
+                    "patterns": [{ "include": "#character-escape" }]
                 },
                 {
                     "comment": "CHAR LITERAL",
                     "name": "string.quoted.single.hlsl",
                     "begin": "'",
                     "end": "('|(?<!\\\\)(?=\n))",
-                    "patterns": [
-                        {
-                            "include": "#character-escape"
-                        }
-                    ]
+                    "patterns": [{ "include": "#character-escape" }]
                 }
             ]
         },
@@ -92,9 +72,7 @@
         },
         "character-escape": {
             "patterns": [
-                {
-                    "include": "#line-continuation"
-                },
+                { "include": "#line-continuation" },
                 {
                     "comment": "HEX ESCAPE CHARACTER",
                     "name": "constant.character.escape.hlsl",
@@ -184,17 +162,13 @@
                     "comment": "HLSL PREPROCESSOR DIRECTIVE",
                     "name": "keyword.control.hlsl",
                     "match": "#((\\s|/\\*.*?\\*/)*)(define|elif|else|endif|error|if|ifdef|ifndef|include|line|pragma|undef)\\b",
-                    "captures": {
-                        "1": { "name": "comment.block.hlsl" }
-                    }
+                    "captures": { "1": { "name": "comment.block.hlsl" } }
                 },
                 {
                     "comment": "DSHL PREPROCESSOR DIRECTIVE",
                     "name": "keyword.control.hlsl",
                     "match": "##((\\s|/\\*.*?\\*/)*)(elif|else|endif|if|assert)\\b",
-                    "captures": {
-                        "1": { "name": "comment.block.hlsl" }
-                    }
+                    "captures": { "1": { "name": "comment.block.hlsl" } }
                 },
                 {
                     "comment": "INCLUDE DIRECTIVE",
@@ -233,13 +207,16 @@
                     "match": "(?<=define\\s+)[a-zA-Z_]\\w*\\b(?!\\()"
                 },
                 {
+                    "comment": "CURLY BRACES",
+                    "name": "punctuation.hlsl",
+                    "match": "{|}"
+                },
+                {
                     "comment": "PREPROCESSOR ONLY OPERATOR",
                     "name": "keyword.operator.hlsl",
                     "match": "##|#@|defined"
                 },
-                {
-                    "include": "$self"
-                }
+                { "include": "$self" }
             ]
         },
         "template": {
