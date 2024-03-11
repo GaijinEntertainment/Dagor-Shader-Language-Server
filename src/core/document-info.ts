@@ -182,6 +182,10 @@ export class DocumentInfo {
             offsetPosition(vd.originalRange.end, md.contentOriginalRange.start);
             offsetPosition(vd.nameOriginalRange.start, md.contentOriginalRange.start);
             offsetPosition(vd.nameOriginalRange.end, md.contentOriginalRange.start);
+            if (vd.interval) {
+                offsetPosition(vd.interval.nameOriginalRange.start, md.contentOriginalRange.start);
+                offsetPosition(vd.interval.nameOriginalRange.end, md.contentOriginalRange.start);
+            }
         }
         for (const vu of scope.variableUsages) {
             offsetPosition(vu.originalRange.start, md.contentOriginalRange.start);
@@ -194,6 +198,11 @@ export class DocumentInfo {
             offsetPosition(fu.nameOriginalRange.end, md.contentOriginalRange.start);
             offsetPosition(fu.parameterListOriginalRange.start, md.contentOriginalRange.start);
             offsetPosition(fu.parameterListOriginalRange.end, md.contentOriginalRange.start);
+            for (const fa of fu.arguments) {
+                offsetPosition(fa.originalRange.start, md.contentOriginalRange.start);
+                offsetPosition(fa.originalRange.end, md.contentOriginalRange.start);
+                offsetPosition(fa.trimmedOriginalStartPosition, md.contentOriginalRange.start);
+            }
         }
         if (scope.blockDeclaration) {
             offsetPosition(scope.blockDeclaration.originalRange.start, md.contentOriginalRange.start);
