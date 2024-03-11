@@ -39,6 +39,9 @@ export class HlslPreprocessor {
 
     public async preprocess(): Promise<void> {
         await this.preprocessDirectives();
+        if (this.snapshot.uri.endsWith('hardware_defines.dshl')) {
+            return;
+        }
         this.expandDefines();
     }
 
@@ -770,6 +773,9 @@ export class HlslPreprocessor {
                     (ds) => (!!da && !ds.objectLike && ds.parameters.length === da.arguments.length) || ds.objectLike
                 ) ?? null;
             if (!ds || expansions.includes(ds)) {
+                continue;
+            }
+            if (this.snapshot.getIncludeContextDeepAt(globalPosition)?.uri?.endsWith('hardware_defines.dshl')) {
                 continue;
             }
 
