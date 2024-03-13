@@ -1,7 +1,7 @@
 import { ParserRuleContext } from 'antlr4ts';
 import { AbstractParseTreeVisitor } from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode';
-import { Position, Range } from 'vscode-languageserver';
+import { DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
 import {
     Dshl_assignmentContext,
     Dshl_assume_statementContext,
@@ -111,23 +111,43 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
     }
 
     public visitDshl_variable_declaration(ctx: Dshl_variable_declarationContext): void {
+        const visible = this.isVisible(ctx.start.startIndex);
         const type = ctx.IDENTIFIER(0);
         const identifier = ctx.IDENTIFIER(1);
+        const nameOriginalRange = this.snapshot.getOriginalRange(
+            identifier.symbol.startIndex,
+            identifier.symbol.stopIndex + 1
+        );
         const vd: VariableDeclaration = {
             type: type.text,
             name: identifier.text,
             nameEndPosition: ctx.stop!.stopIndex + 1,
             originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
-            nameOriginalRange: this.snapshot.getOriginalRange(
-                identifier.symbol.startIndex,
-                identifier.symbol.stopIndex + 1
-            ),
+            nameOriginalRange,
             uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
-            isVisible: this.isVisible(ctx.start.startIndex),
+            isVisible: visible,
             usages: [],
         };
+        if (visible && identifier.text.toLowerCase() !== identifier.text) {
+            this.snapshot.diagnostics.push({
+                range: nameOriginalRange,
+                message: `Variable '${vd.name}' is not using snake case. Consider renaming it to '${this.toSnakeCase(vd.name)}'`,
+                severity: DiagnosticSeverity.Warning,
+            });
+        }
         this.scope.variableDeclarations.push(vd);
         this.visitChildren(ctx);
+    }
+
+    private toSnakeCase(name: string): string {
+        if (name.toUpperCase() === name) {
+            return name.toLocaleLowerCase();
+        } else {
+            return name
+                .split(/(?=[A-Z])/)
+                .join('_')
+                .toLowerCase();
+        }
     }
 
     public visitDshl_expression?(ctx: Dshl_expressionContext): void {

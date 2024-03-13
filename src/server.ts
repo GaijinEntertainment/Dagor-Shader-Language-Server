@@ -4,6 +4,7 @@ import {
     InitializeResult,
     InitializedParams,
     InlayHintRequest,
+    PublishDiagnosticsParams,
     ServerCapabilities,
     TextDocumentSyncKind,
     TextDocuments,
@@ -172,6 +173,10 @@ export abstract class Server {
         if (getCapabilities().inlayHints) {
             this.connection.languages.inlayHint.refresh();
         }
+    }
+
+    public async sendDiagnostics(diagnostics: PublishDiagnosticsParams): Promise<void> {
+        this.connection.sendDiagnostics(diagnostics);
     }
 
     private listen(): void {

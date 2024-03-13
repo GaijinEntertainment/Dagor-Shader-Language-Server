@@ -1,4 +1,4 @@
-import { DocumentUri, Position, Range } from 'vscode-languageserver';
+import { Diagnostic, DocumentUri, Position, Range } from 'vscode-languageserver';
 
 import { dshlFunctions } from '../helper/dshl-info';
 import { defaultPosition, isBeforeOrEqual, isIntervalContains, rangeContains } from '../helper/helper';
@@ -55,6 +55,7 @@ export class Snapshot {
     public foldingRanges: Range[] = [];
     public rootScope: Scope;
     public preprocessingOffsets: PreprocessingOffset[] = [];
+    public diagnostics: Diagnostic[] = [];
 
     public constructor(version: SnapshotVersion, uri: DocumentUri, text: string, isPredefined = false) {
         this.version = version;
@@ -344,6 +345,10 @@ export class Snapshot {
             this.hlslBlocks.some((hb) => hb.isVisible && rangeContains(hb.originalRange, position)) ||
             this.macroDeclarations.some((md) => md.contentSnapshot.isInHlslBlock(position))
         );
+    }
+
+    public getHlslBlockAt(position: number): HlslBlock | null {
+        return this.hlslBlocks.find((hb) => isIntervalContains(hb.startPosition, hb.endPosition, position)) ?? null;
     }
 
     public getDefinition(name: string, position: number): DefineStatement | null {

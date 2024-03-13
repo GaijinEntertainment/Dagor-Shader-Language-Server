@@ -7,7 +7,7 @@ import { DshlLexer } from '../_generated/DshlLexer';
 import { DshlParser } from '../_generated/DshlParser';
 import { offsetPosition } from '../helper/helper';
 import { Scope } from '../helper/scope';
-import { getDocuments, syncInitialization } from '../helper/server-helper';
+import { getDocuments, sendDiagnostics, syncInitialization } from '../helper/server-helper';
 import { DocumentVersion } from '../interface/document-version';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { SnapshotVersion, invalidVersion } from '../interface/snapshot-version';
@@ -109,6 +109,7 @@ export class DocumentInfo {
         if (this.analyzedVersion <= snapshot.version) {
             this.analyzedVersion = snapshot.version;
             this.snapshot = snapshot;
+            sendDiagnostics({ uri: snapshot.uri, diagnostics: snapshot.diagnostics });
         }
     }
 
