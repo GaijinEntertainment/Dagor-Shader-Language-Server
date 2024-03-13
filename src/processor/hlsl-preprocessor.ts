@@ -62,6 +62,14 @@ export class HlslPreprocessor {
     }
 
     private async preprocessDirective(position: number, beforeEndPosition: number, match: string): Promise<number> {
+        const hb = this.snapshot.getHlslBlockAt(position);
+        let te: TextEdit | null = null;
+        const trimmedMatch = hb ? this.snapshot.text.substring(position, hb.endPosition) : '';
+        if (hb && trimmedMatch.indexOf('\n') === -1) {
+            match = trimmedMatch;
+            te = { startPosition: position, endPosition: hb.endPosition, newText: '' };
+        }
+
         let regexResult = /#[ \t]*include[ \t]*(?:"(?<quotedPath>(?:\\"|[^"])*)"|<(?<angularPath>[^>]*)>)/.exec(match);
         if (regexResult) {
             return await this.preprocessInclude(regexResult, position);
@@ -94,6 +102,9 @@ export class HlslPreprocessor {
         regexResult = endifRegex.exec(match);
         if (regexResult) {
             this.preprocessEndif(position);
+            if (te) {
+                this.textEdits.push(te);
+            }
             return beforeEndPosition;
         }
         if (!this.isAnyFalseAbove(true)) {
@@ -102,18 +113,27 @@ export class HlslPreprocessor {
             regexResult = functionDefineRegex.exec(match);
             if (regexResult) {
                 this.preprocessFunctionDefine(regexResult, position);
+                if (te) {
+                    this.textEdits.push(te);
+                }
                 return beforeEndPosition;
             }
             const objectDefineRegex = /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)[ \t]*(?<content>.*)?/;
             regexResult = objectDefineRegex.exec(match);
             if (regexResult) {
                 this.preprocessObjectDefine(regexResult, position);
+                if (te) {
+                    this.textEdits.push(te);
+                }
                 return beforeEndPosition;
             }
             const undefRegex = /(?<beforeName>#[ \t]*undef[ \t]+)(?<name>[a-zA-Z_]\w*).*/;
             regexResult = undefRegex.exec(match);
             if (regexResult) {
                 this.preprocessUndef(regexResult, position);
+                if (te) {
+                    this.textEdits.push(te);
+                }
                 return beforeEndPosition;
             }
         }
@@ -516,6 +536,7 @@ export class HlslPreprocessor {
     }
 
     public addHlslDirectivesInMacro(snapshot: Snapshot, offset: number): void {
+        const textEdits: TextEdit[] = [];
         const regex = /#.*/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(snapshot.text))) {
@@ -523,12 +544,28 @@ export class HlslPreprocessor {
             if (Preprocessor.isInString(position, snapshot)) {
                 continue;
             }
-            const match = regexResult[0];
+            let match = regexResult[0];
+
+            const globalPosition = offset + position;
+            const hb = snapshot.getHlslBlockAt(globalPosition);
+            let te: TextEdit | null = null;
+            const trimmedMatch = hb ? snapshot.text.substring(position, hb.endPosition - offset) : '';
+            if (hb && trimmedMatch.indexOf('\n') === -1) {
+                match = trimmedMatch;
+                te = {
+                    startPosition: position,
+                    endPosition: hb.endPosition - offset,
+                    newText: ' '.repeat(hb.endPosition - offset - position),
+                };
+            }
             const includeRegex = /#[ \t]*include[ \t]*(?:"(?<quotedPath>(?:\\"|[^"])*)"|<(?<angularPath>[^>]*)>)/;
             regexResult = includeRegex.exec(match);
             if (regexResult) {
                 position += offset + regexResult.index;
                 this.preprocessIncludeLight(regexResult, position);
+                if (te) {
+                    textEdits.push(te);
+                }
                 continue;
             }
             const ifRegex = /^#[ \t]*if\b.*/;
@@ -564,6 +601,9 @@ export class HlslPreprocessor {
             if (regexResult) {
                 position += offset + regexResult.index;
                 this.preprocessEndifLight(position);
+                if (te) {
+                    textEdits.push(te);
+                }
                 continue;
             }
             const functionDefineRegex =
@@ -572,6 +612,9 @@ export class HlslPreprocessor {
             if (regexResult) {
                 position += offset + regexResult.index;
                 this.preprocessFunctionDefineLight(regexResult, position, snapshot);
+                if (te) {
+                    textEdits.push(te);
+                }
                 continue;
             }
             const objectDefineRegex = /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)[ \t]*(?<content>.*)?/;
@@ -579,9 +622,13 @@ export class HlslPreprocessor {
             if (regexResult) {
                 position += offset + regexResult.index;
                 this.preprocessObjectDefineLight(regexResult, position, snapshot);
+                if (te) {
+                    textEdits.push(te);
+                }
                 continue;
             }
         }
+        Preprocessor.executeTextEdits(textEdits, snapshot, false);
         const definesMap = this.createDefinesMap(snapshot.defineStatements);
         this.expandAll(definesMap, snapshot.defineStatements, [], snapshot, offset, true);
     }
