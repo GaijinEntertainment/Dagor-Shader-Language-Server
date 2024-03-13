@@ -40,6 +40,7 @@ dshl_statement:
 	| dshl_macro_statement
 	| dshl_preshader
 	| dshl_function_call
+    | dshl_expression
 	| IDENTIFIER;
 
 dshl_assume_statement:
@@ -124,6 +125,7 @@ hlsl:
 		| function_declaration
 		| function_definition
 		| statement
+		| hlsl_identifier
 		| SEMICOLON
 	)*;
 
@@ -176,7 +178,8 @@ parameter_list: parameter (COMMA parameter)*;
 parameter:
 	input_modifier* type hlsl_identifier semantic* hlsl_identifier* (
 		COLON interpolation_modifier
-	)* (ASSIGN expression)?;
+	)* (ASSIGN expression)?
+	| function_call hlsl_identifier;
 
 input_modifier: hlsl_identifier; // in, out, inout, uniform
 
