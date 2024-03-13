@@ -249,6 +249,24 @@
         "keyword-operator": {
             "patterns": [
                 {
+                    "comment": "LOOP KEYWORDS WITH ATTRIBUTES",
+                    "match": "\\b(UNROLL|LOOP)((?:\\s|/\\*.*?\\*/)+)(for|while)\\b",
+                    "captures": {
+                        "1": { "name": "variable.hlsl" },
+                        "2": { "name": "comment.block.hlsl" },
+                        "3": { "name": "keyword.control.hlsl" }
+                    }
+                },
+                {
+                    "comment": "IF KEYWORD WITH ATTRIBUTE",
+                    "match": "\\b(FLATTEN|BRANCH)((?:\\s|/\\*.*?\\*/)+)(if)\\b",
+                    "captures": {
+                        "1": { "name": "variable.hlsl" },
+                        "2": { "name": "comment.block.hlsl" },
+                        "3": { "name": "keyword.control.hlsl" }
+                    }
+                },
+                {
                     "comment": "CONTROL KEYWORD",
                     "name": "keyword.control.hlsl",
                     "match": "\\b(break|continue|discard|return|for|if|else|switch|case|default|do|while|compile|compile_fragment)\\b"
