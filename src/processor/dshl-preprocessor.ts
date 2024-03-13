@@ -338,7 +338,17 @@ class DshlPreprocessor {
         if (this.isRoot) {
             contentSnapshot.stringRanges = this.getStringRanges(content, contentPosition);
             contentSnapshot.preprocessingOffsets = this.getPreprocessingOffsets(content, contentPosition);
+            const pos: PreprocessingOffset[] = this.snapshot.preprocessingOffsets
+                .filter((po) => po.position >= contentPosition && po.position < contentPosition + content.length)
+                .map((po) => ({
+                    position: po.position - contentPosition,
+                    beforeEndPosition: po.beforeEndPosition - contentPosition,
+                    afterEndPosition: po.afterEndPosition - contentPosition,
+                    offset: po.offset,
+                }));
+            contentSnapshot.preprocessingOffsets = pos;
         }
+
         contentSnapshot.text = content;
         return contentSnapshot;
     }
@@ -540,10 +550,10 @@ class DshlPreprocessor {
 
     private getMacroPasteText(md: MacroDeclaration, ma: Arguments): string {
         if (!ma.arguments.length) {
-            return md.contentSnapshot.originalText;
+            return md.contentSnapshot.text;
         }
         const contentSnapshot = new Snapshot(invalidVersion, '', '');
-        contentSnapshot.text = md.contentSnapshot.originalText;
+        contentSnapshot.text = md.contentSnapshot.text;
         Preprocessor.addStringRanges(0, contentSnapshot.text.length, contentSnapshot);
         const parameterNames = md.parameters.map((mp) => mp.name);
         const regex = new RegExp(`\\b(${parameterNames.join('|')})\\b`, 'g');
