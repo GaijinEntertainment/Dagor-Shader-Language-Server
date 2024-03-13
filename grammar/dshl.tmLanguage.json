@@ -4,6 +4,7 @@
     "fileTypes": ["dshl"],
     "patterns": [
         { "include": "#block" },
+        { "include": "#one-line-hlsl-block" },
         { "include": "#hlsl-block" },
         { "include": "#comment" },
         { "include": "#string-literal" },
@@ -19,24 +20,43 @@
         { "include": "#variable" }
     ],
     "repository": {
+        "one-line-hlsl-block": {
+            "comment": "HLSL BLOCK IN ONE LINE CONTAINING A DEFINE",
+            "match": "\\b(hlsl)((?:\\s|/\\*.*?\\*/)*)(?:\\(((?:\\s|/\\*.*?\\*/)*)(\\w+)((?:\\s|/\\*.*?\\*/)*)\\)((?:\\s|/\\*.*?\\*/)*))?{((?:\\s|/\\*.*?\\*/)*)(#.*?)}((?:\\s|/\\*.*?\\*/)*)(//.*)?$",
+            "captures": {
+                "1": { "name": "keyword.other.dshl" },
+                "2": { "name": "comment.block.dshl" },
+                "3": { "name": "comment.block.dshl" },
+                "4": {
+                    "patterns": [
+                        {
+                            "name": "constant.language.dshl",
+                            "match": "\\b(vs|hs|ds|gs|ps|cs)\\b"
+                        },
+                        { "include": "#variable" }
+                    ]
+                },
+                "5": { "name": "comment.block.dshl" },
+                "6": { "name": "comment.block.dshl" },
+                "7": { "name": "comment.block.dshl" },
+                "8": { "patterns": [{ "include": "source.hlsl" }] },
+                "9": { "name": "comment.block.dshl" },
+                "10": { "name": "comment.block.dshl" }
+            }
+        },
         "hlsl-block": {
+            "comment": "HLSL BLOCK",
             "begin": "\\b(hlsl)\\b",
             "end": "(?<=})",
-            "beginCaptures": {
-                "0": { "name": "keyword.other.dshl" }
-            },
+            "beginCaptures": { "0": { "name": "keyword.other.dshl" } },
             "patterns": [{ "include": "#stage" }, { "include": "source.hlsl" }]
         },
         "block": {
             "comment": "BLOCK",
             "begin": "{",
             "end": "}",
-            "beginCaptures": {
-                "0": { "name": "punctuation.dshl" }
-            },
-            "endCaptures": {
-                "0": { "name": "punctuation.dshl" }
-            },
+            "beginCaptures": { "0": { "name": "punctuation.dshl" } },
+            "endCaptures": { "0": { "name": "punctuation.dshl" } },
             "patterns": [{ "include": "$self" }]
         },
         "bool-null-literal": {
