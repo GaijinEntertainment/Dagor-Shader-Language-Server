@@ -40,7 +40,6 @@ dshl_statement:
 	| dshl_macro_statement
 	| dshl_preshader
 	| dshl_function_call
-    | dshl_expression
 	| IDENTIFIER;
 
 dshl_assume_statement:
@@ -246,15 +245,11 @@ statement:
 	| default
 	| while_statement
 	| expression_statement
-	| expression_list_statement
-	| function_call
 	| SEMICOLON;
 
 statement_block: LCB statement* RCB;
 
 expression_statement: expression SEMICOLON;
-
-expression_list_statement: expression_list SEMICOLON;
 
 variable_declaration_statement: variable_declaration SEMICOLON;
 
@@ -311,14 +306,13 @@ while_statement:
 function_call:
 	(hlsl_identifier | ASSERT) (LAB expression_list? RAB)* LRB expression_list? RRB;
 
-expression_list: expression+ (COMMA expression+)* COMMA?;
+expression_list: expression (COMMA expression)* COMMA?;
 
 expression:
 	(
 		literal
 		| function_call
-		| hlsl_identifier
-		| COLON COLON hlsl_identifier
+		| hlsl_identifier (COLON COLON hlsl_identifier)?
 		| LCB expression_list RCB
 	)
 	| LRB expression_list RRB
