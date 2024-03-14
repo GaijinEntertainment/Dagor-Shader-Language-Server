@@ -1,7 +1,7 @@
 import { ParserRuleContext } from 'antlr4ts';
 import { AbstractParseTreeVisitor } from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode';
-import { DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
+import { Position, Range } from 'vscode-languageserver';
 import {
     Dshl_assignmentContext,
     Dshl_assume_statementContext,
@@ -128,13 +128,13 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             isVisible: visible,
             usages: [],
         };
-        if (visible && identifier.text.toLowerCase() !== identifier.text) {
-            this.snapshot.diagnostics.push({
-                range: nameOriginalRange,
-                message: `Variable '${vd.name}' is not using snake case. Consider renaming it to '${this.toSnakeCase(vd.name)}'.`,
-                severity: DiagnosticSeverity.Warning,
-            });
-        }
+        // if (visible && identifier.text.toLowerCase() !== identifier.text) {
+        //     this.snapshot.diagnostics.push({
+        //         range: nameOriginalRange,
+        //         message: `Variable '${vd.name}' is not using snake case. Consider renaming it to '${this.toSnakeCase(vd.name)}'.`,
+        //         severity: DiagnosticSeverity.Warning,
+        //     });
+        // }
         this.scope.variableDeclarations.push(vd);
         this.visitChildren(ctx);
     }

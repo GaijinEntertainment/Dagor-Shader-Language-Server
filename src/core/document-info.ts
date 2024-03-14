@@ -7,7 +7,7 @@ import { DshlLexer } from '../_generated/DshlLexer';
 import { DshlParser } from '../_generated/DshlParser';
 import { offsetPosition } from '../helper/helper';
 import { Scope } from '../helper/scope';
-import { getDocuments, sendDiagnostics, syncInitialization } from '../helper/server-helper';
+import { getDocuments, syncInitialization } from '../helper/server-helper';
 import { DocumentVersion } from '../interface/document-version';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { SnapshotVersion, invalidVersion } from '../interface/snapshot-version';
@@ -110,7 +110,7 @@ export class DocumentInfo {
         if (this.analyzedVersion <= snapshot.version) {
             this.analyzedVersion = snapshot.version;
             this.snapshot = snapshot;
-            sendDiagnostics({ uri: snapshot.uri, diagnostics: snapshot.diagnostics });
+            // sendDiagnostics({ uri: snapshot.uri, diagnostics: snapshot.diagnostics });
         }
     }
 
@@ -249,11 +249,11 @@ export class DocumentInfo {
             this.analyzationInProgressVersion = invalidVersion;
             this.analyzationInProgress = Promise.resolve();
         }
-        sendDiagnostics({ uri: this.document.uri, diagnostics: this.snapshot.diagnostics });
+        // sendDiagnostics({ uri: this.document.uri, diagnostics: this.snapshot.diagnostics });
     }
 
     public closed(): void {
         this.lastTimeClosed = Date.now();
-        sendDiagnostics({ uri: this.document.uri, diagnostics: [] });
+        // sendDiagnostics({ uri: this.document.uri, diagnostics: [] });
     }
 }
