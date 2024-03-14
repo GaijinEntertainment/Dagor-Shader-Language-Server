@@ -22,6 +22,7 @@ export class DocumentInfo {
     private analyzedVersion = invalidVersion;
     private analyzationInProgressVersion = invalidVersion;
     private analyzationInProgress = Promise.resolve();
+    private lastTimeClosed = 0;
     private document: TextDocument;
     private snapshot = new Snapshot(invalidVersion, '', '');
 
@@ -43,7 +44,7 @@ export class DocumentInfo {
     }
 
     private isAnalyzedVersionValid(): boolean {
-        return this.isVersionValid(this.analyzedVersion);
+        return this.isVersionValid(this.analyzedVersion) && this.analyzedVersion.timestamp > this.lastTimeClosed;
     }
 
     private isAnalyzationInProgressVersionValid(): boolean {
@@ -117,47 +118,55 @@ export class DocumentInfo {
         const lexer = this.createLexer(snapshot.text);
         const parser = this.createParser(lexer);
         let tree: ParseTree;
-        if (this.document.uri.endsWith(HLSL_EXTENSION) || this.document.uri.endsWith(HLSLI_EXTENSION)) {
-            tree = parser.hlsl();
-        } else {
-            tree = parser.dshl();
+        try {
+            if (this.document.uri.endsWith(HLSL_EXTENSION) || this.document.uri.endsWith(HLSLI_EXTENSION)) {
+                tree = parser.hlsl();
+            } else {
+                tree = parser.dshl();
+            }
+            const visitor = new DshlVisitor(snapshot);
+            visitor.visit(tree);
+        } catch (e) {
+            // catching any error during the parsing to prevent the server from crashing
         }
-        const visitor = new DshlVisitor(snapshot);
-        visitor.visit(tree);
         this.addMacroDefinitions(snapshot);
     }
 
     private addMacroDefinitions(snapshot: Snapshot): void {
         if (!this.document.uri.endsWith(HLSL_EXTENSION) && !this.document.uri.endsWith(HLSLI_EXTENSION)) {
             for (const md of snapshot.macroDeclarations.filter((md) => md.uri === snapshot.uri)) {
-                const contentSnapshot = md.contentSnapshot;
-                const lexer = this.createLexer(contentSnapshot.text);
-                const parser = this.createParser(lexer);
-                const tree = parser.dshl();
-                const visitor = new DshlVisitor(contentSnapshot, snapshot, md.contentOriginalRange.start);
-                visitor.visit(tree);
-                for (const fr of contentSnapshot.foldingRanges) {
-                    offsetPosition(fr.start, md.contentOriginalRange.start);
-                    offsetPosition(fr.end, md.contentOriginalRange.start);
-                    snapshot.foldingRanges.push(fr);
+                try {
+                    const contentSnapshot = md.contentSnapshot;
+                    const lexer = this.createLexer(contentSnapshot.text);
+                    const parser = this.createParser(lexer);
+                    const tree = parser.dshl();
+                    const visitor = new DshlVisitor(contentSnapshot, snapshot, md.contentOriginalRange.start);
+                    visitor.visit(tree);
+                    for (const fr of contentSnapshot.foldingRanges) {
+                        offsetPosition(fr.start, md.contentOriginalRange.start);
+                        offsetPosition(fr.end, md.contentOriginalRange.start);
+                        snapshot.foldingRanges.push(fr);
+                    }
+                    const macroScope: Scope = {
+                        originalRange: contentSnapshot.rootScope.originalRange,
+                        children: [contentSnapshot.rootScope],
+                        shaderDeclarations: [],
+                        shaderUsages: [],
+                        variableDeclarations: [],
+                        variableUsages: [],
+                        functionUsages: [],
+                        blockUsages: [],
+                        macroDeclaration: md,
+                        functionDeclarations: [],
+                        parent: snapshot.rootScope,
+                        isVisible: contentSnapshot.rootScope.isVisible,
+                    };
+                    contentSnapshot.rootScope.parent = macroScope;
+                    this.addElementsFromMacro(contentSnapshot.rootScope, md, true);
+                    snapshot.rootScope.children.push(macroScope);
+                } catch (e) {
+                    // catching any error during the parsing to prevent the server from crashing
                 }
-                const macroScope: Scope = {
-                    originalRange: contentSnapshot.rootScope.originalRange,
-                    children: [contentSnapshot.rootScope],
-                    shaderDeclarations: [],
-                    shaderUsages: [],
-                    variableDeclarations: [],
-                    variableUsages: [],
-                    functionUsages: [],
-                    blockUsages: [],
-                    macroDeclaration: md,
-                    functionDeclarations: [],
-                    parent: snapshot.rootScope,
-                    isVisible: contentSnapshot.rootScope.isVisible,
-                };
-                contentSnapshot.rootScope.parent = macroScope;
-                this.addElementsFromMacro(contentSnapshot.rootScope, md, true);
-                snapshot.rootScope.children.push(macroScope);
             }
         }
     }
@@ -229,7 +238,22 @@ export class DocumentInfo {
     private createParser(lexer: DshlLexer): DshlParser {
         const tokenStream = new CommonTokenStream(lexer);
         const parser = new DshlParser(tokenStream);
-        // parser.removeErrorListeners();
+        parser.removeErrorListeners();
         return parser;
+    }
+
+    public opened(document: TextDocument): void {
+        this.document = document;
+        if (document.version < this.analyzedVersion.documentVersion) {
+            this.analyzedVersion = invalidVersion;
+            this.analyzationInProgressVersion = invalidVersion;
+            this.analyzationInProgress = Promise.resolve();
+        }
+        sendDiagnostics({ uri: this.document.uri, diagnostics: this.snapshot.diagnostics });
+    }
+
+    public closed(): void {
+        this.lastTimeClosed = Date.now();
+        sendDiagnostics({ uri: this.document.uri, diagnostics: [] });
     }
 }

@@ -16,6 +16,7 @@ import { getCapabilities, initializeCapabilities } from './core/capability-manag
 import { initializeConfiguration } from './core/configuration-manager';
 import { SERVER_NAME, SERVER_VERSION } from './core/constant';
 import { initializeDebug } from './core/debug';
+import { getDocumentInfo } from './core/document-manager';
 import { Configuration } from './interface/configuration';
 import { HostDependent } from './interface/host-dependent';
 import { completionProvider } from './provider/completion-provider';
@@ -74,6 +75,12 @@ export abstract class Server {
                 await this.onInitialized(ip);
                 resolve();
             });
+        });
+        this.documents.onDidOpen((e) => {
+            getDocumentInfo(e.document.uri)?.opened(e.document);
+        });
+        this.documents.onDidClose((e) => {
+            getDocumentInfo(e.document.uri)?.closed();
         });
         this.connection.onShutdown((_token) => {
             this.onShutdown();
