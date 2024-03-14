@@ -131,7 +131,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         if (visible && identifier.text.toLowerCase() !== identifier.text) {
             this.snapshot.diagnostics.push({
                 range: nameOriginalRange,
-                message: `Variable '${vd.name}' is not using snake case. Consider renaming it to '${this.toSnakeCase(vd.name)}'`,
+                message: `Variable '${vd.name}' is not using snake case. Consider renaming it to '${this.toSnakeCase(vd.name)}'.`,
                 severity: DiagnosticSeverity.Warning,
             });
         }
