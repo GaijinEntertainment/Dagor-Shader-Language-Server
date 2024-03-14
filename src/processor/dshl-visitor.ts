@@ -140,14 +140,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
     }
 
     private toSnakeCase(name: string): string {
-        if (name.toUpperCase() === name) {
-            return name.toLocaleLowerCase();
-        } else {
-            return name
-                .split(/(?=[A-Z])/)
-                .join('_')
-                .toLowerCase();
-        }
+        return name.replace(/(?<=[a-z0-9])([A-Z]+)/g, '_$1').toLowerCase();
     }
 
     public visitDshl_expression?(ctx: Dshl_expressionContext): void {
