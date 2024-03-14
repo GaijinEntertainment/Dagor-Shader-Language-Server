@@ -39,19 +39,19 @@
         "vscode-uri": "^3.0.8"
     },
     "devDependencies": {
-        "@types/node": "^20.11.18",
-        "@typescript-eslint/eslint-plugin": "^7.0.1",
-        "@typescript-eslint/parser": "^7.0.1",
+        "@types/node": "^20.11.27",
+        "@typescript-eslint/eslint-plugin": "^7.2.0",
+        "@typescript-eslint/parser": "^7.2.0",
         "antlr4ts-cli": "^0.5.0-alpha.4",
-        "eslint": "^8.56.0",
+        "eslint": "^8.57.0",
         "husky": "^9.0.11",
         "lint-staged": "^15.2.2",
         "pkg": "^5.8.1",
         "prettier": "^3.2.5",
         "prettier-plugin-organize-imports": "^3.2.4",
         "ts-loader": "^9.5.1",
-        "typescript": "^5.3.3",
-        "webpack": "^5.90.1",
+        "typescript": "^5.4.2",
+        "webpack": "^5.90.3",
         "webpack-cli": "^5.1.4"
     },
     "lint-staged": {
