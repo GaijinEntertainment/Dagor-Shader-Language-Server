@@ -39,6 +39,9 @@ export class HlslPreprocessor {
 
     public async preprocess(): Promise<void> {
         await this.preprocessDirectives();
+        if (this.snapshot.uri.endsWith('hardware_defines.dshl')) {
+            return;
+        }
         this.expandDefines();
     }
 
@@ -59,6 +62,14 @@ export class HlslPreprocessor {
     }
 
     private async preprocessDirective(position: number, beforeEndPosition: number, match: string): Promise<number> {
+        const hb = this.snapshot.getHlslBlockAt(position);
+        let te: TextEdit | null = null;
+        const trimmedMatch = hb ? this.snapshot.text.substring(position, hb.endPosition) : '';
+        if (hb && trimmedMatch.indexOf('\n') === -1) {
+            match = trimmedMatch;
+            te = { startPosition: position, endPosition: hb.endPosition, newText: '' };
+        }
+
         let regexResult = /#[ \t]*include[ \t]*(?:"(?<quotedPath>(?:\\"|[^"])*)"|<(?<angularPath>[^>]*)>)/.exec(match);
         if (regexResult) {
             return await this.preprocessInclude(regexResult, position);
@@ -91,6 +102,9 @@ export class HlslPreprocessor {
         regexResult = endifRegex.exec(match);
         if (regexResult) {
             this.preprocessEndif(position);
+            if (te) {
+                this.textEdits.push(te);
+            }
             return beforeEndPosition;
         }
         if (!this.isAnyFalseAbove(true)) {
@@ -99,18 +113,27 @@ export class HlslPreprocessor {
             regexResult = functionDefineRegex.exec(match);
             if (regexResult) {
                 this.preprocessFunctionDefine(regexResult, position);
+                if (te) {
+                    this.textEdits.push(te);
+                }
                 return beforeEndPosition;
             }
             const objectDefineRegex = /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)[ \t]*(?<content>.*)?/;
             regexResult = objectDefineRegex.exec(match);
             if (regexResult) {
                 this.preprocessObjectDefine(regexResult, position);
+                if (te) {
+                    this.textEdits.push(te);
+                }
                 return beforeEndPosition;
             }
             const undefRegex = /(?<beforeName>#[ \t]*undef[ \t]+)(?<name>[a-zA-Z_]\w*).*/;
             regexResult = undefRegex.exec(match);
             if (regexResult) {
                 this.preprocessUndef(regexResult, position);
+                if (te) {
+                    this.textEdits.push(te);
+                }
                 return beforeEndPosition;
             }
         }
@@ -179,7 +202,7 @@ export class HlslPreprocessor {
             parent: parentIc,
             children: [],
             uri,
-            originalEndPosition: this.snapshot.getOriginalPosition(afterEndPosition, false),
+            originalRange: this.snapshot.getOriginalRange(position, afterEndPosition),
         };
         if (parentIc) {
             parentIc.children.push(ic);
@@ -221,11 +244,13 @@ export class HlslPreprocessor {
             if (ds) {
                 const conditionPosition = position + (regexResult.groups.beforeCondition?.length ?? 0);
                 const endPosition = conditionPosition + condition.length;
+                const originalRange = this.snapshot.getOriginalRange(conditionPosition, endPosition);
                 HlslPreprocessor.createDefineContext(
                     conditionPosition,
                     endPosition,
                     endPosition,
-                    this.snapshot.getOriginalRange(conditionPosition, endPosition),
+                    originalRange,
+                    originalRange,
                     ds,
                     this.snapshot,
                     !this.snapshot.isInIncludeContext(position) && !this.snapshot.isInMacroContext(position),
@@ -487,18 +512,20 @@ export class HlslPreprocessor {
                 if (ds.undefPosition === null) {
                     ds.undefPosition = position;
                     ds.undefCodeCompletionPosition = ic
-                        ? ic.originalEndPosition
+                        ? ic.originalRange.end
                         : this.snapshot.getOriginalPosition(position, true);
                 }
             });
             if (dss.length) {
                 const conditionPosition = position + regexResult.groups.beforeName.length;
                 const endPosition = conditionPosition + name.length;
+                const originalRange = this.snapshot.getOriginalRange(conditionPosition, endPosition);
                 HlslPreprocessor.createDefineContext(
                     conditionPosition,
                     endPosition,
                     endPosition,
-                    this.snapshot.getOriginalRange(conditionPosition, endPosition),
+                    originalRange,
+                    originalRange,
                     dss[0],
                     this.snapshot,
                     !ic && !this.snapshot.isInMacroContext(position),
@@ -509,6 +536,7 @@ export class HlslPreprocessor {
     }
 
     public addHlslDirectivesInMacro(snapshot: Snapshot, offset: number): void {
+        const textEdits: TextEdit[] = [];
         const regex = /#.*/g;
         let regexResult: RegExpExecArray | null;
         while ((regexResult = regex.exec(snapshot.text))) {
@@ -516,12 +544,28 @@ export class HlslPreprocessor {
             if (Preprocessor.isInString(position, snapshot)) {
                 continue;
             }
-            const match = regexResult[0];
+            let match = regexResult[0];
+
+            const globalPosition = offset + position;
+            const hb = snapshot.getHlslBlockAt(globalPosition);
+            let te: TextEdit | null = null;
+            const trimmedMatch = hb ? snapshot.text.substring(position, hb.endPosition - offset) : '';
+            if (hb && trimmedMatch.indexOf('\n') === -1) {
+                match = trimmedMatch;
+                te = {
+                    startPosition: position,
+                    endPosition: hb.endPosition - offset,
+                    newText: ' '.repeat(hb.endPosition - offset - position),
+                };
+            }
             const includeRegex = /#[ \t]*include[ \t]*(?:"(?<quotedPath>(?:\\"|[^"])*)"|<(?<angularPath>[^>]*)>)/;
             regexResult = includeRegex.exec(match);
             if (regexResult) {
                 position += offset + regexResult.index;
                 this.preprocessIncludeLight(regexResult, position);
+                if (te) {
+                    textEdits.push(te);
+                }
                 continue;
             }
             const ifRegex = /^#[ \t]*if\b.*/;
@@ -557,6 +601,9 @@ export class HlslPreprocessor {
             if (regexResult) {
                 position += offset + regexResult.index;
                 this.preprocessEndifLight(position);
+                if (te) {
+                    textEdits.push(te);
+                }
                 continue;
             }
             const functionDefineRegex =
@@ -565,6 +612,9 @@ export class HlslPreprocessor {
             if (regexResult) {
                 position += offset + regexResult.index;
                 this.preprocessFunctionDefineLight(regexResult, position, snapshot);
+                if (te) {
+                    textEdits.push(te);
+                }
                 continue;
             }
             const objectDefineRegex = /(?<beforeName>#[ \t]*define[ \t]+)(?<name>[a-zA-Z_]\w*)[ \t]*(?<content>.*)?/;
@@ -572,9 +622,13 @@ export class HlslPreprocessor {
             if (regexResult) {
                 position += offset + regexResult.index;
                 this.preprocessObjectDefineLight(regexResult, position, snapshot);
+                if (te) {
+                    textEdits.push(te);
+                }
                 continue;
             }
         }
+        Preprocessor.executeTextEdits(textEdits, snapshot, false);
         const definesMap = this.createDefinesMap(snapshot.defineStatements);
         this.expandAll(definesMap, snapshot.defineStatements, [], snapshot, offset, true);
     }
@@ -768,6 +822,9 @@ export class HlslPreprocessor {
             if (!ds || expansions.includes(ds)) {
                 continue;
             }
+            if (this.snapshot.getIncludeContextDeepAt(globalPosition)?.uri?.endsWith('hardware_defines.dshl')) {
+                continue;
+            }
 
             const beforeEndPosition = da ? da.endPosition : identifierEndPosition;
             const macroSnapshot = new Snapshot(invalidVersion, '', '');
@@ -792,12 +849,13 @@ export class HlslPreprocessor {
             );
             textEdits.push(te);
             if (expansions.length === 0) {
-                const beforeEndPosition = globalPosition + te.newText.length;
-                const afterEndPosition = globalPosition + macroSnapshot.text.length;
+                const globalBeforeEndPosition = globalPosition + (beforeEndPosition - localPosition);
+                const globalAfterEndPosition = globalPosition + macroSnapshot.text.length;
                 const nameOriginalRange = this.snapshot.getOriginalRange(
                     globalPosition,
                     globalPosition + identifier.length
                 );
+                const originalRange = this.snapshot.getOriginalRange(globalPosition, globalBeforeEndPosition);
                 if (da) {
                     this.computeOriginalArgumentPositions(da, offset);
                 }
@@ -807,8 +865,9 @@ export class HlslPreprocessor {
                     !this.snapshot.isInMacroContext(globalPosition);
                 HlslPreprocessor.createDefineContext(
                     globalPosition,
-                    beforeEndPosition,
-                    afterEndPosition,
+                    globalBeforeEndPosition,
+                    globalBeforeEndPosition,
+                    originalRange,
                     nameOriginalRange,
                     ds,
                     this.snapshot,
@@ -1027,6 +1086,7 @@ export class HlslPreprocessor {
         position: number,
         beforeEndPosition: number,
         afterEndPosition: number,
+        originalRange: Range,
         nameOriginalRange: Range,
         ds: DefineStatement,
         snapshot: Snapshot,
@@ -1040,6 +1100,7 @@ export class HlslPreprocessor {
             startPosition: position,
             beforeEndPosition,
             afterEndPosition,
+            originalRange,
             nameOriginalRange,
             isVisible,
             arguments: da,

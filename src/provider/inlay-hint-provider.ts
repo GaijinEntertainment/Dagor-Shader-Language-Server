@@ -3,6 +3,7 @@ import { DocumentUri, InlayHint, InlayHintKind, InlayHintParams, Position, Range
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
 import { DefineContext } from '../interface/define-context';
+import { FunctionUsage } from '../interface/function/function-usage';
 import { MacroUsage, getBestMacroDeclaration } from '../interface/macro/macro-usage';
 
 export async function inlayHintProvider(params: InlayHintParams): Promise<InlayHint[] | null> {
@@ -26,6 +27,8 @@ export async function inlayHintProvider(params: InlayHintParams): Promise<InlayH
                 rangeContains(params.range, dc.nameOriginalRange.end))
     );
     addDefineArguments(result, dcs);
+    const fus = snapshot.getFunctioneUsagesIn(params.range);
+    addFunctionArguments(result, fus);
     return result;
 }
 
@@ -50,6 +53,19 @@ function addDefineArguments(result: InlayHint[], dcs: DefineContext[]): void {
                 const da = dc.arguments.arguments[i];
                 const dp = dc.define.parameters[i];
                 const ih = createInlayHint(dp, da.trimmedOriginalStartPosition);
+                result.push(ih);
+            }
+        }
+    }
+}
+
+function addFunctionArguments(result: InlayHint[], fus: FunctionUsage[]): void {
+    for (const fu of fus) {
+        if (fu.arguments.length) {
+            for (let i = 0; i < fu.arguments.length && i < fu.declaration.parameters.length; i++) {
+                const fa = fu.arguments[i];
+                const fp = fu.declaration.parameters[i];
+                const ih = createInlayHint(fp.name, fa.trimmedOriginalStartPosition);
                 result.push(ih);
             }
         }

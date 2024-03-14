@@ -3,9 +3,13 @@ import { DocumentHighlight, DocumentHighlightKind, DocumentHighlightParams } fro
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
 import { rangeContains } from '../helper/helper';
+import { BlockDeclaration } from '../interface/block/block-declaration';
 import { DefineStatement } from '../interface/define-statement';
+import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { Macro } from '../interface/macro/macro';
 import { MacroParameter } from '../interface/macro/macro-parameter';
+import { ShaderDeclaration } from '../interface/shader/shader-declaration';
+import { VariableDeclaration } from '../interface/variable/variable-declaration';
 
 export async function documentHighlightProvider(
     params: DocumentHighlightParams
@@ -60,6 +64,82 @@ export async function documentHighlightProvider(
                 range: dc.nameOriginalRange,
                 kind: DocumentHighlightKind.Text,
             });
+        }
+        return result;
+    }
+    const vd = getVariableDeclaration(snapshot, params);
+    if (vd) {
+        const result: DocumentHighlight[] = [];
+        if (vd.isVisible && vd.uri === params.textDocument.uri) {
+            result.push({
+                range: vd.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        if (vd.interval && vd.interval.isVisible && vd.interval.uri === params.textDocument.uri) {
+            result.push({
+                range: vd.interval.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        for (const vu of vd.usages) {
+            if (vu.isVisible) {
+                result.push({
+                    range: vu.originalRange,
+                    kind: DocumentHighlightKind.Text,
+                });
+            }
+        }
+        return result;
+    }
+    const fd = getFunctionDeclaration(snapshot, params);
+    if (fd) {
+        const result: DocumentHighlight[] = [];
+        for (const fu of fd.usages) {
+            if (fu.isVisible) {
+                result.push({
+                    range: fu.nameOriginalRange,
+                    kind: DocumentHighlightKind.Text,
+                });
+            }
+        }
+        return result;
+    }
+    const sd = getShaderDeclaration(snapshot, params);
+    if (sd) {
+        const result: DocumentHighlight[] = [];
+        if (sd.isVisible && sd.uri === params.textDocument.uri) {
+            result.push({
+                range: sd.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        for (const su of sd.usages) {
+            if (su.isVisible) {
+                result.push({
+                    range: su.originalRange,
+                    kind: DocumentHighlightKind.Text,
+                });
+            }
+        }
+        return result;
+    }
+    const bd = getBlockDeclaration(snapshot, params);
+    if (bd) {
+        const result: DocumentHighlight[] = [];
+        if (bd.isVisible && bd.uri === params.textDocument.uri) {
+            result.push({
+                range: bd.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        for (const su of bd.usages) {
+            if (su.isVisible) {
+                result.push({
+                    range: su.originalRange,
+                    kind: DocumentHighlightKind.Text,
+                });
+            }
         }
         return result;
     }
@@ -119,4 +199,52 @@ function getMacroParameter(snapshot: Snapshot, params: DocumentHighlightParams):
                 mp.usages.some((mpu) => rangeContains(mpu.originalRange, params.position))
         ) ?? null
     );
+}
+
+function getVariableDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): VariableDeclaration | null {
+    const vd = snapshot.getVariableDeclarationAt(params.position);
+    if (vd) {
+        return vd;
+    }
+    const vu = snapshot.getVariableUsageAt(params.position);
+    if (vu) {
+        return vu.declaration;
+    }
+    const id = snapshot.getIntervalDeclarationAt(params.position);
+    if (id) {
+        return id.variable;
+    }
+    return null;
+}
+
+function getFunctionDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): FunctionDeclaration | null {
+    const fu = snapshot.getFunctionUsageAt(params.position);
+    if (fu) {
+        return fu.declaration;
+    }
+    return null;
+}
+
+function getShaderDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): ShaderDeclaration | null {
+    const sd = snapshot.getShaderDeclarationAt(params.position);
+    if (sd) {
+        return sd;
+    }
+    const su = snapshot.getShaderUsageAt(params.position);
+    if (su) {
+        return su.declaration;
+    }
+    return null;
+}
+
+function getBlockDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): BlockDeclaration | null {
+    const bd = snapshot.getBlockDeclarationAt(params.position);
+    if (bd) {
+        return bd;
+    }
+    const bu = snapshot.getBlockUsageAt(params.position);
+    if (bu) {
+        return bu.declaration;
+    }
+    return null;
 }

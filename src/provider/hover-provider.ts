@@ -3,10 +3,17 @@ import { Hover, HoverParams, MarkupContent, MarkupKind } from 'vscode-languagese
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
+import { toStringBlockDeclaration } from '../interface/block/block-declaration';
+import { BlockUsage } from '../interface/block/block-usage';
 import { DefineContext } from '../interface/define-context';
 import { toStringDefineStatementWithContent } from '../interface/define-statement';
+import { toStringFunctionDeclaration } from '../interface/function/function-declaration';
+import { FunctionUsage } from '../interface/function/function-usage';
 import { toStringMacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroUsage, getBestMacroDeclaration } from '../interface/macro/macro-usage';
+import { toStringShaderDeclaration } from '../interface/shader/shader-declaration';
+import { ShaderUsage } from '../interface/shader/shader-usage';
+import { VariableDeclaration } from '../interface/variable/variable-declaration';
 
 export async function hoverProvider(params: HoverParams): Promise<Hover | undefined | null> {
     const snapshot = await getSnapshot(params.textDocument.uri);
@@ -27,6 +34,41 @@ export async function hoverProvider(params: HoverParams): Promise<Hover | undefi
         return {
             contents: createDefineHoverContent(dc),
             range: dc.nameOriginalRange,
+        };
+    }
+    const id = snapshot.getIntervalDeclarationAt(params.position);
+    if (id) {
+        return {
+            contents: createVariableHoverContent(id.variable),
+            range: id.nameOriginalRange,
+        };
+    }
+    const vu = snapshot.getVariableUsageAt(params.position);
+    if (vu) {
+        return {
+            contents: createVariableHoverContent(vu.declaration),
+            range: vu.originalRange,
+        };
+    }
+    const fu = snapshot.getFunctionUsageAt(params.position);
+    if (fu) {
+        return {
+            contents: createFunctionHoverContent(fu),
+            range: fu.nameOriginalRange,
+        };
+    }
+    const su = snapshot.getShaderUsageAt(params.position);
+    if (su) {
+        return {
+            contents: createShaderHoverContent(su),
+            range: su.originalRange,
+        };
+    }
+    const bu = snapshot.getBlockUsageAt(params.position);
+    if (bu) {
+        return {
+            contents: createBlockHoverContent(bu),
+            range: bu.originalRange,
         };
     }
     return null;
@@ -79,6 +121,81 @@ function getDefineValue(dc: DefineContext): string {
         } else {
             return `${define}\nExpands to:\n${dc.expansion}`;
         }
+    } else {
+        return '';
+    }
+}
+
+function createVariableHoverContent(vd: VariableDeclaration): MarkupContent {
+    return {
+        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
+        value: getVariableValue(vd),
+    };
+}
+
+function getVariableValue(vd: VariableDeclaration): string {
+    const declaration = `${vd.type} ${vd.name};`;
+    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
+        return `\`\`\`dshl\n${declaration}\n\`\`\``;
+    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
+        return declaration;
+    } else {
+        return '';
+    }
+}
+
+function createFunctionHoverContent(fu: FunctionUsage): MarkupContent {
+    return {
+        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
+        value: getFunctionValue(fu),
+    };
+}
+
+function getFunctionValue(fu: FunctionUsage): string {
+    const fd = fu.declaration;
+    const declaration = toStringFunctionDeclaration(fd);
+    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
+        return `\`\`\`hlsl\n${declaration}\n\`\`\``;
+    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
+        return declaration;
+    } else {
+        return '';
+    }
+}
+
+function createShaderHoverContent(su: ShaderUsage): MarkupContent {
+    return {
+        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
+        value: getShaderValue(su),
+    };
+}
+
+function getShaderValue(su: ShaderUsage): string {
+    const sd = su.declaration;
+    const declaration = toStringShaderDeclaration(sd);
+    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
+        return `\`\`\`dshl\n${declaration}\n\`\`\``;
+    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
+        return declaration;
+    } else {
+        return '';
+    }
+}
+
+function createBlockHoverContent(bu: BlockUsage): MarkupContent {
+    return {
+        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
+        value: getBlockValue(bu),
+    };
+}
+
+function getBlockValue(bu: BlockUsage): string {
+    const sd = bu.declaration;
+    const declaration = toStringBlockDeclaration(sd);
+    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
+        return `\`\`\`dshl\n${declaration}\n\`\`\``;
+    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
+        return declaration;
     } else {
         return '';
     }

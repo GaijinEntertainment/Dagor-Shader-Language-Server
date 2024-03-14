@@ -1,3 +1,4 @@
+import { FunctionInfo } from '../interface/function/function-info';
 import { LanguageElementInfo } from '../interface/language-element-info';
 
 export const dshlKeywords: LanguageElementInfo[] = [
@@ -241,32 +242,239 @@ export const dshlPrimitiveShortTypes: LanguageElementInfo[] = [
     { name: '@f44', sortName: 'f44', description: 'float4x4' },
 ];
 
-export const dshlFunctions: LanguageElementInfo[] = [
+export const dshlFunctions: FunctionInfo[] = [
     {
         name: 'error',
         description: 'You can cause a compilation error with the message.',
         type: 'void',
+        parameters: [
+            {
+                name: 'message',
+                type: 'string',
+            },
+        ],
     },
     {
         name: 'maybe',
         description:
             'The maybe intrinsic can be used in a bool-expression. The argument is any identifier. If this identifier is not a Boolean variable, the intrinsic will return false, otherwise the value of this Boolean variable.',
         type: 'bool',
+        parameters: [
+            {
+                name: 'condition',
+                type: 'bool',
+            },
+        ],
     },
-    { name: 'time_phase', type: 'float' },
-    { name: 'sin', type: 'float' },
-    { name: 'cos', type: 'float' },
-    { name: 'pow', type: 'float' },
-    { name: 'sRGBread', type: 'float4' },
-    { name: 'vecpow', type: 'float4' },
-    { name: 'fsel', type: 'float' },
-    { name: 'sqrt', type: 'float' },
-    { name: 'min', type: 'float' },
-    { name: 'max', type: 'float' },
-    { name: 'anim_frame', type: 'float4' },
-    { name: 'wind_coeff', type: 'float4' },
-    { name: 'fade_val', type: 'float' },
-    { name: 'get_dimensions', type: 'float4' },
-    { name: 'get_size', type: 'float' },
-    { name: 'get_viewport', type: 'float4' },
+    {
+        name: 'time_phase',
+        type: 'float',
+        parameters: [
+            {
+                name: 'f1',
+                type: 'float',
+            },
+            {
+                name: 'f2',
+                type: 'float',
+            },
+        ],
+    },
+    {
+        name: 'sin',
+        type: 'float',
+        parameters: [
+            {
+                name: 'value',
+                type: 'float',
+            },
+        ],
+    },
+    {
+        name: 'cos',
+        type: 'float',
+        parameters: [
+            {
+                name: 'value',
+                type: 'float',
+            },
+        ],
+    },
+    {
+        name: 'pow',
+        type: 'float',
+        parameters: [
+            {
+                name: 'base',
+                type: 'float',
+            },
+            {
+                name: 'exponent',
+                type: 'float',
+            },
+        ],
+    },
+    {
+        name: 'sRGBread',
+        type: 'float4',
+        parameters: [
+            {
+                name: 'value',
+                type: 'float4',
+            },
+        ],
+    },
+    {
+        name: 'vecpow',
+        type: 'float4',
+        parameters: [
+            {
+                name: 'base',
+                type: 'float4',
+            },
+            {
+                name: 'exponent',
+                type: 'float',
+            },
+        ],
+    },
+    {
+        name: 'fsel',
+        type: 'float',
+        parameters: [
+            {
+                name: 'f1',
+                type: 'float',
+            },
+            {
+                name: 'f2',
+                type: 'float',
+            },
+            {
+                name: 'f3',
+                type: 'float',
+            },
+        ],
+    },
+    {
+        name: 'sqrt',
+        type: 'float',
+        parameters: [
+            {
+                name: 'value',
+                type: 'float',
+            },
+        ],
+    },
+    {
+        name: 'min',
+        type: 'float',
+        parameters: [
+            {
+                name: 'f1',
+                type: 'float',
+            },
+            {
+                name: 'f2',
+                type: 'float',
+            },
+        ],
+    },
+    {
+        name: 'max',
+        type: 'float',
+        parameters: [
+            {
+                name: 'f1',
+                type: 'float',
+            },
+            {
+                name: 'f2',
+                type: 'float',
+            },
+        ],
+    },
+    {
+        name: 'anim_frame',
+        type: 'float4',
+        parameters: [
+            {
+                name: 'f1',
+                type: 'float',
+            },
+            {
+                name: 'f2',
+                type: 'float',
+            },
+            {
+                name: 'f3',
+                type: 'float',
+            },
+            {
+                name: 'f4',
+                type: 'float',
+            },
+        ],
+    },
+    {
+        name: 'wind_coeff',
+        type: 'float4',
+        parameters: [
+            {
+                name: 'f1',
+                type: 'float',
+            },
+            {
+                name: 'f2',
+                type: 'float',
+            },
+        ],
+    },
+    {
+        name: 'fade_val',
+        type: 'float',
+        parameters: [
+            {
+                name: 'f1',
+                type: 'float',
+            },
+            {
+                name: 'f2',
+                type: 'float',
+            },
+            {
+                name: 'f3',
+                type: 'float',
+            },
+            {
+                name: 'f4',
+                type: 'float',
+            },
+        ],
+    },
+    {
+        name: 'get_dimensions',
+        type: 'float4',
+        parameters: [
+            {
+                name: 'tex',
+                type: 'texture',
+            },
+            {
+                name: 'value',
+                type: 'float',
+            },
+        ],
+    },
+    {
+        name: 'get_size',
+        type: 'float',
+        parameters: [
+            {
+                name: 'buf',
+                type: 'buffer',
+            },
+        ],
+    },
+    { name: 'get_viewport', type: 'float4', parameters: [] },
 ];

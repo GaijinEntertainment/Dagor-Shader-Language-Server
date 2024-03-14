@@ -1,4 +1,4 @@
-import { TextDocuments } from 'vscode-languageserver';
+import { PublishDiagnosticsParams, TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { Server } from '../server';
@@ -29,4 +29,8 @@ export function showErrorMessage(message: string): void {
 
 export function refreshInlayHints(): void {
     Server.getServer().refreshInlayHints();
+}
+
+export async function sendDiagnostics(diagnostics: PublishDiagnosticsParams): Promise<void> {
+    Server.getServer().sendDiagnostics(diagnostics);
 }

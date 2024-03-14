@@ -185,4 +185,14 @@ export const dshlSnippets: LanguageElementInfo[] = [
             'compile("${1|target_cs,target_vs,target_vs_half,target_vs_for_tess,target_vs_for_gs,target_hs,target_ds,target_gs,target_ps,target_ps_half|}", "${2:main}");',
         isSnippet: true,
     },
+    {
+        name: 'assume',
+        insertText: 'assume ${1:name} = ${2:value};',
+        isSnippet: true,
+    },
+    {
+        name: 'supports',
+        insertText: 'supports ${1:value};',
+        isSnippet: true,
+    },
 ];

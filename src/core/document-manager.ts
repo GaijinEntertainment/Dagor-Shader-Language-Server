@@ -18,3 +18,7 @@ export async function getSnapshot(uri: DocumentUri): Promise<Snapshot | null> {
     }
     return await di.getSnapshot();
 }
+
+export function getDocumentInfo(uri: DocumentUri): DocumentInfo | null {
+    return documentInfos.get(uri) ?? null;
+}

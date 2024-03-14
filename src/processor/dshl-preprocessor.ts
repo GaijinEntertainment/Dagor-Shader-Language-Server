@@ -1,7 +1,7 @@
-import { DocumentUri, Position, Range } from 'vscode-languageserver';
+import { DocumentUri, Range } from 'vscode-languageserver';
 
 import { Snapshot } from '../core/snapshot';
-import { defaultRange } from '../helper/helper';
+import { defaultRange, offsetPosition } from '../helper/helper';
 import { Arguments } from '../interface/arguments';
 import { ElementRange } from '../interface/element-range';
 import { HlslBlock } from '../interface/hlsl-block';
@@ -137,7 +137,7 @@ class DshlPreprocessor {
                 includeStatement: result.includeStatement,
                 snapshot: result.snapshot,
                 parent: null,
-                originalEndPosition: this.snapshot.getOriginalPosition(afterEndPosition, false),
+                originalRange: this.snapshot.getOriginalRange(result.position, afterEndPosition),
                 uri: result.snapshot.uri,
             };
             for (const sr of result.snapshot.stringRanges) {
@@ -338,7 +338,17 @@ class DshlPreprocessor {
         if (this.isRoot) {
             contentSnapshot.stringRanges = this.getStringRanges(content, contentPosition);
             contentSnapshot.preprocessingOffsets = this.getPreprocessingOffsets(content, contentPosition);
+            const pos: PreprocessingOffset[] = this.snapshot.preprocessingOffsets
+                .filter((po) => po.position >= contentPosition && po.position < contentPosition + content.length)
+                .map((po) => ({
+                    position: po.position - contentPosition,
+                    beforeEndPosition: po.beforeEndPosition - contentPosition,
+                    afterEndPosition: po.afterEndPosition - contentPosition,
+                    offset: po.offset,
+                }));
+            contentSnapshot.preprocessingOffsets = pos;
         }
+
         contentSnapshot.text = content;
         return contentSnapshot;
     }
@@ -463,23 +473,14 @@ class DshlPreprocessor {
 
     private offsetPositions(nameOriginalRange: Range, md: MacroDeclaration, ma: Arguments): void {
         const contentStartPosition = md.contentOriginalRange.start;
-        this.offsetPosition(nameOriginalRange.start, contentStartPosition);
-        this.offsetPosition(nameOriginalRange.end, contentStartPosition);
-        this.offsetPosition(ma.argumentListOriginalRange.start, contentStartPosition);
-        this.offsetPosition(ma.argumentListOriginalRange.end, contentStartPosition);
+        offsetPosition(nameOriginalRange.start, contentStartPosition);
+        offsetPosition(nameOriginalRange.end, contentStartPosition);
+        offsetPosition(ma.argumentListOriginalRange.start, contentStartPosition);
+        offsetPosition(ma.argumentListOriginalRange.end, contentStartPosition);
         for (const maa of ma.arguments) {
-            this.offsetPosition(maa.originalRange.start, contentStartPosition);
-            this.offsetPosition(maa.originalRange.end, contentStartPosition);
-            this.offsetPosition(maa.trimmedOriginalStartPosition, contentStartPosition);
-        }
-    }
-
-    private offsetPosition(position: Position, offset: Position): void {
-        if (position.line === 0) {
-            position.line = offset.line;
-            position.character += offset.character;
-        } else {
-            position.line += offset.line;
+            offsetPosition(maa.originalRange.start, contentStartPosition);
+            offsetPosition(maa.originalRange.end, contentStartPosition);
+            offsetPosition(maa.trimmedOriginalStartPosition, contentStartPosition);
         }
     }
 
@@ -543,16 +544,16 @@ class DshlPreprocessor {
         const pasteText = this.getMacroPasteText(md, ma);
         const afterEndPosition = position + pasteText.length;
         Preprocessor.changeTextAndAddOffset(position, beforeEndPosition, afterEndPosition, pasteText, this.snapshot);
-        this.createMacroContext(position, afterEndPosition, md, parentMc);
+        this.createMacroContext(position, beforeEndPosition, afterEndPosition, md, parentMc);
         Preprocessor.addStringRanges(position, afterEndPosition, this.snapshot);
     }
 
     private getMacroPasteText(md: MacroDeclaration, ma: Arguments): string {
         if (!ma.arguments.length) {
-            return md.contentSnapshot.originalText;
+            return md.contentSnapshot.text;
         }
         const contentSnapshot = new Snapshot(invalidVersion, '', '');
-        contentSnapshot.text = md.contentSnapshot.originalText;
+        contentSnapshot.text = md.contentSnapshot.text;
         Preprocessor.addStringRanges(0, contentSnapshot.text.length, contentSnapshot);
         const parameterNames = md.parameters.map((mp) => mp.name);
         const regex = new RegExp(`\\b(${parameterNames.join('|')})\\b`, 'g');
@@ -580,6 +581,7 @@ class DshlPreprocessor {
 
     private createMacroContext(
         position: number,
+        beforeEndPosition: number,
         afterEndPosition: number,
         md: MacroDeclaration,
         parentMc: MacroContext | null
@@ -587,6 +589,7 @@ class DshlPreprocessor {
         const mc: MacroContext = {
             startPosition: position,
             endPosition: afterEndPosition,
+            originalRange: this.snapshot.getOriginalRange(position, beforeEndPosition),
             parent: parentMc,
             children: [],
             macroDeclaration: md,

@@ -8,6 +8,7 @@ export interface DefineContext {
     beforeEndPosition: number;
     afterEndPosition: number;
     nameOriginalRange: Range;
+    originalRange: Range;
     isVisible: boolean;
     expansion: string | null;
     arguments: Arguments | null;

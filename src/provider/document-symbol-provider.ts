@@ -9,6 +9,8 @@ import {
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
+import { Scope } from '../helper/scope';
+import { toStringBlockType } from '../interface/block/block-declaration';
 import {
     DefineStatement,
     toStringDefineStatementHeader,
@@ -18,6 +20,7 @@ import {
     toStringMacroDeclarationHeader,
     toStringMacroDeclarationParameterList,
 } from '../interface/macro/macro-declaration';
+import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
 
 export async function documentSymbolProvider(
     params: DocumentSymbolParams
@@ -36,22 +39,76 @@ export async function documentSymbolProvider(
 
 function createDocumentSymbols(snapshot: Snapshot, uri: DocumentUri): DocumentSymbol[] {
     const result: DocumentSymbol[] = [];
-    const mds = snapshot.macroDeclarations.filter((md) => md.uri === uri);
-    for (const md of mds) {
-        result.push({
-            name: md.name,
-            kind: SymbolKind.Constant,
-            range: md.originalRange,
-            selectionRange: md.nameOriginalRange,
-            detail: toStringMacroDeclarationParameterList(md),
-            children: md.contentSnapshot.defineStatements.map((ds) => defineToDocumentSymbol(ds)),
-        });
-    }
     const dss = snapshot.defineStatements.filter((ds) => ds.isVisible && !ds.realDefine);
     for (const ds of dss) {
         result.push(defineToDocumentSymbol(ds));
     }
+    addScopedElements(result, snapshot.rootScope, uri);
     return result;
+}
+
+function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri): void {
+    for (const vd of scope.variableDeclarations) {
+        if (vd.isVisible) {
+            dss.push({
+                name: vd.name,
+                kind: SymbolKind.Variable,
+                range: vd.originalRange,
+                selectionRange: vd.nameOriginalRange,
+                detail: getVariableTypeWithInterval(vd),
+            });
+        }
+    }
+    for (const childScope of scope.children) {
+        if (childScope.shaderDeclarations.length && childScope.shaderDeclarations[0].isVisible) {
+            const sdss: DocumentSymbol[] = [];
+            dss.push({
+                name: childScope.shaderDeclarations.map((sd) => sd.name).join(', '),
+                kind: SymbolKind.Module,
+                range: childScope.shaderDeclarations[0].originalRange,
+                selectionRange: childScope.shaderDeclarations[0].originalRange,
+                detail: 'shader',
+                children: sdss,
+            });
+            for (const shaderChildScope of childScope.children) {
+                addScopedElements(sdss, shaderChildScope, uri);
+            }
+        } else if (childScope.blockDeclaration) {
+            if (childScope.blockDeclaration.isVisible) {
+                const sdss: DocumentSymbol[] = [];
+                dss.push({
+                    name: childScope.blockDeclaration.name,
+                    kind: SymbolKind.Module,
+                    range: childScope.blockDeclaration.originalRange,
+                    selectionRange: childScope.blockDeclaration.originalRange,
+                    detail: toStringBlockType(childScope.blockDeclaration),
+                    children: sdss,
+                });
+                for (const shaderChildScope of childScope.children) {
+                    addScopedElements(sdss, shaderChildScope, uri);
+                }
+            }
+        } else if (childScope.macroDeclaration) {
+            if (childScope.macroDeclaration.uri === uri) {
+                const sdss = childScope.macroDeclaration.contentSnapshot.defineStatements.map((ds) =>
+                    defineToDocumentSymbol(ds)
+                );
+                dss.push({
+                    name: childScope.macroDeclaration.name,
+                    kind: SymbolKind.Constant,
+                    range: childScope.macroDeclaration.originalRange,
+                    selectionRange: childScope.macroDeclaration.nameOriginalRange,
+                    detail: toStringMacroDeclarationParameterList(childScope.macroDeclaration),
+                    children: sdss,
+                });
+                for (const shaderChildScope of childScope.children) {
+                    addScopedElements(sdss, shaderChildScope, uri);
+                }
+            }
+        } else {
+            addScopedElements(dss, childScope, uri);
+        }
+    }
 }
 
 function defineToDocumentSymbol(ds: DefineStatement): DocumentSymbol {
@@ -82,6 +139,32 @@ function createSymbolInformations(snapshot: Snapshot, uri: DocumentUri): SymbolI
     }
     const dss = snapshot.defineStatements.filter((ds) => ds.isVisible);
     addDefines(result, dss, uri);
+    const vds = snapshot.getAllVariableDeclarations();
+    for (const vd of vds) {
+        result.push({
+            name: vd.name,
+            kind: SymbolKind.Variable,
+            containerName: vd.name,
+            location: {
+                range: vd.originalRange,
+                uri: vd.uri,
+            },
+        });
+    }
+    for (const scope of snapshot.rootScope.children) {
+        if (scope.shaderDeclarations.length) {
+            const name = scope.shaderDeclarations.map((sd) => sd.name).join(', ');
+            result.push({
+                name,
+                kind: SymbolKind.Module,
+                containerName: name,
+                location: {
+                    uri: scope.shaderDeclarations[0].uri,
+                    range: scope.shaderDeclarations[0].originalRange,
+                },
+            });
+        }
+    }
     return result;
 }
 

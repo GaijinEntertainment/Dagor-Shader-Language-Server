@@ -4,6 +4,7 @@ import {
     InitializeResult,
     InitializedParams,
     InlayHintRequest,
+    PublishDiagnosticsParams,
     ServerCapabilities,
     TextDocumentSyncKind,
     TextDocuments,
@@ -15,6 +16,7 @@ import { getCapabilities, initializeCapabilities } from './core/capability-manag
 import { initializeConfiguration } from './core/configuration-manager';
 import { SERVER_NAME, SERVER_VERSION } from './core/constant';
 import { initializeDebug } from './core/debug';
+import { getDocumentInfo } from './core/document-manager';
 import { Configuration } from './interface/configuration';
 import { HostDependent } from './interface/host-dependent';
 import { completionProvider } from './provider/completion-provider';
@@ -74,6 +76,12 @@ export abstract class Server {
                 resolve();
             });
         });
+        this.documents.onDidOpen((e) => {
+            getDocumentInfo(e.document.uri)?.opened(e.document);
+        });
+        this.documents.onDidClose((e) => {
+            getDocumentInfo(e.document.uri)?.closed();
+        });
         this.connection.onShutdown((_token) => {
             this.onShutdown();
         });
@@ -102,7 +110,7 @@ export abstract class Server {
             definitionProvider: true,
             documentHighlightProvider: true,
             documentSymbolProvider: true,
-            // foldingRangeProvider: true, // TODO: disabled, because only works with DSHL macros, re-enable when the provider finds all ranges
+            foldingRangeProvider: true,
             hoverProvider: true,
             implementationProvider: true,
             inlayHintProvider: { documentSelector: [{ language: 'dshl' }, { language: 'hlsl' }] },
@@ -172,6 +180,10 @@ export abstract class Server {
         if (getCapabilities().inlayHints) {
             this.connection.languages.inlayHint.refresh();
         }
+    }
+
+    public async sendDiagnostics(diagnostics: PublishDiagnosticsParams): Promise<void> {
+        this.connection.sendDiagnostics(diagnostics);
     }
 
     private listen(): void {

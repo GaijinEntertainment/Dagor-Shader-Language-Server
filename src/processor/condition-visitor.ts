@@ -185,11 +185,13 @@ export class ConditionVisitor
             if (ds) {
                 const position = this.position + (identifier?.symbol.startIndex ?? 0);
                 const endPosition = this.position + (identifier?.symbol.stopIndex ?? 0);
+                const originalRange = this.snapshot.getOriginalRange(position, endPosition + 1);
                 HlslPreprocessor.createDefineContext(
                     position,
                     endPosition,
                     endPosition,
-                    this.snapshot.getOriginalRange(position, endPosition + 1),
+                    originalRange,
+                    originalRange,
                     ds,
                     this.snapshot,
                     !this.snapshot.isInIncludeContext(this.position) && !this.snapshot.isInMacroContext(this.position),

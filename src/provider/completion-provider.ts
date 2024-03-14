@@ -45,11 +45,14 @@ import {
     hlslVariables,
     hlslVectorMatrixStringTypes,
 } from '../helper/hlsl-info';
+import { toStringBlockType } from '../interface/block/block-declaration';
 import { DefineStatement } from '../interface/define-statement';
+import { toStringFunctionParameters } from '../interface/function/function-declaration';
 import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
 import { ShaderStage } from '../interface/shader-stage';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
+import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
 import { getPredefineSnapshot } from '../processor/include-processor';
 import { getIncludeCompletionInfos } from '../processor/include-resolver';
 
@@ -195,11 +198,41 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     addCompletionItems(result, dshlNonPrimitiveShortTypes, CompletionItemKind.Class, 'type');
     addCompletionItems(result, dshlPrimitiveShortTypes, CompletionItemKind.Class, 'type');
     addCompletionItems(result, dshlProperties, CompletionItemKind.Property, 'property');
-    addCompletionItems(result, dshlFunctions, CompletionItemKind.Function, 'function');
+    result.push(
+        ...dshlFunctions.map<CompletionItem>((fi) =>
+            getCompletionItem(
+                fi,
+                CompletionItemKind.Function,
+                'function',
+                `(${toStringFunctionParameters(fi.parameters)})`
+            )
+        )
+    );
     addCompletionItems(result, getMacros(snapshot, position), CompletionItemKind.Constant, 'macro');
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, dshlSnippets, CompletionItemKind.Snippet, 'snippet');
     }
+    const vds = snapshot.getVariableDeclarationsInScope(position);
+    addCompletionItems(
+        result,
+        vds.map((vd) => ({ name: vd.name, type: getVariableTypeWithInterval(vd) })),
+        CompletionItemKind.Variable,
+        'variable'
+    );
+    const sds = snapshot.getShaderDeclarationsInScope(position);
+    addCompletionItems(
+        result,
+        sds.map((sd) => ({ name: sd.name, type: 'shader' })),
+        CompletionItemKind.Module,
+        'shader'
+    );
+    const bds = snapshot.getBlockDeclarationsInScope(position);
+    addCompletionItems(
+        result,
+        bds.map((bd) => ({ name: bd.name, type: toStringBlockType(bd) })),
+        CompletionItemKind.Module,
+        'block'
+    );
 }
 
 function getMacros(snapshot: Snapshot, position: Position): LanguageElementInfo[] {
@@ -223,19 +256,24 @@ function addCompletionItems(
     result: CompletionItem[],
     items: LanguageElementInfo[],
     kind: CompletionItemKind,
-    type = ''
+    type: string
 ): void {
     result.push(...items.map<CompletionItem>((item) => getCompletionItem(item, kind, type)));
 }
 
-function getCompletionItem(item: LanguageElementInfo, kind: CompletionItemKind, type = ''): CompletionItem {
+function getCompletionItem(
+    item: LanguageElementInfo,
+    kind: CompletionItemKind,
+    type: string,
+    parameters?: string
+): CompletionItem {
     return {
         label: item.name,
         kind: getKind(kind),
         detail: getDetail(item, type),
         sortText: item.sortName,
         filterText: item.filterText,
-        labelDetails: getLabelDetails(item),
+        labelDetails: getLabelDetails(item, parameters),
         documentation: getDocumentation(item),
         insertText: item.insertText,
         insertTextFormat: item.isSnippet ? InsertTextFormat.Snippet : undefined,
@@ -259,10 +297,11 @@ function getDetail(item: LanguageElementInfo, type: string): string {
     }
 }
 
-function getLabelDetails(item: LanguageElementInfo): CompletionItemLabelDetails | undefined {
+function getLabelDetails(item: LanguageElementInfo, parameters?: string): CompletionItemLabelDetails | undefined {
     return getCapabilities().completionLabelDetails
         ? {
               description: item.type,
+              detail: parameters,
           }
         : undefined;
 }

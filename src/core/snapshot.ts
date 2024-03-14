@@ -1,12 +1,18 @@
-import { DocumentUri, Position, Range } from 'vscode-languageserver';
+import { Diagnostic, DocumentUri, Position, Range } from 'vscode-languageserver';
 
-import { defaultPosition, isIntervalContains, rangeContains } from '../helper/helper';
+import { dshlFunctions } from '../helper/dshl-info';
+import { defaultPosition, isBeforeOrEqual, isIntervalContains, rangeContains } from '../helper/helper';
+import { Scope } from '../helper/scope';
+import { BlockDeclaration } from '../interface/block/block-declaration';
+import { BlockUsage } from '../interface/block/block-usage';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
+import { FunctionUsage } from '../interface/function/function-usage';
 import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
+import { IntervalDeclaration } from '../interface/interval-declaration';
 import { Macro } from '../interface/macro/macro';
 import { MacroContext } from '../interface/macro/macro-context';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
@@ -14,7 +20,11 @@ import { MacroUsage } from '../interface/macro/macro-usage';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { RangeWithChildren } from '../interface/range-with-children';
 import { ShaderBlock } from '../interface/shader-block';
+import { ShaderDeclaration } from '../interface/shader/shader-declaration';
+import { ShaderUsage } from '../interface/shader/shader-usage';
 import { SnapshotVersion } from '../interface/snapshot-version';
+import { VariableDeclaration } from '../interface/variable/variable-declaration';
+import { VariableUsage } from '../interface/variable/variable-usage';
 import { getPredefineSnapshot } from '../processor/include-processor';
 import { HLSLI_EXTENSION, HLSL_EXTENSION } from './constant';
 
@@ -42,7 +52,10 @@ export class Snapshot {
     public globalHlslBlocks: HlslBlock[] = [];
     public hlslBlocks: HlslBlock[] = [];
     public noCodeCompletionRanges: Range[] = [];
+    public foldingRanges: Range[] = [];
+    public rootScope: Scope;
     public preprocessingOffsets: PreprocessingOffset[] = [];
+    public diagnostics: Diagnostic[] = [];
 
     public constructor(version: SnapshotVersion, uri: DocumentUri, text: string, isPredefined = false) {
         this.version = version;
@@ -50,6 +63,34 @@ export class Snapshot {
         this.originalText = text;
         this.isPredefined = isPredefined;
         this.computeOriginalTextOffsets();
+        const lastLine = this.originalTextOffsets[this.originalTextOffsets.length - 1];
+        this.rootScope = {
+            shaderDeclarations: [],
+            shaderUsages: [],
+            variableDeclarations: [],
+            variableUsages: [],
+            functionDeclarations: [],
+            functionUsages: [],
+            blockUsages: [],
+            originalRange: {
+                start: { line: 0, character: 0 },
+                end: {
+                    line: this.originalTextOffsets.length,
+                    character: lastLine.endPosition - lastLine.startPosition,
+                },
+            },
+            children: [],
+            isVisible: true,
+        };
+        this.rootScope.functionDeclarations = dshlFunctions.map((fi) => ({
+            name: fi.name,
+            type: fi.type,
+            parameters: fi.parameters.map((p) => ({
+                name: p.name,
+                type: p.type,
+            })),
+            usages: [],
+        }));
     }
 
     private computeOriginalTextOffsets(): void {
@@ -272,6 +313,10 @@ export class Snapshot {
         return this.macroContexts.some((mc) => mc.startPosition <= position && position < mc.endPosition);
     }
 
+    public getMacroContextAt(position: number): MacroContext | null {
+        return this.macroContexts.find((mc) => isIntervalContains(mc.startPosition, mc.endPosition, position)) ?? null;
+    }
+
     public getMacroContextDeepAt(position: number): MacroContext | null {
         for (const mc of this.macroContexts) {
             const result = this.getMacroContext(mc, position);
@@ -300,6 +345,10 @@ export class Snapshot {
             this.hlslBlocks.some((hb) => hb.isVisible && rangeContains(hb.originalRange, position)) ||
             this.macroDeclarations.some((md) => md.contentSnapshot.isInHlslBlock(position))
         );
+    }
+
+    public getHlslBlockAt(position: number): HlslBlock | null {
+        return this.hlslBlocks.find((hb) => isIntervalContains(hb.startPosition, hb.endPosition, position)) ?? null;
     }
 
     public getDefinition(name: string, position: number): DefineStatement | null {
@@ -359,7 +408,269 @@ export class Snapshot {
         return ds.endPosition <= position && (!ds.undefPosition || position <= ds.undefPosition);
     }
 
+    public getDefineContextAt(position: number): DefineContext | null {
+        return (
+            this.defineContexts.find((dc) => isIntervalContains(dc.startPosition, dc.afterEndPosition, position)) ??
+            null
+        );
+    }
+
     public isInDirective(position: number): boolean {
         return this.directives.some((d) => isIntervalContains(d.startPosition, d.endPosition, position));
+    }
+
+    public getVariableUsageAt(position: Position): VariableUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const vu = scope.variableUsages.find((vu) => vu.isVisible && rangeContains(vu.originalRange, position));
+            if (vu) {
+                return vu;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getShaderUsageAt(position: Position): ShaderUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const vu = scope.shaderUsages.find((vu) => vu.isVisible && rangeContains(vu.originalRange, position));
+            if (vu) {
+                return vu;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getFunctionUsageAt(position: Position): FunctionUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const fu = scope.functionUsages.find((fu) => fu.isVisible && rangeContains(fu.originalRange, position));
+            if (fu) {
+                return fu;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getBlockUsageAt(position: Position): BlockUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const bu = scope.blockUsages.find((bu) => bu.isVisible && rangeContains(bu.originalRange, position));
+            if (bu) {
+                return bu;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getFunctioneUsagesIn(range: Range): FunctionUsage[] {
+        const result: FunctionUsage[] = [];
+        this.addFunctionUsage(result, this.rootScope, range);
+        return result;
+    }
+
+    private addFunctionUsage(result: FunctionUsage[], scope: Scope, range: Range): void {
+        result.push(
+            ...scope.functionUsages.filter(
+                (fu) =>
+                    fu.isVisible &&
+                    (rangeContains(range, fu.originalRange.start) || rangeContains(range, fu.originalRange.end))
+            )
+        );
+        for (const child of scope.children) {
+            if (rangeContains(range, child.originalRange.start) || rangeContains(range, child.originalRange.end)) {
+                this.addFunctionUsage(result, child, range);
+            }
+        }
+    }
+
+    public getFunctioneUsageParameterListAt(position: Position): FunctionUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const fu = scope.functionUsages.find(
+                (fu) => fu.isVisible && rangeContains(fu.parameterListOriginalRange, position)
+            );
+            if (fu) {
+                return fu;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getVariableDeclarationAt(position: Position): VariableDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const vd = scope.variableDeclarations.find(
+                (vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, position)
+            );
+            if (vd) {
+                return vd;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getShaderDeclarationAt(position: Position): ShaderDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const sd = scope.shaderDeclarations.find(
+                (sd) => sd.isVisible && rangeContains(sd.nameOriginalRange, position)
+            );
+            if (sd) {
+                return sd;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getIntervalDeclarationAt(position: Position): IntervalDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const id = scope.variableDeclarations.find(
+                (vd) => vd.interval && vd.interval.isVisible && rangeContains(vd.interval.nameOriginalRange, position)
+            )?.interval;
+            if (id) {
+                return id;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getBlockDeclarationAt(position: Position): BlockDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            if (
+                scope.blockDeclaration &&
+                scope.blockDeclaration.isVisible &&
+                rangeContains(scope.blockDeclaration.nameOriginalRange, position)
+            ) {
+                return scope.blockDeclaration;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getVariableDeclarationFor(name: string, position: Position, onlyRoot = false): VariableDeclaration | null {
+        let scope: Scope | null = onlyRoot ? this.rootScope : this.getScopeAt(position);
+        while (scope) {
+            const vd = scope.variableDeclarations.find(
+                (vd) => isBeforeOrEqual(vd.originalRange.end, position) && vd.name === name
+            );
+            if (vd) {
+                return vd;
+            }
+            if (onlyRoot) {
+                return null;
+            }
+            scope = scope.parent ?? null;
+        }
+        return null;
+    }
+
+    public getShaderDeclarationFor(name: string, position: Position, onlyRoot = false): ShaderDeclaration | null {
+        let scope: Scope | null = onlyRoot ? this.rootScope : this.getScopeAt(position);
+        while (scope) {
+            const sd = scope.shaderDeclarations.find(
+                (sd) => isBeforeOrEqual(sd.nameOriginalRange.end, position) && sd.name === name
+            );
+            if (sd) {
+                return sd;
+            }
+            if (onlyRoot) {
+                return null;
+            }
+            scope = scope.parent ?? null;
+        }
+        return null;
+    }
+
+    public getBlockDeclarationFor(name: string, position: Position, onlyRoot = false): BlockDeclaration | null {
+        let scope: Scope | null = onlyRoot ? this.rootScope : this.getScopeAt(position);
+        while (scope) {
+            const bd = scope.children
+                .map((s) => s.blockDeclaration)
+                .find((bd) => bd && bd.name === name && isBeforeOrEqual(bd.nameOriginalRange.end, position));
+            if (bd) {
+                return bd;
+            }
+            if (onlyRoot) {
+                return null;
+            }
+            scope = scope.parent ?? null;
+        }
+        return null;
+    }
+
+    public getVariableDeclarationsInScope(position: Position): VariableDeclaration[] {
+        const result: VariableDeclaration[] = [];
+        let scope: Scope | null = this.getScopeAt(position);
+        while (scope) {
+            result.push(
+                ...scope.variableDeclarations.filter((vd) => isBeforeOrEqual(vd.nameOriginalRange.end, position))
+            );
+            scope = scope.parent ?? null;
+        }
+        return result;
+    }
+
+    public getShaderDeclarationsInScope(position: Position): ShaderDeclaration[] {
+        const result: ShaderDeclaration[] = [];
+        let scope: Scope | null = this.getScopeAt(position);
+        while (scope) {
+            result.push(
+                ...scope.shaderDeclarations.filter((vd) => isBeforeOrEqual(vd.nameOriginalRange.end, position))
+            );
+            scope = scope.parent ?? null;
+        }
+        return result;
+    }
+
+    public getBlockDeclarationsInScope(position: Position): BlockDeclaration[] {
+        const result: BlockDeclaration[] = [];
+        let scope: Scope | null = this.getScopeAt(position);
+        while (scope) {
+            const bds = scope.children
+                .map((s) => s.blockDeclaration)
+                .filter((bd) => bd && isBeforeOrEqual(bd.nameOriginalRange.end, position)) as BlockDeclaration[];
+            result.push(...bds);
+            scope = scope.parent ?? null;
+        }
+        return result;
+    }
+
+    public getAllVariableDeclarations(): VariableDeclaration[] {
+        const result: VariableDeclaration[] = [];
+        this.addVariableDeclarations(result, this.rootScope);
+        return result;
+    }
+
+    private addVariableDeclarations(result: VariableDeclaration[], scope: Scope): void {
+        result.push(...scope.variableDeclarations.filter((vd) => vd.isVisible));
+        for (const child of scope.children) {
+            this.addVariableDeclarations(result, child);
+        }
+    }
+
+    private getScopeAt(position: Position): Scope {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const child: Scope | null =
+                scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+            if (child) {
+                scope = child;
+            } else {
+                return scope;
+            }
+        }
+        return this.rootScope;
     }
 }
