@@ -11,9 +11,10 @@ import {
 
 import { DshlLexer } from '../_generated/DshlLexer';
 import { getSnapshot } from '../core/document-manager';
+import { Snapshot } from '../core/snapshot';
 import { getEol } from '../helper/file-helper';
-import { containsRange, createLexer } from '../helper/helper';
-import { hlslBufferTypes } from '../helper/hlsl-info';
+import { containsRange, createLexer, rangeContains } from '../helper/helper';
+import { hlslBufferTypes, hlslTextureTypes } from '../helper/hlsl-info';
 import { getDocuments } from '../helper/server-helper';
 
 export async function documentFormattingProvider(
@@ -43,8 +44,7 @@ class FormattingProvider {
 
     private lastRealToken: number | null = null;
     private lastEvaluatedToken: number | null = null;
-    private firstNewLine: number | null = null;
-    private lastNewLine: number | null = null;
+    private newLine: number[] = [];
     private forHeader = false;
     private forHeaderDepth = 0;
     private functionCall = false;
@@ -52,6 +52,7 @@ class FormattingProvider {
     private template = false;
     private templateDepth = 0;
     private stickyOperator = true;
+    private enum = false;
     private depth = 0;
 
     public constructor(options: FormattingOptions, uri: DocumentUri, ranges: Range[] = []) {
@@ -86,7 +87,7 @@ class FormattingProvider {
                 t.type === DshlLexer.INCLUDE ||
                 t.type === DshlLexer.LINE_CONTINUATION
             ) {
-                this.handleEvaluated(tokens, i);
+                this.handleEvaluated(tokens, i, snapshot);
             } else {
                 this.handleRealToken(tokens, i);
             }
@@ -95,26 +96,45 @@ class FormattingProvider {
     }
 
     private handleNewLine(i: number): void {
-        this.lastNewLine = i;
-        if (this.firstNewLine === null) {
-            this.firstNewLine = i;
-        }
+        this.newLine.push(i);
     }
 
-    private handleEvaluated(tokens: Token[], i: number): void {
-        // if (this.lastEvaluatedToken && this.lastNewLine) {
-        //     const t1 = tokens[this.lastEvaluatedToken];
-        //     const t2 = tokens[this.lastNewLine];
-        //     result.push({
-        //         range: {
-        //             start: { line: t1.line - 1, character: t1.charPositionInLine + (t1.text?.length ?? 0) },
-        //             end: { line: t2.line - 1, character: t2.charPositionInLine },
-        //         },
-        //         newText: '',
-        //     });
-        // }
-        this.firstNewLine = null;
-        this.lastNewLine = null;
+    private handleEvaluated(tokens: Token[], i: number, snapshot: Snapshot): void {
+        if (this.newLine.length) {
+            const newText = this.newLine.length > 1 ? getEol() : '';
+            const t2 = tokens[this.newLine[this.newLine.length - 1]];
+            if (this.lastEvaluatedToken !== null) {
+                if (this.lastEvaluatedToken === this.lastRealToken) {
+                    const t1 = tokens[this.lastEvaluatedToken];
+                    this.addTextEdit(t1, t2, newText);
+                } else {
+                    const t1 = tokens[this.newLine[0]];
+                    this.addTextEdit(t1, t2, newText);
+                }
+            } else {
+                this.result.push({
+                    range: {
+                        start: { line: 0, character: 0 },
+                        end: { line: t2.line - 1, character: t2.charPositionInLine },
+                    },
+                    newText,
+                });
+            }
+        }
+        const t = tokens[i];
+        const range: Range = {
+            start: { line: t.line - 1, character: t.charPositionInLine - 1 },
+            end: { line: t.line - 1, character: t.charPositionInLine - 1 + (t.text?.length ?? 0) },
+        };
+        if (
+            snapshot.hlslBlocks.some((hb) => hb.isVisible && rangeContains(range, hb.originalRange.end)) ||
+            snapshot.macroDeclarations
+                .map((md) => md.contentSnapshot)
+                .some((cs) => cs.hlslBlocks.some((hb) => hb.isVisible && rangeContains(range, hb.originalRange.end)))
+        ) {
+            this.depth--;
+        }
+        this.newLine = [];
         this.lastEvaluatedToken = i;
     }
 
@@ -134,7 +154,7 @@ class FormattingProvider {
             this.depth--;
         }
 
-        if (this.lastRealToken) {
+        if (this.lastRealToken !== null) {
             const t1 = tokens[this.lastRealToken];
             if (
                 !this.functionCall &&
@@ -152,9 +172,12 @@ class FormattingProvider {
             }
             if (
                 !this.template &&
-                (t1.type === DshlLexer.IDENTIFIER || t1.type === DshlLexer.TEMPLATE) &&
-                t1.text &&
-                hlslBufferTypes.map((bt) => bt.name).includes(t1.text) &&
+                ((t1.type === DshlLexer.IDENTIFIER &&
+                    t1.text &&
+                    (hlslBufferTypes.map((bt) => bt.name).includes(t1.text) ||
+                        hlslTextureTypes.map((bt) => bt.name).includes(t1.text) ||
+                        t1.text === 'RayQuery')) ||
+                    t1.type === DshlLexer.TEMPLATE) &&
                 t2.type === DshlLexer.LAB
             ) {
                 this.template = true;
@@ -173,6 +196,9 @@ class FormattingProvider {
                 } else {
                     this.addTextEdit(t1, t2, ' ');
                 }
+            } else if (this.newLine.length) {
+                const newLine = tokens[this.newLine[0]];
+                this.addTextEdit(newLine, t2, this.getNewLineText());
             }
             if (this.functionCall && this.functionCallDepth === 0) {
                 this.functionCall = false;
@@ -191,21 +217,28 @@ class FormattingProvider {
                 t1.type !== DshlLexer.CHAR_LITERAL &&
                 t1.type !== DshlLexer.BOOL_LITERAL;
         }
-        if (t2.type === DshlLexer.LCB || t2.type === DshlLexer.MACRO) {
+        if (
+            t2.type === DshlLexer.LCB ||
+            t2.type === DshlLexer.MACRO ||
+            t2.type === DshlLexer.DEFINE_MACRO_IF_NOT_DEFINED
+        ) {
             this.depth++;
         }
         if (t2.type === DshlLexer.FOR) {
             this.forHeader = true;
+        } else if (t2.type === DshlLexer.ENUM) {
+            this.enum = true;
+        } else if (t2.type === DshlLexer.SEMICOLON) {
+            this.enum = false;
         }
-        this.firstNewLine = null;
-        this.lastNewLine = null;
+        this.newLine = [];
         this.lastEvaluatedToken = i;
         this.lastRealToken = i;
     }
 
     private getNewLineText(): string {
         let newLine = getEol();
-        if (this.firstNewLine !== this.lastNewLine && this.firstNewLine !== null) {
+        if (this.newLine.length > 1) {
             newLine += getEol();
         }
         return newLine + this.getIndentation();
@@ -214,26 +247,29 @@ class FormattingProvider {
     private isNewLineNeeded(t1: Token, t2: Token): boolean {
         return (
             (t1.type === DshlLexer.SEMICOLON && !this.forHeader) ||
-            (t2.type === DshlLexer.LCB && !!this.lastNewLine) ||
+            (t2.type === DshlLexer.LCB && !!this.newLine.length) ||
             t1.type === DshlLexer.LCB ||
-            (t1.type === DshlLexer.RCB && t2.type !== DshlLexer.ELSE && t2.type !== DshlLexer.SEMICOLON) ||
+            (t1.type === DshlLexer.RCB &&
+                t2.type !== DshlLexer.SEMICOLON &&
+                (t2.type !== DshlLexer.ELSE || !!this.newLine.length)) ||
             t1.type === DshlLexer.ENDMACRO ||
             (t1.type === DshlLexer.RRB &&
-                t2.type === DshlLexer.IDENTIFIER &&
+                (t2.type === DshlLexer.IDENTIFIER || t2.type === DshlLexer.HLSL) &&
                 this.functionCall &&
                 this.functionCallDepth === 0) ||
             (t1.type == DshlLexer.RSB && t2.type === DshlLexer.IDENTIFIER) ||
-            (t1.type === DshlLexer.IDENTIFIER &&
-                (t1.text === 'UNROLL' || t1.text === 'LOOP') &&
-                (t2.type === DshlLexer.FOR || t2.type === DshlLexer.WHILE)) ||
-            (t1.type === DshlLexer.IDENTIFIER &&
-                (t1.text === 'FLATTEN' || t1.text === 'BRANCH') &&
-                t2.type === DshlLexer.IF) ||
-            (t1.type === DshlLexer.RRB &&
-                (t2.type === DshlLexer.HLSL ||
-                    t2.type === DshlLexer.IF ||
-                    t2.type === DshlLexer.LRB ||
-                    t2.type === DshlLexer.RCB))
+            (t1.type !== DshlLexer.ELSE && t2.type === DshlLexer.IF) ||
+            t2.type === DshlLexer.FOR ||
+            t2.type === DshlLexer.WHILE ||
+            t2.type === DshlLexer.DO ||
+            t2.type === DshlLexer.SWITCH ||
+            t2.type === DshlLexer.CASE ||
+            t2.type === DshlLexer.DEFAULT ||
+            t2.type === DshlLexer.ENDMACRO ||
+            (t1.type === DshlLexer.RRB && t2.type === DshlLexer.LRB) ||
+            t2.type === DshlLexer.STRUCT ||
+            t2.type === DshlLexer.RCB ||
+            (t1.type === DshlLexer.COMMA && this.enum)
         );
     }
 
@@ -253,6 +289,8 @@ class FormattingProvider {
             t2.type === DshlLexer.RSB ||
             t1.type === DshlLexer.NOT ||
             t1.type === DshlLexer.BITWISE_NOT ||
+            t1.type === DshlLexer.DOUBLE_COLON ||
+            t2.type === DshlLexer.DOUBLE_COLON ||
             (this.template && (t1.type === DshlLexer.LAB || t2.type === DshlLexer.LAB || t2.type === DshlLexer.RAB)) ||
             ((t1.type === DshlLexer.INCREMENT || t1.type === DshlLexer.DECREMENT) &&
                 (t2.type === DshlLexer.IDENTIFIER ||

@@ -98,6 +98,7 @@ NOT: '!';
 ASSIGN: '=';
 
 QUESTION: '?';
+DOUBLE_COLON: '::';
 COLON: ':';
 
 COMMA: ',';
