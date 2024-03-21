@@ -7,4 +7,5 @@ export interface HostDependent {
     getFolderContent(path: string): Promise<FileSystemItemInfo[]>;
     watchFile(path: string, callback: (path: string) => void): FileWatcher;
     isFile(path: string): Promise<boolean>;
+    getEol(): string;
 }

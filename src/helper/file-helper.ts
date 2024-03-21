@@ -21,3 +21,7 @@ export async function getFolderContent(file: string): Promise<FileSystemItemInfo
 export function watchFile(path: string, callback: (path: string) => void): FileWatcher {
     return Server.getHostDependent().watchFile(path, callback);
 }
+
+export function getEol(): string {
+    return Server.getHostDependent().getEol();
+}

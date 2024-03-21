@@ -1,5 +1,4 @@
 import { Token } from 'antlr4ts';
-import { EOL } from 'os';
 import {
     DocumentFormattingParams,
     DocumentRangeFormattingParams,
@@ -12,6 +11,7 @@ import {
 
 import { DshlLexer } from '../_generated/DshlLexer';
 import { getSnapshot } from '../core/document-manager';
+import { getEol } from '../helper/file-helper';
 import { containsRange, createLexer } from '../helper/helper';
 import { hlslBufferTypes } from '../helper/hlsl-info';
 import { getDocuments } from '../helper/server-helper';
@@ -204,9 +204,9 @@ class FormattingProvider {
     }
 
     private getNewLineText(): string {
-        let newLine = EOL;
+        let newLine = getEol();
         if (this.firstNewLine !== this.lastNewLine && this.firstNewLine !== null) {
-            newLine += EOL;
+            newLine += getEol();
         }
         return newLine + this.getIndentation();
     }
