@@ -1,3 +1,4 @@
+import { EOL } from 'os';
 import {
     Connection,
     InitializedParams,
@@ -33,6 +34,7 @@ export class ServerDesktop extends Server {
             isFile: isFile,
             getFolderContent: getFolderContent,
             watchFile: watchFile,
+            getEol: () => EOL,
         };
     }
 

@@ -15,6 +15,7 @@ PREPROCESSOR:
 		| 'include'
 		| 'error'
 	) ~[\r\n]* -> channel(HIDDEN);
+INCLUDE: 'include' ' '* '"' ~[\r\n"]* '"' -> channel(HIDDEN);
 NEW_LINE: ('\r\n' | '\r' | '\n') -> channel(HIDDEN);
 SPACE: ' ' -> channel(HIDDEN);
 TAB: '\t' -> channel(HIDDEN);
@@ -97,6 +98,7 @@ NOT: '!';
 ASSIGN: '=';
 
 QUESTION: '?';
+DOUBLE_COLON: '::';
 COLON: ':';
 
 COMMA: ',';

@@ -34,6 +34,9 @@ export class ServerWeb extends Server {
                     close() {},
                 };
             },
+            getEol() {
+                return '\n';
+            },
         };
     }
 }

@@ -1,5 +1,6 @@
 import {
     Connection,
+    DocumentRangesFormattingRequest,
     InitializeParams,
     InitializeResult,
     InitializedParams,
@@ -25,6 +26,11 @@ import { definitionProvider } from './provider/definition-provider';
 import { documentHighlightProvider } from './provider/document-highlight-provider';
 import { documentSymbolProvider } from './provider/document-symbol-provider';
 import { foldingRangesProvider } from './provider/folding-ranges-provider';
+import {
+    documentFormattingProvider,
+    documentRangeFormattingProvider,
+    documentRangesFormattingProvider,
+} from './provider/formatting-provider';
 import { hoverProvider } from './provider/hover-provider';
 import { implementationProvider } from './provider/implementation-provider';
 import { inlayHintProvider } from './provider/inlay-hint-provider';
@@ -115,6 +121,8 @@ export abstract class Server {
             implementationProvider: true,
             inlayHintProvider: { documentSelector: [{ language: 'dshl' }, { language: 'hlsl' }] },
             signatureHelpProvider: { triggerCharacters: ['(', ','] },
+            documentFormattingProvider: true,
+            documentRangeFormattingProvider: { rangesSupport: true },
         };
     }
 
@@ -170,6 +178,9 @@ export abstract class Server {
         this.connection.onHover(hoverProvider);
         this.connection.onImplementation(implementationProvider);
         this.connection.onSignatureHelp(signatureHelpProvider);
+        this.connection.onDocumentFormatting(documentFormattingProvider);
+        this.connection.onDocumentRangeFormatting(documentRangeFormattingProvider);
+        this.connection.onRequest(DocumentRangesFormattingRequest.type, documentRangesFormattingProvider);
         this.connection.onRequest(InlayHintRequest.type, inlayHintProvider);
         this.documents.onDidChangeContent((_change) => {
             this.refreshInlayHints();
