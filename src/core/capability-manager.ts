@@ -11,6 +11,7 @@ const capabilities: Capabilities = {
     configurationChange: false,
     declarationLink: false,
     definitionLink: false,
+    diagnostics: false,
     documentLinkTooltip: false,
     documentSymbolHierarchy: false,
     foldingRangeKinds: [],
@@ -33,6 +34,7 @@ export function initializeCapabilities(clientCapabilities: ClientCapabilities): 
     capabilities.configurationChange = !!clientCapabilities.workspace?.didChangeConfiguration;
     capabilities.declarationLink = !!clientCapabilities.textDocument?.declaration?.linkSupport;
     capabilities.definitionLink = !!clientCapabilities.textDocument?.definition?.linkSupport;
+    capabilities.diagnostics = !!clientCapabilities.textDocument?.publishDiagnostics;
     capabilities.documentLinkTooltip = !!clientCapabilities.textDocument?.documentLink?.tooltipSupport;
     capabilities.documentSymbolHierarchy =
         !!clientCapabilities.textDocument?.documentSymbol?.hierarchicalDocumentSymbolSupport;

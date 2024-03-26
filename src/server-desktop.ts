@@ -1,4 +1,4 @@
-import { EOL } from 'os';
+import { EOL, platform } from 'os';
 import {
     Connection,
     InitializedParams,
@@ -18,6 +18,7 @@ import {
     collectPredefines,
     increaseShaderConfigVersion,
 } from './processor/include-processor';
+import { DiagnosticProvider } from './provider/diagnostic-provider';
 import { documentLinkResolveProvider } from './provider/document-link-resolve-provider';
 import { documentLinksProvider } from './provider/document-links-provider';
 import { Server } from './server';
@@ -54,6 +55,13 @@ export class ServerDesktop extends Server {
         super.addFeatures();
         this.connection.onDocumentLinks(documentLinksProvider);
         this.connection.onDocumentLinkResolve(documentLinkResolveProvider);
+        // TODO: Linux and macOS
+        if (platform() === 'win32') {
+            this.documents.onDidOpen(DiagnosticProvider.diagnosticOpenOrSaveHandler);
+            this.documents.onDidChangeContent(DiagnosticProvider.diagnosticChangeOrCloseHandler);
+            this.documents.onDidSave(DiagnosticProvider.diagnosticOpenOrSaveHandler);
+            this.documents.onDidClose(DiagnosticProvider.diagnosticChangeOrCloseHandler);
+        }
     }
 
     protected override onShutdown(): void {
