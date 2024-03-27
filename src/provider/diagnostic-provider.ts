@@ -1,70 +1,83 @@
 import { exec } from 'child_process';
 import { EOL } from 'os';
+import * as path from 'path';
 import { Diagnostic, DiagnosticSeverity, Position, Range, TextDocumentChangeEvent } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import path = require('path');
 
+import { URI } from 'vscode-uri';
 import { getCapabilities } from '../core/capability-manager';
 import { getConfiguration } from '../core/configuration-manager';
+import { exists, getFolderContent } from '../helper/file-helper';
 import { getRootFolder, sendDiagnostics } from '../helper/server-helper';
 
-export class DiagnosticProvider {
+export async function diagnosticOpenOrSaveHandler(event: TextDocumentChangeEvent<TextDocument>): Promise<void> {
+    if (getCapabilities().diagnostics) {
+        await new DiagnosticProvider(event.document).computeAndSendDiagnostics();
+    }
+}
+
+export function diagnosticChangeOrCloseHandler(event: TextDocumentChangeEvent<TextDocument>): void {
+    if (getCapabilities().diagnostics) {
+        new DiagnosticProvider(event.document).clearDiagnostics();
+    }
+}
+
+class DiagnosticProvider {
     private document: TextDocument;
     private diagnostics: Diagnostic[] = [];
+    private shaderConfigs: string[] = [];
 
-    public static async diagnosticOpenOrSaveHandler(event: TextDocumentChangeEvent<TextDocument>): Promise<void> {
-        if (getCapabilities().diagnostics) {
-            await new DiagnosticProvider(event.document).computeAndSendDiagnostics();
-        }
-    }
-
-    public static diagnosticChangeOrCloseHandler(event: TextDocumentChangeEvent<TextDocument>): void {
-        if (getCapabilities().diagnostics) {
-            new DiagnosticProvider(event.document).clearDiagnostics();
-        }
-    }
-
-    private static sendDiagnostics(document: TextDocument, diagnostics: Diagnostic[]): void {
-        sendDiagnostics({
-            uri: document.uri,
-            version: document.version,
-            diagnostics,
-        });
-    }
-
-    private constructor(document: TextDocument) {
+    public constructor(document: TextDocument) {
         this.document = document;
     }
 
-    private async computeAndSendDiagnostics(): Promise<void> {
+    public async computeAndSendDiagnostics(): Promise<void> {
         if (this.document.uri.endsWith('.dshl')) {
             await this.validateDocument();
         }
     }
 
-    private clearDiagnostics(): void {
-        DiagnosticProvider.sendDiagnostics(this.document, []);
+    public clearDiagnostics(): void {
+        sendDiagnostics({
+            uri: this.document.uri,
+            version: this.document.version,
+            diagnostics: [],
+        });
     }
 
     private async validateDocument(): Promise<void> {
-        const validatorOutput = await this.getCompilerOutput();
+        const compilerPath = this.getCompilerPath();
+        if (!(await exists(compilerPath))) {
+            return;
+        }
+        const blkPath = await this.getBlkPath();
+        const SHADERS = 'shaders';
+        let shadersIndex = blkPath.indexOf(SHADERS);
+        if (shadersIndex === -1) {
+            return;
+        }
+        const workingDirectory = URI.parse(blkPath.substring(0, shadersIndex + SHADERS.length)).fsPath;
+        shadersIndex = this.document.uri.indexOf(SHADERS);
+        if (shadersIndex === -1) {
+            return;
+        }
+        const dshlPath = this.document.uri.substring(shadersIndex + SHADERS.length + 1);
+        const validatorOutput = await this.getCompilerOutput(compilerPath, blkPath, dshlPath, workingDirectory);
         console.log(validatorOutput);
         this.addDiagnosticsAndSend(validatorOutput);
     }
 
-    private async getCompilerOutput(): Promise<string> {
+    private async getCompilerOutput(
+        compilerPath: string,
+        blkPath: string,
+        dshlPath: string,
+        workingDirectory: string
+    ): Promise<string> {
         return new Promise<string>((resolve) => {
-            // TODO: check if compiler exists
-            const compilerPath = this.getCompilerPath();
-            // TODO: select blk file
-            const blkPath = 'D:/dagor2/enlisted/prog/shaders/shaders_dx12.blk';
-            // TODO: check if path is correct if it's not in the shaders folder
-            const dshlPath = path.parse(this.document.uri).base;
             exec(
                 `${compilerPath} ${blkPath} -c ${dshlPath} -nosave -w -wx -wall -supressLogs`,
                 {
-                    // TODO: select the correct shaders folder
-                    cwd: 'D:/dagor2/enlisted/prog/shaders',
+                    cwd: workingDirectory,
                 },
                 (_, validatorOutput) => {
                     resolve(validatorOutput);
@@ -73,51 +86,8 @@ export class DiagnosticProvider {
         });
     }
 
-    // public async collectIncludeFolders(): Promise<void> {
-    //     const gameFolders = await this.getGameFolders();
-    //     for (const gameFolder of gameFolders) {
-    //         await this.addIncludeFolders(gameFolder);
-    //     }
-    // }
-
-    // private async getGameFolders(): Promise<string[]> {
-    //     let result = await this.getFoldersFrom('.');
-    //     const absoluteSamplesPath = path.resolve(getRootFolder(), 'samples');
-    //     if (await exists(absoluteSamplesPath)) {
-    //         const samples = await this.getFoldersFrom('samples');
-    //         result = result.concat(samples);
-    //     }
-    //     return result;
-    // }
-
-    // private async getFoldersFrom(pathFrom: string): Promise<string[]> {
-    //     const absolutePath = path.resolve(getRootFolder(), pathFrom);
-    //     const filesAndFolders = await getFolderContent(absolutePath);
-    //     const folders = filesAndFolders.filter((item) => item.isDirectory());
-    //     return folders.map((item) => path.join(pathFrom, item.name));
-    // }
-
-    // private async addIncludeFolders(gameFolder: string): Promise<void> {
-    //     const shadersFolder = path.resolve(getRootFolder(), gameFolder, 'prog/shaders');
-    //     if (await exists(shadersFolder)) {
-    //         const shaderConfigs = await this.getShaderConfigs(shadersFolder);
-    //         for (const shaderConfig of shaderConfigs) {
-    //             const shaderConfigPath = path.join(shadersFolder, shaderConfig);
-    //             // TODO
-    //         }
-    //     }
-    // }
-
-    // private async getShaderConfigs(shadersFolder: string): Promise<string[]> {
-    //     const filesAndFolders = await getFolderContent(shadersFolder);
-    //     const shaderConfigs = filesAndFolders.filter(
-    //         (item) => item.isFile() && item.name.startsWith('shaders_') && item.name.endsWith('.blk')
-    //     );
-    //     return shaderConfigs.map((item) => item.name);
-    // }
-
     private getCompilerPath(): string {
-        return `${getRootFolder()}/tools/dagor3_cdk/util64/${this.getCompilerName()}`;
+        return path.resolve(getRootFolder(), 'tools/dagor3_cdk/util64', `${this.getCompilerName()}.exe`);
     }
 
     private getCompilerName(): string | null {
@@ -138,12 +108,74 @@ export class DiagnosticProvider {
         }
     }
 
+    private async getBlkPath(): Promise<string> {
+        if (getConfiguration().shaderConfigOverride) {
+            return path.resolve(getRootFolder(), getConfiguration().shaderConfigOverride);
+        } else {
+            await this.collectShaderConfig();
+            const sc = this.shaderConfigs.find(
+                (shaderConfig) =>
+                    shaderConfig.includes(getConfiguration().launchOptions.game ?? '') &&
+                    (shaderConfig.includes(getConfiguration().launchOptions.platform ?? '') ||
+                        shaderConfig.includes('dx12'))
+            );
+            return sc ?? this.shaderConfigs[0];
+        }
+    }
+
+    public async collectShaderConfig(): Promise<void> {
+        const gameFolders = await this.getGameFolders();
+        for (const gameFolder of gameFolders) {
+            await this.collectShaderConfigFromGameFolder(gameFolder);
+        }
+    }
+
+    private async getGameFolders(): Promise<string[]> {
+        let result = await this.getFoldersFrom('.');
+        const absoluteSamplesPath = path.resolve(getRootFolder(), 'samples');
+        if (await exists(absoluteSamplesPath)) {
+            const samples = await this.getFoldersFrom('samples');
+            result = result.concat(samples);
+        }
+        return result;
+    }
+
+    private async getFoldersFrom(pathFrom: string): Promise<string[]> {
+        const absolutePath = path.resolve(getRootFolder(), pathFrom);
+        const filesAndFolders = await getFolderContent(absolutePath);
+        const folders = filesAndFolders.filter((item) => item.isDirectory());
+        return folders.map((item) => path.join(pathFrom, item.name));
+    }
+
+    private async collectShaderConfigFromGameFolder(gameFolder: string): Promise<void> {
+        const shadersFolder = path.resolve(getRootFolder(), gameFolder, 'prog/shaders');
+        if (await exists(shadersFolder)) {
+            const shaderConfigs = await this.getShaderConfigs(shadersFolder);
+            for (const shaderConfig of shaderConfigs) {
+                const shaderConfigPath = path.join(shadersFolder, shaderConfig);
+                this.shaderConfigs.push(shaderConfigPath);
+            }
+        }
+    }
+
+    private async getShaderConfigs(shadersFolder: string): Promise<string[]> {
+        const filesAndFolders = await getFolderContent(shadersFolder);
+        const shaderConfigs = filesAndFolders.filter(
+            (item) => item.isFile() && item.name.startsWith('shaders_') && item.name.endsWith('.blk')
+        );
+        return shaderConfigs.map((item) => item.name);
+    }
+
     private addDiagnosticsAndSend(compilerOutput: string): void {
         const compilerOutputRows = compilerOutput.split(EOL);
         for (const compilerOutputRow of compilerOutputRows) {
             this.addDiagnosticForRow(compilerOutputRow.trim());
         }
-        DiagnosticProvider.sendDiagnostics(this.document, this.diagnostics);
+        sendDiagnostics({
+            uri: this.document.uri,
+            version: this.document.version,
+            diagnostics: this.diagnostics,
+        });
     }
 
     private addDiagnosticForRow(compilerOutputRow: string): void {
@@ -152,17 +184,15 @@ export class DiagnosticProvider {
             compilerOutputRow.includes('[ERROR]') ||
             compilerOutputRow.includes('[WARN]')
         ) {
-            const regex = /\[(?<severity>\w+)\] [^()]*\((?<line>\d+),(?<column>\d+)\): \w+: (?<description>.*)/;
+            const regex =
+                /\[(?<severity>\w+)\] [^()]*\((?<line>\d+),(?<column>\d+)\): \w+: (?<description>[^<>]*(<(?<snippet>[^<>]*)>)?)/;
             const regexResult = regex.exec(compilerOutputRow);
             if (regexResult?.groups) {
                 const validatorSeverity = regexResult.groups['severity'];
                 const line = +regexResult.groups['line'] - 1;
-                // TODO: snippet
-                const snippet: string | undefined = undefined; //regexResult.groups['snippet'];
+                const snippet: string | undefined = regexResult.groups['snippet'];
                 const description = regexResult.groups['description'];
                 this.addDiagnostic(validatorSeverity, line, snippet, description);
-            } else {
-                // TODO: show full message in the 1st line
             }
         }
     }
@@ -175,7 +205,7 @@ export class DiagnosticProvider {
     ): void {
         const diagnostic: Diagnostic = {
             range: this.getRange(line, snippet),
-            message: this.getMessage(description, snippet),
+            message: description,
             severity: this.getSeverity(validatorSeverity),
             source: 'Dagor Shader Compiler',
         };
@@ -185,13 +215,12 @@ export class DiagnosticProvider {
     private getRange(line: number, snippet: string | undefined): Range {
         const rowRange: Range = { start: { line, character: 0 }, end: { line: line + 1, character: 0 } };
         const row = this.document.getText(rowRange);
-        // TODO
-        // if (snippet && !this.configuration.diagnostics.markTheWholeLine) {
-        //     const position = row.indexOf(snippet);
-        //     if (position !== -1) {
-        //         return Range.create(Position.create(line, position), Position.create(line, position + snippet.length));
-        //     }
-        // }
+        if (snippet) {
+            const position = row.indexOf(snippet);
+            if (position !== -1) {
+                return { start: { line, character: position }, end: { line, character: position + snippet.length } };
+            }
+        }
         return this.getTrimmedRange(line, row);
     }
 
@@ -200,10 +229,6 @@ export class DiagnosticProvider {
         const start: Position = { line, character: row.indexOf(trimmedRow) };
         const end: Position = { line, character: start.character + trimmedRow.length };
         return { start, end };
-    }
-
-    private getMessage(description: string, snippet: string | undefined): string {
-        return snippet ? `'${snippet}' : ${description}` : description;
     }
 
     private getSeverity(validatorSeverity: string): DiagnosticSeverity | undefined {

@@ -18,7 +18,7 @@ import {
     collectPredefines,
     increaseShaderConfigVersion,
 } from './processor/include-processor';
-import { DiagnosticProvider } from './provider/diagnostic-provider';
+import { diagnosticChangeOrCloseHandler, diagnosticOpenOrSaveHandler } from './provider/diagnostic-provider';
 import { documentLinkResolveProvider } from './provider/document-link-resolve-provider';
 import { documentLinksProvider } from './provider/document-links-provider';
 import { Server } from './server';
@@ -57,10 +57,10 @@ export class ServerDesktop extends Server {
         this.connection.onDocumentLinkResolve(documentLinkResolveProvider);
         // TODO: Linux and macOS
         if (platform() === 'win32') {
-            this.documents.onDidOpen(DiagnosticProvider.diagnosticOpenOrSaveHandler);
-            this.documents.onDidChangeContent(DiagnosticProvider.diagnosticChangeOrCloseHandler);
-            this.documents.onDidSave(DiagnosticProvider.diagnosticOpenOrSaveHandler);
-            this.documents.onDidClose(DiagnosticProvider.diagnosticChangeOrCloseHandler);
+            this.documents.onDidOpen(diagnosticOpenOrSaveHandler);
+            this.documents.onDidChangeContent(diagnosticChangeOrCloseHandler);
+            this.documents.onDidSave(diagnosticOpenOrSaveHandler);
+            this.documents.onDidClose(diagnosticChangeOrCloseHandler);
         }
     }
 
