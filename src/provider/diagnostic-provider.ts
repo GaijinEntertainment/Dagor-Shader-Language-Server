@@ -63,7 +63,6 @@ class DiagnosticProvider {
         }
         const dshlPath = this.document.uri.substring(shadersIndex + SHADERS.length + 1);
         const validatorOutput = await this.getCompilerOutput(compilerPath, blkPath, dshlPath, workingDirectory);
-        console.log(validatorOutput);
         this.addDiagnosticsAndSend(validatorOutput);
     }
 
