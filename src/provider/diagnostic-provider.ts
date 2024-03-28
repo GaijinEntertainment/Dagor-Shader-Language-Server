@@ -9,15 +9,19 @@ import { getConfiguration } from '../core/configuration-manager';
 import { exists, getFolderContent } from '../helper/file-helper';
 import { getRootFolder, sendDiagnostics, syncInitialization } from '../helper/server-helper';
 
-export async function diagnosticOpenOrSaveHandler(event: TextDocumentChangeEvent<TextDocument>): Promise<void> {
+export async function diagnosticsOpenOrSaveHandler(event: TextDocumentChangeEvent<TextDocument>): Promise<void> {
     if (getCapabilities().diagnostics) {
         await new DiagnosticProvider(event.document).computeAndSendDiagnostics();
     }
 }
 
-export function diagnosticChangeOrCloseHandler(event: TextDocumentChangeEvent<TextDocument>): void {
+export function diagnosticsChangeOrCloseHandler(event: TextDocumentChangeEvent<TextDocument>): void {
+    clearDiagnostics(event.document);
+}
+
+export function clearDiagnostics(document: TextDocument): void {
     if (getCapabilities().diagnostics) {
-        new DiagnosticProvider(event.document).clearDiagnostics();
+        new DiagnosticProvider(document).clearDiagnostics();
     }
 }
 

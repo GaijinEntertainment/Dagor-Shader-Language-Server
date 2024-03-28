@@ -18,7 +18,11 @@ import {
     collectPredefines,
     increaseShaderConfigVersion,
 } from './processor/include-processor';
-import { diagnosticChangeOrCloseHandler, diagnosticOpenOrSaveHandler } from './provider/diagnostic-provider';
+import {
+    clearDiagnostics,
+    diagnosticsChangeOrCloseHandler,
+    diagnosticsOpenOrSaveHandler,
+} from './provider/diagnostic-provider';
 import { documentLinkResolveProvider } from './provider/document-link-resolve-provider';
 import { documentLinksProvider } from './provider/document-links-provider';
 import { Server } from './server';
@@ -55,12 +59,11 @@ export class ServerDesktop extends Server {
         super.addFeatures();
         this.connection.onDocumentLinks(documentLinksProvider);
         this.connection.onDocumentLinkResolve(documentLinkResolveProvider);
-        // TODO: Linux and macOS
         if (platform() === 'win32') {
-            this.documents.onDidOpen(diagnosticOpenOrSaveHandler);
-            this.documents.onDidChangeContent(diagnosticChangeOrCloseHandler);
-            this.documents.onDidSave(diagnosticOpenOrSaveHandler);
-            this.documents.onDidClose(diagnosticChangeOrCloseHandler);
+            this.documents.onDidOpen(diagnosticsOpenOrSaveHandler);
+            this.documents.onDidChangeContent(diagnosticsChangeOrCloseHandler);
+            this.documents.onDidSave(diagnosticsOpenOrSaveHandler);
+            this.documents.onDidClose(diagnosticsChangeOrCloseHandler);
         }
     }
 
@@ -77,6 +80,11 @@ export class ServerDesktop extends Server {
             if (oldConfiguration.shaderConfigOverride !== newConfiguration.shaderConfigOverride) {
                 await this.collectShaderIncludeFolders(newConfiguration.shaderConfigOverride);
             }
+            this.getDocuments()
+                .all()
+                .forEach((document) => {
+                    clearDiagnostics(document);
+                });
         }
     }
 
