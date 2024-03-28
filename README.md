@@ -8,6 +8,7 @@ Language Server for the Dagor Shader Language. At the moment it's work in progre
 
 -   Syntax highlight (not part of the actual language server)
 -   Code completion (types, variables, functions, constructors, keywords, modifiers, semantics, attributes, shaders, block statements, preprocessor directives, code snippets, DSHL macros, and HLSL defines)
+-   Diagnostics (at the moment, the compiler only runs when the user saves the document)
 -   Go to / Peek definition (DSHL variables, functions, shaders, block statements, macros, HLSL defines)
 -   Go to / Peek declaration (DSHL variables, functions, shaders, block statements, macros, HLSL defines)
 -   Go to / Peek implementation (DSHL functions, shaders, block statements, macros, HLSL defines)
@@ -17,6 +18,7 @@ Language Server for the Dagor Shader Language. At the moment it's work in progre
 -   Signature help (DSHL functions, DSHL macros)
 -   Inlay hints (DSHL functions, DSHL macro, HLSL defines)
 -   Document symbols (DSHL variables, shaders, block statements, macros, HLSL defines)
+-   Code formatting (document, range, ranges)
 -   Folding ranges (except scopes without blocks)
 -   Comment toggling (not part of the actual language server)
 -   Bracket matching (not part of the actual language server)
