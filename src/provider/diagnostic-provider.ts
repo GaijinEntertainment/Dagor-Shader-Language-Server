@@ -7,7 +7,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getCapabilities } from '../core/capability-manager';
 import { getConfiguration } from '../core/configuration-manager';
 import { exists, getFolderContent } from '../helper/file-helper';
-import { getRootFolder, sendDiagnostics } from '../helper/server-helper';
+import { getRootFolder, sendDiagnostics, syncInitialization } from '../helper/server-helper';
 
 export async function diagnosticOpenOrSaveHandler(event: TextDocumentChangeEvent<TextDocument>): Promise<void> {
     if (getCapabilities().diagnostics) {
@@ -45,6 +45,7 @@ class DiagnosticProvider {
     }
 
     private async validateDocument(): Promise<void> {
+        await syncInitialization();
         const compilerPath = this.getCompilerPath();
         if (!(await exists(compilerPath))) {
             return;
