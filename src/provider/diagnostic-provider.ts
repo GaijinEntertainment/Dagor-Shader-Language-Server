@@ -39,7 +39,7 @@ class DiagnosticProvider {
     public clearDiagnostics(): void {
         sendDiagnostics({
             uri: this.document.uri,
-            version: this.document.version,
+            version: getCapabilities().diagnosticsVersion ? this.document.version : undefined,
             diagnostics: [],
         });
     }
@@ -184,7 +184,7 @@ class DiagnosticProvider {
         }
         sendDiagnostics({
             uri: this.document.uri,
-            version: this.document.version,
+            version: getCapabilities().diagnosticsVersion ? this.document.version : undefined,
             diagnostics: this.diagnostics,
         });
     }

@@ -10,6 +10,7 @@ export interface Capabilities {
     declarationLink: boolean;
     definitionLink: boolean;
     diagnostics: boolean;
+    diagnosticsVersion: boolean;
     documentLinkTooltip: boolean;
     documentSymbolHierarchy: boolean;
     foldingRangeKinds: FoldingRangeKind[];
