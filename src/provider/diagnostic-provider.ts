@@ -4,7 +4,6 @@ import * as path from 'path';
 import { Diagnostic, DiagnosticSeverity, Position, Range, TextDocumentChangeEvent } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-import { URI } from 'vscode-uri';
 import { getCapabilities } from '../core/capability-manager';
 import { getConfiguration } from '../core/configuration-manager';
 import { exists, getFolderContent } from '../helper/file-helper';
@@ -56,7 +55,7 @@ class DiagnosticProvider {
         if (shadersIndex === -1) {
             return;
         }
-        const workingDirectory = URI.parse(blkPath.substring(0, shadersIndex + SHADERS.length)).fsPath;
+        const workingDirectory = blkPath.substring(0, shadersIndex + SHADERS.length);
         shadersIndex = this.document.uri.indexOf(SHADERS);
         if (shadersIndex === -1) {
             return;
