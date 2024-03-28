@@ -113,13 +113,25 @@ class DiagnosticProvider {
             return path.resolve(getRootFolder(), getConfiguration().shaderConfigOverride);
         } else {
             await this.collectShaderConfig();
-            const sc = this.shaderConfigs.find(
-                (shaderConfig) =>
-                    shaderConfig.includes(getConfiguration().launchOptions.game ?? '') &&
-                    (shaderConfig.includes(getConfiguration().launchOptions.platform ?? '') ||
-                        shaderConfig.includes('dx12'))
-            );
-            return sc ?? this.shaderConfigs[0];
+            const game = getConfiguration().launchOptions.game ?? '';
+            const platform = getConfiguration().launchOptions.platform ?? '';
+            const buildCommand = getConfiguration().launchOptions.buildCommand ?? null;
+            let shaderConfig = this.shaderConfigs.find((sc) => sc.includes(game) && sc.includes(platform));
+            if (shaderConfig) {
+                return shaderConfig;
+            }
+            if (buildCommand) {
+                const driver = buildCommand.substring(buildCommand.lastIndexOf('_') + 1, buildCommand.lastIndexOf('.'));
+                shaderConfig = this.shaderConfigs.find((sc) => sc.includes(game) && sc.includes(driver));
+                if (shaderConfig) {
+                    return shaderConfig;
+                }
+            }
+            shaderConfig = this.shaderConfigs.find((sc) => sc.includes(game) && sc.includes('dx12'));
+            if (shaderConfig) {
+                return shaderConfig;
+            }
+            return this.shaderConfigs[0];
         }
     }
 
