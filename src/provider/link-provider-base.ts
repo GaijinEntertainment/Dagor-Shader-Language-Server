@@ -1,14 +1,16 @@
 import { DocumentUri, Location, LocationLink, Position } from 'vscode-languageserver';
 
 import { getSnapshot } from '../core/document-manager';
-import { rangeContains } from '../helper/helper';
+import { defaultRange, rangeContains } from '../helper/helper';
 import { BlockDeclaration } from '../interface/block/block-declaration';
 import { DefineStatement } from '../interface/define-statement';
+import { IncludeStatement } from '../interface/include/include-statement';
 import { Macro } from '../interface/macro/macro';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroParameter } from '../interface/macro/macro-parameter';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
+import { getIncludedDocumentUri } from '../processor/include-resolver';
 
 export async function linkProviderBase(
     position: Position,
@@ -54,6 +56,12 @@ export async function linkProviderBase(
     const bu = snapshot.getBlockUsageAt(position);
     if (bu) {
         return getBlockDeclarationLocation(bu.declaration, linkSupport);
+    }
+    const is = snapshot.includeStatements.find(
+        (is) => is.includerUri === uri && rangeContains(is.pathOriginalRange, position)
+    );
+    if (is) {
+        return await getIncludeStatementLocation(is, linkSupport);
     }
     if (implementation) {
         return null;
@@ -185,6 +193,31 @@ function getBlockDeclarationLocation(bd: BlockDeclaration, linkSupport: boolean)
         return {
             range: bd.nameOriginalRange,
             uri: bd.uri,
+        };
+    }
+}
+
+async function getIncludeStatementLocation(
+    is: IncludeStatement,
+    linkSupport: boolean
+): Promise<LocationLink[] | Location> {
+    const uri = await getIncludedDocumentUri(is);
+    if (!uri) {
+        return [];
+    }
+    if (linkSupport) {
+        return [
+            {
+                targetRange: defaultRange,
+                targetSelectionRange: defaultRange,
+                originSelectionRange: is.pathOriginalRange,
+                targetUri: uri,
+            },
+        ];
+    } else {
+        return {
+            range: defaultRange,
+            uri,
         };
     }
 }
