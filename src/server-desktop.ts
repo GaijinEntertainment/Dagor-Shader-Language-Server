@@ -1,11 +1,5 @@
 import { EOL, platform } from 'os';
-import {
-    Connection,
-    InitializedParams,
-    ProposedFeatures,
-    ServerCapabilities,
-    createConnection,
-} from 'vscode-languageserver/node';
+import { Connection, InitializedParams, ProposedFeatures, createConnection } from 'vscode-languageserver/node';
 
 import { getConfiguration } from './core/configuration-manager';
 import { clearCache } from './core/file-cache-manager';
@@ -23,8 +17,6 @@ import {
     diagnosticsChangeOrCloseHandler,
     diagnosticsOpenOrSaveHandler,
 } from './provider/diagnostic-provider';
-import { documentLinkResolveProvider } from './provider/document-link-resolve-provider';
-import { documentLinksProvider } from './provider/document-links-provider';
 import { Server } from './server';
 
 export class ServerDesktop extends Server {
@@ -43,13 +35,6 @@ export class ServerDesktop extends Server {
         };
     }
 
-    protected override getServerCapabilities(): ServerCapabilities {
-        return {
-            ...super.getServerCapabilities(),
-            documentLinkProvider: { resolveProvider: true },
-        };
-    }
-
     protected override async onInitialized(_ip: InitializedParams): Promise<void> {
         await collectPredefines();
         await this.collectShaderIncludeFolders(getConfiguration().shaderConfigOverride);
@@ -57,8 +42,6 @@ export class ServerDesktop extends Server {
 
     protected override addFeatures(): void {
         super.addFeatures();
-        this.connection.onDocumentLinks(documentLinksProvider);
-        this.connection.onDocumentLinkResolve(documentLinkResolveProvider);
         if (platform() === 'win32') {
             this.documents.onDidOpen(diagnosticsOpenOrSaveHandler);
             this.documents.onDidChangeContent(diagnosticsChangeOrCloseHandler);

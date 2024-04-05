@@ -13,7 +13,6 @@ const capabilities: Capabilities = {
     definitionLink: false,
     diagnostics: false,
     diagnosticsVersion: false,
-    documentLinkTooltip: false,
     documentSymbolHierarchy: false,
     foldingRangeKinds: [],
     hoverFormat: [],
@@ -37,7 +36,6 @@ export function initializeCapabilities(clientCapabilities: ClientCapabilities): 
     capabilities.definitionLink = !!clientCapabilities.textDocument?.definition?.linkSupport;
     capabilities.diagnostics = !!clientCapabilities.textDocument?.publishDiagnostics;
     capabilities.diagnosticsVersion = !!clientCapabilities.textDocument?.publishDiagnostics?.versionSupport;
-    capabilities.documentLinkTooltip = !!clientCapabilities.textDocument?.documentLink?.tooltipSupport;
     capabilities.documentSymbolHierarchy =
         !!clientCapabilities.textDocument?.documentSymbol?.hierarchicalDocumentSymbolSupport;
     capabilities.foldingRangeKinds = clientCapabilities.textDocument?.foldingRange?.foldingRangeKind?.valueSet ?? [];

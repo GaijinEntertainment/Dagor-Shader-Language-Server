@@ -4,7 +4,7 @@ import { URI } from 'vscode-uri';
 
 import { getConfiguration } from '../core/configuration-manager';
 import { DSHL_EXTENSION, HLSLI_EXTENSION, HLSL_EXTENSION } from '../core/constant';
-import { log, logDocumentLinkResolveShaderConfig } from '../core/debug';
+import { log, logSelectedGameAndShaderConfig } from '../core/debug';
 import { exists, getFolderContent, isFile } from '../helper/file-helper';
 import { FileSystemItemInfo } from '../interface/file-system/file-system-item-info';
 import { IncludeStatement } from '../interface/include/include-statement';
@@ -203,7 +203,7 @@ function getDriver(buildCommand: string): string | null {
 }
 
 function logGameAndShaderConfig(game: string, shaderConfig: string): void {
-    if (!logDocumentLinkResolveShaderConfig) {
+    if (!logSelectedGameAndShaderConfig) {
         return;
     }
     log(`selected game: ${game}`);

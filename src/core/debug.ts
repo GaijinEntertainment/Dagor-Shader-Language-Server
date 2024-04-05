@@ -1,8 +1,7 @@
 import { Connection } from 'vscode-languageserver';
 
 export const logShaderConfigs = false;
-export const showDocumentLinkDebugLabel = false;
-export const logDocumentLinkResolveShaderConfig = false;
+export const logSelectedGameAndShaderConfig = false;
 export const logCachingBehavior = false;
 
 let connection: Connection;
