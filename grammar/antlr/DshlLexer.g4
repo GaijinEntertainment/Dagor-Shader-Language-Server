@@ -56,6 +56,8 @@ STRUCT: 'struct';
 INTERFACE: 'interface';
 NAMESPACE: 'namespace';
 TYPENAME: 'typename';
+NO_WARNINGS: 'no_warnings';
+ALWAYS_REFERENCED: 'always_referenced';
 
 HLSL: 'hlsl';
 ASSUME: 'assume';

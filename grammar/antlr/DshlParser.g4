@@ -18,7 +18,7 @@ dshl_interval_declaration:
 dshl_variable_declaration:
 	dshl_modifier* IDENTIFIER IDENTIFIER dshl_array_subscript? (
 		ASSIGN dshl_expression
-	)? dshl_modifier* SEMICOLON;
+	)? (ALWAYS_REFERENCED | NO_WARNINGS | dshl_modifier)* SEMICOLON;
 
 dshl_statement:
 	DONT_RENDER SEMICOLON
@@ -386,4 +386,6 @@ hlsl_identifier:
 	| DEFINE_MACRO_IF_NOT_DEFINED
 	| ENDMACRO
 	| SHADER
-	| SUPPORTS;
+	| SUPPORTS
+	| ALWAYS_REFERENCED
+	| NO_WARNINGS;
