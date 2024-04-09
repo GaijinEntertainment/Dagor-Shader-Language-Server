@@ -317,12 +317,17 @@ class FormattingProvider {
 
     private addTextEdit(t1: Token, t2: Token, newText: string): void {
         const range: Range = {
-            start: { line: t1.line - 1, character: t1.charPositionInLine + (t1.text?.length ?? 0) },
+            start: {
+                line: t1.line - 1,
+                character:
+                    t1.charPositionInLine + (t1.text?.length && t1.type !== DshlLexer.NEW_LINE ? t1.text.length : 0),
+            },
             end: { line: t2.line - 1, character: t2.charPositionInLine },
         };
         if (
             (this.ranges.length === 0 || this.ranges.some((r) => containsRange(r, range))) &&
-            this.text.substring(t1.stopIndex + 1, t2.startIndex) !== newText
+            this.text.substring(t1.stopIndex + 1, t2.startIndex) !== newText &&
+            t1 !== t2
         ) {
             this.result.push({
                 range,
