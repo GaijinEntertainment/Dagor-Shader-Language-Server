@@ -1,6 +1,5 @@
-import { ParserRuleContext } from 'antlr4ts';
+import { ParserRuleContext, Token } from 'antlr4ts';
 import { AbstractParseTreeVisitor } from 'antlr4ts/tree/AbstractParseTreeVisitor';
-import { TerminalNode } from 'antlr4ts/tree/TerminalNode';
 import { Position, Range } from 'vscode-languageserver';
 import {
     Dshl_assignmentContext,
@@ -14,9 +13,12 @@ import {
     Dshl_statement_blockContext,
     Dshl_supports_statementContext,
     Dshl_variable_declarationContext,
+    ExpressionContext,
+    ParameterContext,
     State_objectContext,
     Statement_blockContext,
     Type_declarationContext,
+    Variable_declarationContext,
 } from '../_generated/DshlParser';
 import { DshlParserVisitor } from '../_generated/DshlParserVisitor';
 import { Snapshot } from '../core/snapshot';
@@ -47,8 +49,14 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
     }
 
     private isVisible(position: number): boolean {
-        return !this.snapshot.isInIncludeContext(position) && !this.snapshot.isInMacroContext(position);
+        return (
+            !this.snapshot.isInIncludeContext(position) &&
+            !this.snapshot.isInMacroContext(position) &&
+            !this.snapshot.isInDefineContext(position)
+        );
     }
+
+    // region DSHL
 
     public visitStatement_block(ctx: Statement_blockContext): void {
         if (this.isVisible(ctx.start.startIndex)) {
@@ -127,6 +135,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
             isVisible: visible,
             usages: [],
+            isHlsl: false,
         };
         // if (visible && identifier.text.toLowerCase() !== identifier.text) {
         //     this.snapshot.diagnostics.push({
@@ -152,7 +161,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 const originalPosition = this.snapshot.getOriginalPosition(position, true);
                 const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
                 if (vd) {
-                    this.createVariableUsage(vd, identifier, visible);
+                    this.createVariableUsage(vd, identifier.symbol, visible);
                     this.visitChildren(ctx);
                     return;
                 } else if (this.rootSnapshot && this.contentStartPosition) {
@@ -162,7 +171,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                         true
                     );
                     if (vd) {
-                        this.createVariableUsage(vd, identifier, visible);
+                        this.createVariableUsage(vd, identifier.symbol, visible);
                         this.visitChildren(ctx);
                         return;
                     }
@@ -367,7 +376,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             const originalPosition = this.snapshot.getOriginalPosition(position, true);
             const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
             if (vd) {
-                this.createVariableUsage(vd, identifier, visible);
+                this.createVariableUsage(vd, identifier.symbol, visible);
             } else if (this.rootSnapshot && this.contentStartPosition) {
                 const vd = this.rootSnapshot.getVariableDeclarationFor(
                     identifier.text,
@@ -375,7 +384,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     true
                 );
                 if (vd) {
-                    this.createVariableUsage(vd, identifier, visible);
+                    this.createVariableUsage(vd, identifier.symbol, visible);
                 }
             }
         }
@@ -390,7 +399,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             const originalPosition = this.snapshot.getOriginalPosition(position, true);
             const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
             if (vd) {
-                this.createVariableUsage(vd, identifier, visible);
+                this.createVariableUsage(vd, identifier.symbol, visible);
             } else if (this.rootSnapshot && this.contentStartPosition) {
                 const vd = this.rootSnapshot.getVariableDeclarationFor(
                     identifier.text,
@@ -398,20 +407,96 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     true
                 );
                 if (vd) {
-                    this.createVariableUsage(vd, identifier, visible);
+                    this.createVariableUsage(vd, identifier.symbol, visible);
                 }
             }
         }
         this.visitChildren(ctx);
     }
 
-    private createVariableUsage(vd: VariableDeclaration, identifier: TerminalNode, visible: boolean): VariableUsage {
+    // region HLSL
+
+    public visitVariable_declaration(ctx: Variable_declarationContext): void {
+        for (const vi of ctx.variable_initialization()) {
+            const visible = this.isVisible(ctx.start.startIndex);
+            const type = ctx.type();
+            const identifier = vi.hlsl_identifier();
+            const nameOriginalRange = this.snapshot.getOriginalRange(
+                identifier.start.startIndex,
+                identifier.stop!.stopIndex + 1
+            );
+            const vd: VariableDeclaration = {
+                type: type.text,
+                name: identifier.text,
+                nameEndPosition: ctx.stop!.stopIndex + 1,
+                originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+                nameOriginalRange,
+                uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
+                isVisible: visible,
+                usages: [],
+                isHlsl: true,
+            };
+            this.scope.variableDeclarations.push(vd);
+        }
+        this.visitChildren(ctx);
+    }
+
+    public visitParameter(ctx: ParameterContext): void {
+        const visible = this.isVisible(ctx.start.startIndex);
+        const type = ctx.type();
+        if (visible && type) {
+            const visible = this.isVisible(ctx.start.startIndex);
+            const identifier = ctx.hlsl_identifier(0);
+            const nameOriginalRange = this.snapshot.getOriginalRange(
+                identifier.start.startIndex,
+                identifier.stop!.stopIndex + 1
+            );
+            const vd: VariableDeclaration = {
+                type: type.text,
+                name: identifier.text,
+                nameEndPosition: ctx.stop!.stopIndex + 1,
+                originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+                nameOriginalRange,
+                uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
+                isVisible: visible,
+                usages: [],
+                isHlsl: true,
+            };
+            this.scope.variableDeclarations.push(vd);
+        }
+        this.visitChildren(ctx);
+    }
+
+    public visitExpression(ctx: ExpressionContext): void {
+        const visible = this.isVisible(ctx.start.startIndex);
+        if (visible) {
+            for (const identifier of ctx.hlsl_identifier()) {
+                const position = identifier.start.startIndex;
+                const originalPosition = this.snapshot.getOriginalPosition(position, true);
+                const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
+                if (vd) {
+                    this.createVariableUsage(vd, identifier.start, visible);
+                } else if (this.rootSnapshot && this.contentStartPosition) {
+                    const vd = this.rootSnapshot.getVariableDeclarationFor(
+                        identifier.text,
+                        this.contentStartPosition,
+                        true
+                    );
+                    if (vd) {
+                        this.createVariableUsage(vd, identifier.start, visible);
+                    }
+                }
+            }
+        }
+        this.visitChildren(ctx);
+    }
+
+    // region shared
+
+    private createVariableUsage(vd: VariableDeclaration, identifier: Token, visible: boolean): VariableUsage {
         const vu: VariableUsage = {
             declaration: vd,
-            originalRange: this.snapshot.getOriginalRange(
-                identifier.symbol.startIndex,
-                identifier.symbol.stopIndex + 1
-            ),
+            originalRange: this.snapshot.getOriginalRange(identifier.startIndex, identifier.stopIndex + 1),
             isVisible: visible,
         };
         this.scope.variableUsages.push(vu);

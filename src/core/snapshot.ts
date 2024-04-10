@@ -408,6 +408,10 @@ export class Snapshot {
         return ds.endPosition <= position && (!ds.undefPosition || position <= ds.undefPosition);
     }
 
+    public isInDefineContext(position: number): boolean {
+        return this.defineContexts.some((dc) => dc.startPosition <= position && position < dc.afterEndPosition);
+    }
+
     public getDefineContextAt(position: number): DefineContext | null {
         return (
             this.defineContexts.find((dc) => isIntervalContains(dc.startPosition, dc.afterEndPosition, position)) ??
