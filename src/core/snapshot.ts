@@ -614,12 +614,14 @@ export class Snapshot {
         return null;
     }
 
-    public getVariableDeclarationsInScope(position: Position): VariableDeclaration[] {
+    public getVariableDeclarationsInScope(position: Position, hlsl: boolean): VariableDeclaration[] {
         const result: VariableDeclaration[] = [];
         let scope: Scope | null = this.getScopeAt(position);
         while (scope) {
             result.push(
-                ...scope.variableDeclarations.filter((vd) => isBeforeOrEqual(vd.nameOriginalRange.end, position))
+                ...scope.variableDeclarations.filter(
+                    (vd) => vd.isHlsl === hlsl && isBeforeOrEqual(vd.nameOriginalRange.end, position)
+                )
             );
             scope = scope.parent ?? null;
         }
