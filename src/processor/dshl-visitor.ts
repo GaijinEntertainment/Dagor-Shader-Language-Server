@@ -370,6 +370,26 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
 
     public visitDshl_assignment(ctx: Dshl_assignmentContext): void {
         const visible = this.isVisible(ctx.start.startIndex);
+        if (ctx.AT()) {
+            const identifier = ctx.IDENTIFIER(0);
+            const type = ctx.IDENTIFIER(1);
+            const nameOriginalRange = this.snapshot.getOriginalRange(
+                identifier.symbol.startIndex,
+                identifier.symbol.stopIndex + 1
+            );
+            const vd: VariableDeclaration = {
+                type: this.dshlToHlslType(type.text),
+                name: identifier.text,
+                nameEndPosition: ctx.stop!.stopIndex + 1,
+                originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+                nameOriginalRange,
+                uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
+                isVisible: visible,
+                usages: [],
+                isHlsl: true,
+            };
+            this.scope.variableDeclarations.push(vd);
+        }
         if (visible && ctx.dshl_hlsl_block() && ctx.ASSIGN()) {
             const identifier = ctx.IDENTIFIER(2);
             const position = identifier.symbol.startIndex;
@@ -389,6 +409,37 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+    }
+
+    private dshlToHlslType(dshtlType: string): string {
+        switch (dshtlType) {
+            case 'f1':
+                return 'float';
+            case 'f2':
+                return 'float2';
+            case 'f3':
+                return 'float3';
+            case 'f4':
+                return 'float4';
+            case 'i1':
+                return 'int';
+            case 'i2':
+                return 'int2';
+            case 'i3':
+                return 'int3';
+            case 'i4':
+                return 'int4';
+            case 'f44':
+                return 'float4x4';
+            case 'buf':
+                return 'Buffer/StructuredBuffer';
+            case 'cbuf':
+                return 'ConstantBuffer';
+            case 'uav':
+                return 'uav';
+            default:
+                return 'unknown type';
+        }
     }
 
     public visitDshl_assume_statement(ctx: Dshl_assume_statementContext): void {
