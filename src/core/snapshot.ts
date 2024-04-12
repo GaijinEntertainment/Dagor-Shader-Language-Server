@@ -81,6 +81,8 @@ export class Snapshot {
             },
             children: [],
             isVisible: true,
+            hlslBlocks: [],
+            preshaders: [],
         };
         this.rootScope.functionDeclarations = dshlFunctions.map((fi) => ({
             name: fi.name,
@@ -572,6 +574,22 @@ export class Snapshot {
             if (vd) {
                 return vd;
             }
+            for (const hb of scope.hlslBlocks) {
+                const vd = hb.variableDeclarations.find(
+                    (vd) => isBeforeOrEqual(vd.originalRange.end, position) && vd.name === name
+                );
+                if (vd) {
+                    return vd;
+                }
+            }
+            for (const psb of scope.preshaders) {
+                const vd = psb.variableDeclarations.find(
+                    (vd) => isBeforeOrEqual(vd.originalRange.end, position) && vd.name === name
+                );
+                if (vd) {
+                    return vd;
+                }
+            }
             if (onlyRoot) {
                 return null;
             }
@@ -623,6 +641,14 @@ export class Snapshot {
                     (vd) => vd.isHlsl === hlsl && isBeforeOrEqual(vd.nameOriginalRange.end, position)
                 )
             );
+            for (const hb of scope.hlslBlocks) {
+                result.push(...hb.variableDeclarations.filter((vd) => isBeforeOrEqual(vd.originalRange.end, position)));
+            }
+            for (const psb of scope.preshaders) {
+                result.push(
+                    ...psb.variableDeclarations.filter((vd) => isBeforeOrEqual(vd.originalRange.end, position))
+                );
+            }
             scope = scope.parent ?? null;
         }
         return result;

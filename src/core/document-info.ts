@@ -160,6 +160,8 @@ export class DocumentInfo {
                         functionDeclarations: [],
                         parent: snapshot.rootScope,
                         isVisible: contentSnapshot.rootScope.isVisible,
+                        hlslBlocks: [],
+                        preshaders: [],
                     };
                     contentSnapshot.rootScope.parent = macroScope;
                     this.addElementsFromMacro(contentSnapshot.rootScope, md, true);

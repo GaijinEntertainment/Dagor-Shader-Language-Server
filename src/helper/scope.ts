@@ -4,6 +4,7 @@ import { BlockUsage } from '../interface/block/block-usage';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
+import { ShaderStage } from '../interface/shader-stage';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
@@ -23,4 +24,9 @@ export interface Scope {
     parent?: Scope;
     children: Scope[];
     isVisible: boolean;
+
+    hlslBlocks: Scope[];
+    hlslStage?: ShaderStage | null;
+    preshaders: Scope[];
+    preshaderStage?: ShaderStage | null;
 }

@@ -38,7 +38,7 @@ dshl_statement:
 	| dshl_variable_declaration
 	| dshl_interval_declaration
 	| dshl_macro_statement
-	| dshl_preshader
+	| dshl_preshader_block
 	| dshl_function_call
 	| IDENTIFIER;
 
@@ -64,8 +64,6 @@ dshl_expression_list: dshl_expression (COMMA dshl_expression)*;
 
 dshl_shader_declaration:
 	SHADER IDENTIFIER (COMMA IDENTIFIER)* dshl_statement_block;
-
-dshl_preshader: LRB IDENTIFIER RRB dshl_statement_block;
 
 dshl_statement_block: LCB dshl_statement* RCB;
 
