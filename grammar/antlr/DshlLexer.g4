@@ -14,7 +14,7 @@ PREPROCESSOR:
 		| 'pragma'
 		| 'include'
 		| 'error'
-	) ~[\r\n]* -> channel(HIDDEN);
+	) ('\\' '\r'? '\n' | ~[\r\n])* -> channel(HIDDEN);
 INCLUDE: 'include' ' '* '"' ~[\r\n"]* '"' -> channel(HIDDEN);
 NEW_LINE: ('\r\n' | '\r' | '\n') -> channel(HIDDEN);
 SPACE: ' ' -> channel(HIDDEN);
