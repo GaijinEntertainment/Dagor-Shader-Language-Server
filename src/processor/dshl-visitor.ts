@@ -384,7 +384,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
 
     public visitDshl_assignment(ctx: Dshl_assignmentContext): void {
         const visible = this.isVisible(ctx.start.startIndex);
-        if (ctx.AT()) {
+        if (ctx.AT() && !ctx.dshl_hlsl_block()) {
             const identifier = ctx.IDENTIFIER(0);
             const type = ctx.IDENTIFIER(1);
             const nameOriginalRange = this.snapshot.getOriginalRange(
