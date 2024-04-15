@@ -12,6 +12,7 @@ export interface VariableDeclaration {
     isVisible: boolean;
     uri: DocumentUri;
     interval?: IntervalDeclaration;
+    isHlsl: boolean;
 }
 
 export function getVariableTypeWithInterval(vd: VariableDeclaration): string {

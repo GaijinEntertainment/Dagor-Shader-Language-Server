@@ -109,6 +109,13 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
         CompletionItemKind.Keyword,
         'DSHL preprocessor directive'
     );
+    const vds = snapshot.getVariableDeclarationsInScope(position, true);
+    addCompletionItems(
+        result,
+        vds.map((vd) => ({ name: vd.name, type: getVariableTypeWithInterval(vd) })),
+        CompletionItemKind.Variable,
+        'variable'
+    );
     addCompletionItems(result, hlslModifiers, CompletionItemKind.Keyword, 'modifier');
     addCompletionItems(result, hlslAttributes, CompletionItemKind.Keyword, 'attribute');
     addCompletionItems(result, hlslSemantics, CompletionItemKind.Keyword, 'semantic');
@@ -212,7 +219,7 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, dshlSnippets, CompletionItemKind.Snippet, 'snippet');
     }
-    const vds = snapshot.getVariableDeclarationsInScope(position);
+    const vds = snapshot.getVariableDeclarationsInScope(position, false);
     addCompletionItems(
         result,
         vds.map((vd) => ({ name: vd.name, type: getVariableTypeWithInterval(vd) })),

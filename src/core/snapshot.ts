@@ -81,6 +81,8 @@ export class Snapshot {
             },
             children: [],
             isVisible: true,
+            hlslBlocks: [],
+            preshaders: [],
         };
         this.rootScope.functionDeclarations = dshlFunctions.map((fi) => ({
             name: fi.name,
@@ -408,6 +410,10 @@ export class Snapshot {
         return ds.endPosition <= position && (!ds.undefPosition || position <= ds.undefPosition);
     }
 
+    public isInDefineContext(position: number): boolean {
+        return this.defineContexts.some((dc) => dc.startPosition <= position && position < dc.afterEndPosition);
+    }
+
     public getDefineContextAt(position: number): DefineContext | null {
         return (
             this.defineContexts.find((dc) => isIntervalContains(dc.startPosition, dc.afterEndPosition, position)) ??
@@ -568,6 +574,22 @@ export class Snapshot {
             if (vd) {
                 return vd;
             }
+            for (const hb of scope.hlslBlocks) {
+                const vd = hb.variableDeclarations.find(
+                    (vd) => isBeforeOrEqual(vd.originalRange.end, position) && vd.name === name
+                );
+                if (vd) {
+                    return vd;
+                }
+            }
+            for (const psb of scope.preshaders) {
+                const vd = psb.variableDeclarations.find(
+                    (vd) => isBeforeOrEqual(vd.originalRange.end, position) && vd.name === name
+                );
+                if (vd) {
+                    return vd;
+                }
+            }
             if (onlyRoot) {
                 return null;
             }
@@ -610,13 +632,23 @@ export class Snapshot {
         return null;
     }
 
-    public getVariableDeclarationsInScope(position: Position): VariableDeclaration[] {
+    public getVariableDeclarationsInScope(position: Position, hlsl: boolean): VariableDeclaration[] {
         const result: VariableDeclaration[] = [];
         let scope: Scope | null = this.getScopeAt(position);
         while (scope) {
             result.push(
-                ...scope.variableDeclarations.filter((vd) => isBeforeOrEqual(vd.nameOriginalRange.end, position))
+                ...scope.variableDeclarations.filter(
+                    (vd) => vd.isHlsl === hlsl && isBeforeOrEqual(vd.nameOriginalRange.end, position)
+                )
             );
+            for (const hb of scope.hlslBlocks) {
+                result.push(...hb.variableDeclarations.filter((vd) => isBeforeOrEqual(vd.originalRange.end, position)));
+            }
+            for (const psb of scope.preshaders) {
+                result.push(
+                    ...psb.variableDeclarations.filter((vd) => isBeforeOrEqual(vd.originalRange.end, position))
+                );
+            }
             scope = scope.parent ?? null;
         }
         return result;
