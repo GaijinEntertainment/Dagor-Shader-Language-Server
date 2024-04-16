@@ -67,6 +67,8 @@ export class Snapshot {
         this.rootScope = {
             shaderDeclarations: [],
             shaderUsages: [],
+            typeDeclarations: [],
+            typeUsages: [],
             variableDeclarations: [],
             variableUsages: [],
             functionDeclarations: [],

@@ -152,6 +152,8 @@ export class DocumentInfo {
                         children: [contentSnapshot.rootScope],
                         shaderDeclarations: [],
                         shaderUsages: [],
+                        typeDeclarations: [],
+                        typeUsages: [],
                         variableDeclarations: [],
                         variableUsages: [],
                         functionUsages: [],
