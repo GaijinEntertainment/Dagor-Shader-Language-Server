@@ -197,7 +197,14 @@ variable_initialization:
 type_declaration:
 	template? type_keyowrd hlsl_identifier? LCB struct_member_declaration* RCB;
 
-type_keyowrd: STRUCT | ENUM CLASS | ENUM | CLASS | INTERFACE;
+enum_declaration:
+	ENUM CLASS? (hlsl_identifier (COLON hlsl_identifier)?)? LCB (
+		enum_member ( COMMA enum_member)*
+	)? RCB;
+
+enum_member: hlsl_identifier (ASSIGN expression)?;
+
+type_keyowrd: STRUCT | CLASS | INTERFACE;
 
 namespace: NAMESPACE hlsl_identifier statement_block;
 
@@ -207,7 +214,8 @@ struct_member_declaration:
 	| function_call
 	| function_header
 	| expression_list
-	| type_declaration_statement;
+	| type_declaration_statement
+	| enum_declaration_statement;
 
 interpolation_modifier:
 	hlsl_identifier; //linear, centroid, nointerpolation, noperspective, sample
@@ -252,6 +260,8 @@ expression_statement: expression SEMICOLON;
 variable_declaration_statement: variable_declaration SEMICOLON;
 
 type_declaration_statement: type_declaration SEMICOLON;
+
+enum_declaration_statement: enum_declaration SEMICOLON;
 
 return_statement: RETURN expression? SEMICOLON;
 
