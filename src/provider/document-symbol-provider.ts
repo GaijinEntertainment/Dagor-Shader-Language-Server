@@ -48,6 +48,24 @@ function createDocumentSymbols(snapshot: Snapshot, uri: DocumentUri): DocumentSy
 }
 
 function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri): void {
+    for (const td of scope.typeDeclarations) {
+        if (td.isVisible) {
+            dss.push({
+                name: td.name,
+                kind: SymbolKind.Struct,
+                range: td.originalRange,
+                selectionRange: td.nameOriginalRange,
+                detail: 'struct',
+                children: td.members.map((m) => ({
+                    name: m.name,
+                    kind: SymbolKind.Field,
+                    range: m.originalRange,
+                    selectionRange: m.nameOriginalRange,
+                    detail: m.type,
+                })),
+            });
+        }
+    }
     for (const vd of scope.variableDeclarations) {
         if (vd.isVisible) {
             dss.push({
