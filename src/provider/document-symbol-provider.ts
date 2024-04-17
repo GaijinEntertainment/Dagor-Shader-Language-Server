@@ -157,6 +157,18 @@ function createSymbolInformations(snapshot: Snapshot, uri: DocumentUri): SymbolI
     }
     const dss = snapshot.defineStatements.filter((ds) => ds.isVisible);
     addDefines(result, dss, uri);
+    const tds = snapshot.getAllTypeDeclarations();
+    for (const td of tds) {
+        result.push({
+            name: td.name,
+            kind: SymbolKind.Struct,
+            containerName: td.name,
+            location: {
+                range: td.originalRange,
+                uri: td.uri,
+            },
+        });
+    }
     const vds = snapshot.getAllVariableDeclarations();
     for (const vd of vds) {
         result.push({

@@ -23,6 +23,7 @@ import { ShaderBlock } from '../interface/shader-block';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { SnapshotVersion } from '../interface/snapshot-version';
+import { TypeDeclaration } from '../interface/type/type-declaration';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { VariableUsage } from '../interface/variable/variable-usage';
 import { getPredefineSnapshot } from '../processor/include-processor';
@@ -691,6 +692,19 @@ export class Snapshot {
         result.push(...scope.variableDeclarations.filter((vd) => vd.isVisible));
         for (const child of scope.children) {
             this.addVariableDeclarations(result, child);
+        }
+    }
+
+    public getAllTypeDeclarations(): TypeDeclaration[] {
+        const result: TypeDeclaration[] = [];
+        this.addTypeDeclarations(result, this.rootScope);
+        return result;
+    }
+
+    private addTypeDeclarations(result: TypeDeclaration[], scope: Scope): void {
+        result.push(...scope.typeDeclarations.filter((vd) => vd.isVisible));
+        for (const child of scope.children) {
+            this.addTypeDeclarations(result, child);
         }
     }
 
