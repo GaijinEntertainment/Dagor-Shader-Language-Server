@@ -191,6 +191,22 @@ export class DocumentInfo {
             offsetPosition(su.originalRange.start, md.contentOriginalRange.start);
             offsetPosition(su.originalRange.end, md.contentOriginalRange.start);
         }
+        for (const td of scope.typeDeclarations) {
+            offsetPosition(td.originalRange.start, md.contentOriginalRange.start);
+            offsetPosition(td.originalRange.end, md.contentOriginalRange.start);
+            offsetPosition(td.nameOriginalRange.start, md.contentOriginalRange.start);
+            offsetPosition(td.nameOriginalRange.end, md.contentOriginalRange.start);
+            for (const m of td.members) {
+                offsetPosition(m.originalRange.start, md.contentOriginalRange.start);
+                offsetPosition(m.originalRange.end, md.contentOriginalRange.start);
+                offsetPosition(m.nameOriginalRange.start, md.contentOriginalRange.start);
+                offsetPosition(m.nameOriginalRange.end, md.contentOriginalRange.start);
+            }
+        }
+        for (const tu of scope.typeUsages) {
+            offsetPosition(tu.originalRange.start, md.contentOriginalRange.start);
+            offsetPosition(tu.originalRange.end, md.contentOriginalRange.start);
+        }
         for (const vd of scope.variableDeclarations) {
             offsetPosition(vd.originalRange.start, md.contentOriginalRange.start);
             offsetPosition(vd.originalRange.end, md.contentOriginalRange.start);
