@@ -635,6 +635,19 @@ export class Snapshot {
         return null;
     }
 
+    public getTypeDeclarationsInScope(position: Position): TypeDeclaration[] {
+        const result: TypeDeclaration[] = [];
+        let scope: Scope | null = this.getScopeAt(position);
+        while (scope) {
+            result.push(...scope.typeDeclarations.filter((td) => isBeforeOrEqual(td.originalRange.end, position)));
+            for (const hb of scope.hlslBlocks) {
+                result.push(...hb.typeDeclarations.filter((td) => isBeforeOrEqual(td.originalRange.end, position)));
+            }
+            scope = scope.parent ?? null;
+        }
+        return result;
+    }
+
     public getVariableDeclarationsInScope(position: Position, hlsl: boolean): VariableDeclaration[] {
         const result: VariableDeclaration[] = [];
         let scope: Scope | null = this.getScopeAt(position);

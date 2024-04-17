@@ -26,17 +26,17 @@ Language Server for the Dagor Shader Language. At the moment it's work in progre
 
 ### HLSL
 
-|                      | types        | variables | functions    | keywords | modifiers | semantics | attributes | defines | includes | preprocessor directives |
-| -------------------- | ------------ | --------- | ------------ | -------- | --------- | --------- | ---------- | ------- | -------- | ----------------------- |
-| Code completion      | only builtin | ✓         | only builtin | ✓        | ✓         | ✓         | ✓          | ✓       | ✓        | ✓                       |
-| Go to definition     |              | ✓         |              |          |           |           |            | ✓       | ✓        |                         |
-| Go to declaration    |              | ✓         |              |          |           |           |            | ✓       | ✓        |                         |
-| Go to implementation |              |           |              |          |           |           |            | ✓       | ✓        |                         |
-| Hover                |              | ✓         |              |          |           |           |            | ✓       |          |                         |
-| Document highlights  |              | ✓         |              |          |           |           |            | ✓       |          |                         |
-| Signature help       |              |           |              |          |           |           |            |         |          |                         |
-| Inlay hints          |              |           |              |          |           |           |            | ✓       |          |                         |
-| Document symbols     |              | ✓         |              |          |           |           |            | ✓       |          |                         |
+|                      | types | variables | functions    | keywords | modifiers | semantics | attributes | defines | includes | preprocessor directives |
+| -------------------- | ----- | --------- | ------------ | -------- | --------- | --------- | ---------- | ------- | -------- | ----------------------- |
+| Code completion      | ✓     | ✓         | only builtin | ✓        | ✓         | ✓         | ✓          | ✓       | ✓        | ✓                       |
+| Go to definition     |       | ✓         |              |          |           |           |            | ✓       | ✓        |                         |
+| Go to declaration    |       | ✓         |              |          |           |           |            | ✓       | ✓        |                         |
+| Go to implementation |       |           |              |          |           |           |            | ✓       | ✓        |                         |
+| Hover                |       | ✓         |              |          |           |           |            | ✓       |          |                         |
+| Document highlights  |       | ✓         |              |          |           |           |            | ✓       |          |                         |
+| Signature help       |       |           |              |          |           |           |            |         |          |                         |
+| Inlay hints          |       |           |              |          |           |           |            | ✓       |          |                         |
+| Document symbols     | ✓     | ✓         |              |          |           |           |            | ✓       |          |                         |
 
 ### Features that are part of the repository, but not part of the actual language server
 

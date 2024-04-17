@@ -19,3 +19,7 @@ export function getVariableTypeWithInterval(vd: VariableDeclaration): string {
     const interval = vd.interval ? 'interval ' : '';
     return interval + vd.type;
 }
+
+export function toStringVariableDeclaration(vd: VariableDeclaration): string {
+    return `${vd.type} ${vd.name};`;
+}

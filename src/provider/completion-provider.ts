@@ -52,6 +52,7 @@ import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
 import { ShaderStage } from '../interface/shader-stage';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
+import { TypeDeclaration, toStringTypeDeclaration } from '../interface/type/type-declaration';
 import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
 import { getPredefineSnapshot } from '../processor/include-processor';
 import { getIncludeCompletionInfos } from '../processor/include-resolver';
@@ -108,6 +109,15 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
         hlslDshlPreprocessorDirectives,
         CompletionItemKind.Keyword,
         'DSHL preprocessor directive'
+    );
+    const tds = snapshot.getTypeDeclarationsInScope(position);
+    result.push(
+        ...tds.map<CompletionItem>((td) => ({
+            label: td.name,
+            kind: getKind(CompletionItemKind.Struct),
+            detail: getDetail(td, 'struct'),
+            documentation: getTypeDeclarationDocumentation(td),
+        }))
     );
     const vds = snapshot.getVariableDeclarationsInScope(position, true);
     addCompletionItems(
@@ -319,6 +329,23 @@ function getDocumentation(item: LanguageElementInfo): MarkupContent | undefined 
         return {
             kind: MarkupKind.Markdown,
             value: documentationText + createDocumentationLinks(item.links),
+        };
+    } else if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.PlainText)) {
+        return {
+            kind: MarkupKind.PlainText,
+            value: documentationText,
+        };
+    } else {
+        return undefined;
+    }
+}
+
+function getTypeDeclarationDocumentation(td: TypeDeclaration): MarkupContent | undefined {
+    const documentationText = toStringTypeDeclaration(td);
+    if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.Markdown)) {
+        return {
+            kind: MarkupKind.Markdown,
+            value: '```hlsl\n' + documentationText + '\n```',
         };
     } else if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.PlainText)) {
         return {
