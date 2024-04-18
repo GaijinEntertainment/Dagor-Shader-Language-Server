@@ -650,6 +650,19 @@ export class Snapshot {
         return result;
     }
 
+    public getEnumDeclarationsInScope(position: Position): EnumDeclaration[] {
+        const result: EnumDeclaration[] = [];
+        let scope: Scope | null = this.getScopeAt(position);
+        while (scope) {
+            result.push(...scope.enumDeclarations.filter((td) => isBeforeOrEqual(td.originalRange.end, position)));
+            for (const hb of scope.hlslBlocks) {
+                result.push(...hb.enumDeclarations.filter((td) => isBeforeOrEqual(td.originalRange.end, position)));
+            }
+            scope = scope.parent ?? null;
+        }
+        return result;
+    }
+
     public getVariableDeclarationsInScope(position: Position, hlsl: boolean): VariableDeclaration[] {
         const result: VariableDeclaration[] = [];
         let scope: Scope | null = this.getScopeAt(position);

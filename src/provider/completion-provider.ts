@@ -52,6 +52,7 @@ import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
 import { ShaderStage } from '../interface/shader-stage';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
+import { EnumDeclaration, toStringEnumDeclaration } from '../interface/type/enum-declaration';
 import { TypeDeclaration, toStringTypeDeclaration } from '../interface/type/type-declaration';
 import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
 import { getPredefineSnapshot } from '../processor/include-processor';
@@ -118,6 +119,17 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
             detail: getDetail(td, 'struct'),
             documentation: getTypeDeclarationDocumentation(td),
         }))
+    );
+    const eds = snapshot.getEnumDeclarationsInScope(position);
+    result.push(
+        ...eds
+            .filter((ed) => ed.name)
+            .map<CompletionItem>((ed) => ({
+                label: ed.name!,
+                kind: getKind(CompletionItemKind.Enum),
+                detail: `${ed.name} - enum ${ed.isClass ? 'class' : ''}`,
+                documentation: getEnumDeclarationDocumentation(ed),
+            }))
     );
     const vds = snapshot.getVariableDeclarationsInScope(position, true);
     addCompletionItems(
@@ -342,6 +354,23 @@ function getDocumentation(item: LanguageElementInfo): MarkupContent | undefined 
 
 function getTypeDeclarationDocumentation(td: TypeDeclaration): MarkupContent | undefined {
     const documentationText = toStringTypeDeclaration(td);
+    if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.Markdown)) {
+        return {
+            kind: MarkupKind.Markdown,
+            value: '```hlsl\n' + documentationText + '\n```',
+        };
+    } else if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.PlainText)) {
+        return {
+            kind: MarkupKind.PlainText,
+            value: documentationText,
+        };
+    } else {
+        return undefined;
+    }
+}
+
+function getEnumDeclarationDocumentation(ed: EnumDeclaration): MarkupContent | undefined {
+    const documentationText = toStringEnumDeclaration(ed);
     if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.Markdown)) {
         return {
             kind: MarkupKind.Markdown,
