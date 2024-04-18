@@ -15,6 +15,7 @@ import {
     Dshl_statement_blockContext,
     Dshl_supports_statementContext,
     Dshl_variable_declarationContext,
+    Enum_declarationContext,
     ExpressionContext,
     ParameterContext,
     State_objectContext,
@@ -34,6 +35,7 @@ import { IntervalDeclaration } from '../interface/interval-declaration';
 import { shaderStageKeywordToEnum } from '../interface/shader-stage';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
+import { EnumDeclaration } from '../interface/type/enum-declaration';
 import { TypeDeclaration } from '../interface/type/type-declaration';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { VariableUsage } from '../interface/variable/variable-usage';
@@ -521,6 +523,39 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         this.type = null;
     }
 
+    public visitEnum_declaration(ctx: Enum_declarationContext): void {
+        const visible = this.isVisible(ctx.LCB().symbol.startIndex);
+        if (visible) {
+            const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
+            this.snapshot.foldingRanges.push(range);
+        }
+        const identifier = ctx.hlsl_identifier().length ? ctx.hlsl_identifier(0) : null;
+        const type = ctx.hlsl_identifier().length > 1 ? ctx.hlsl_identifier(1) : null;
+        const originalRange = this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const nameOriginalRange = identifier
+            ? this.snapshot.getOriginalRange(identifier.start.startIndex, identifier.stop!.stopIndex + 1)
+            : undefined;
+        const ed: EnumDeclaration = {
+            name: identifier ? identifier.text : undefined,
+            type: type ? type.text : undefined,
+            isClass: !!ctx.CLASS(),
+            uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
+            originalRange,
+            nameOriginalRange,
+            isVisible: visible,
+            members: ctx.enum_member().map((em) => ({
+                name: em.hlsl_identifier().text,
+                nameOriginalRange: this.snapshot.getOriginalRange(
+                    em.hlsl_identifier().start.startIndex,
+                    em.hlsl_identifier().stop!.stopIndex + 1
+                ),
+                originalRange: this.snapshot.getOriginalRange(em.start.startIndex, em.stop!.stopIndex + 1),
+            })),
+        };
+        this.scope.enumDeclarations.push(ed);
+        this.visitChildren(ctx);
+    }
+
     public visitState_object(ctx: State_objectContext): void {
         if (this.isVisible(ctx.LCB().symbol.startIndex)) {
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
@@ -627,6 +662,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             shaderUsages: [],
             typeDeclarations: [],
             typeUsages: [],
+            enumDeclarations: [],
             variableDeclarations: [],
             variableUsages: [],
             functionDeclarations: [],

@@ -23,6 +23,7 @@ import { ShaderBlock } from '../interface/shader-block';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { SnapshotVersion } from '../interface/snapshot-version';
+import { EnumDeclaration } from '../interface/type/enum-declaration';
 import { TypeDeclaration } from '../interface/type/type-declaration';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { VariableUsage } from '../interface/variable/variable-usage';
@@ -70,6 +71,7 @@ export class Snapshot {
             shaderUsages: [],
             typeDeclarations: [],
             typeUsages: [],
+            enumDeclarations: [],
             variableDeclarations: [],
             variableUsages: [],
             functionDeclarations: [],
@@ -718,6 +720,19 @@ export class Snapshot {
         result.push(...scope.typeDeclarations.filter((vd) => vd.isVisible));
         for (const child of scope.children) {
             this.addTypeDeclarations(result, child);
+        }
+    }
+
+    public getAllEnumDeclarations(): EnumDeclaration[] {
+        const result: EnumDeclaration[] = [];
+        this.addEnumDeclarations(result, this.rootScope);
+        return result;
+    }
+
+    private addEnumDeclarations(result: EnumDeclaration[], scope: Scope): void {
+        result.push(...scope.enumDeclarations.filter((ed) => ed.isVisible));
+        for (const child of scope.children) {
+            this.addEnumDeclarations(result, child);
         }
     }
 

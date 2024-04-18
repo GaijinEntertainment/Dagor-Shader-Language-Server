@@ -153,6 +153,7 @@ export class DocumentInfo {
                         shaderDeclarations: [],
                         shaderUsages: [],
                         typeDeclarations: [],
+                        enumDeclarations: [],
                         typeUsages: [],
                         variableDeclarations: [],
                         variableUsages: [],
@@ -197,6 +198,20 @@ export class DocumentInfo {
             offsetPosition(td.nameOriginalRange.start, md.contentOriginalRange.start);
             offsetPosition(td.nameOriginalRange.end, md.contentOriginalRange.start);
             for (const m of td.members) {
+                offsetPosition(m.originalRange.start, md.contentOriginalRange.start);
+                offsetPosition(m.originalRange.end, md.contentOriginalRange.start);
+                offsetPosition(m.nameOriginalRange.start, md.contentOriginalRange.start);
+                offsetPosition(m.nameOriginalRange.end, md.contentOriginalRange.start);
+            }
+        }
+        for (const ed of scope.enumDeclarations) {
+            offsetPosition(ed.originalRange.start, md.contentOriginalRange.start);
+            offsetPosition(ed.originalRange.end, md.contentOriginalRange.start);
+            if (ed.nameOriginalRange) {
+                offsetPosition(ed.nameOriginalRange.start, md.contentOriginalRange.start);
+                offsetPosition(ed.nameOriginalRange.end, md.contentOriginalRange.start);
+            }
+            for (const m of ed.members) {
                 offsetPosition(m.originalRange.start, md.contentOriginalRange.start);
                 offsetPosition(m.originalRange.end, md.contentOriginalRange.start);
                 offsetPosition(m.nameOriginalRange.start, md.contentOriginalRange.start);

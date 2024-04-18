@@ -66,6 +66,23 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
             });
         }
     }
+    for (const ed of scope.enumDeclarations) {
+        if (ed.isVisible) {
+            dss.push({
+                name: ed.name ?? '<anonymous>',
+                kind: SymbolKind.Enum,
+                range: ed.originalRange,
+                selectionRange: ed.nameOriginalRange ?? ed.originalRange,
+                detail: 'enum' + (ed.isClass ? ' class' : '') + (ed.type ? ` (${ed.type})` : ''),
+                children: ed.members.map((m) => ({
+                    name: m.name,
+                    kind: SymbolKind.EnumMember,
+                    range: m.originalRange,
+                    selectionRange: m.originalRange,
+                })),
+            });
+        }
+    }
     for (const vd of scope.variableDeclarations) {
         if (vd.isVisible) {
             dss.push({
@@ -157,6 +174,18 @@ function createSymbolInformations(snapshot: Snapshot, uri: DocumentUri): SymbolI
     }
     const dss = snapshot.defineStatements.filter((ds) => ds.isVisible);
     addDefines(result, dss, uri);
+    const eds = snapshot.getAllEnumDeclarations();
+    for (const ed of eds) {
+        result.push({
+            name: ed.name ?? '<anonymous>',
+            kind: SymbolKind.Enum,
+            containerName: ed.name ?? '<anonymous>',
+            location: {
+                range: ed.originalRange,
+                uri: ed.uri,
+            },
+        });
+    }
     const tds = snapshot.getAllTypeDeclarations();
     for (const td of tds) {
         result.push({
