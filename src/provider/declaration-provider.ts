@@ -6,5 +6,10 @@ import { linkProviderBase } from './link-provider-base';
 export async function declarationProvider(
     params: DeclarationParams
 ): Promise<Declaration | DeclarationLink[] | undefined | null> {
-    return await linkProviderBase(params.position, params.textDocument.uri, getCapabilities().declarationLink);
+    return await linkProviderBase(
+        params.position,
+        params.textDocument.uri,
+        getCapabilities().declarationLink,
+        'declaration'
+    );
 }

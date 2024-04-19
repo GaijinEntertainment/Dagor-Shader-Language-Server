@@ -9,6 +9,8 @@ import { Macro } from '../interface/macro/macro';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroParameter } from '../interface/macro/macro-parameter';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
+import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { TypeDeclaration } from '../interface/type/type-declaration';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { getIncludedDocumentUri } from '../processor/include-resolver';
 
@@ -16,10 +18,27 @@ export async function linkProviderBase(
     position: Position,
     uri: DocumentUri,
     linkSupport: boolean,
-    implementation = false
+    type: 'declaration' | 'definition' | 'implementation' | 'typeDefinition'
 ): Promise<LocationLink[] | Location | null> {
     const snapshot = await getSnapshot(uri);
     if (!snapshot) {
+        return null;
+    }
+    const vd = snapshot.getVariableDeclarationAt(position);
+    const vu = snapshot.getVariableUsageAt(position);
+    if (type === 'typeDefinition') {
+        if (vd?.typeDeclaration) {
+            return getTypeDeclarationLocation(vd.typeDeclaration, linkSupport);
+        }
+        if (vd?.enumDeclaration) {
+            return getEnumDeclarationLocation(vd.enumDeclaration, linkSupport);
+        }
+        if (vu?.declaration?.typeDeclaration) {
+            return getTypeDeclarationLocation(vu.declaration.typeDeclaration, linkSupport);
+        }
+        if (vu?.declaration?.enumDeclaration) {
+            return getEnumDeclarationLocation(vu.declaration.enumDeclaration, linkSupport);
+        }
         return null;
     }
     let md = snapshot.macroDeclarations.find((md) => md.uri === uri && rangeContains(md.nameOriginalRange, position));
@@ -36,7 +55,9 @@ export async function linkProviderBase(
     }
     const dc = snapshot.defineContexts.find(
         (dc) =>
-            dc.isVisible && rangeContains(dc.nameOriginalRange, position) && (!implementation || !dc.define.objectLike)
+            dc.isVisible &&
+            rangeContains(dc.nameOriginalRange, position) &&
+            (type !== 'implementation' || !dc.define.objectLike)
     );
     if (dc && !dc.define.isPredefined) {
         return getDefineDeclarationLocation(dc.define.realDefine ?? dc.define, linkSupport);
@@ -63,14 +84,28 @@ export async function linkProviderBase(
     if (is) {
         return await getIncludeStatementLocation(is, linkSupport);
     }
-    if (implementation) {
+    const td = snapshot.getTypeDeclarationAt(position);
+    if (td) {
+        return getTypeDeclarationLocation(td, linkSupport);
+    }
+    const tu = snapshot.getTypeUsageAt(position);
+    if (tu) {
+        return getTypeDeclarationLocation(tu.declaration, linkSupport);
+    }
+    const ed = snapshot.getEnumDeclarationAt(position);
+    if (ed) {
+        return getEnumDeclarationLocation(ed, linkSupport);
+    }
+    const eu = snapshot.getEnumUsageAt(position);
+    if (eu) {
+        return getEnumDeclarationLocation(eu.declaration, linkSupport);
+    }
+    if (type === 'implementation') {
         return null;
     }
-    const vd = snapshot.getVariableDeclarationAt(position);
     if (vd) {
         return getVariableDeclarationLocation(vd, linkSupport);
     }
-    const vu = snapshot.getVariableUsageAt(position);
     if (vu) {
         return getVariableDeclarationLocation(vu.declaration, linkSupport);
     }
@@ -142,6 +177,43 @@ function getParameterLocation(mp: MacroParameter, uri: DocumentUri, linkSupport:
         return {
             range: mp.originalRange,
             uri,
+        };
+    }
+}
+
+function getTypeDeclarationLocation(td: TypeDeclaration, linkSupport: boolean): LocationLink[] | Location {
+    if (linkSupport) {
+        return [
+            {
+                targetRange: td.originalRange,
+                targetSelectionRange: td.nameOriginalRange,
+                targetUri: td.uri,
+            },
+        ];
+    } else {
+        return {
+            range: td.nameOriginalRange,
+            uri: td.uri,
+        };
+    }
+}
+
+function getEnumDeclarationLocation(ed: EnumDeclaration, linkSupport: boolean): LocationLink[] | Location | null {
+    if (!ed.nameOriginalRange) {
+        return null;
+    }
+    if (linkSupport) {
+        return [
+            {
+                targetRange: ed.originalRange,
+                targetSelectionRange: ed.nameOriginalRange,
+                targetUri: ed.uri,
+            },
+        ];
+    } else {
+        return {
+            range: ed.nameOriginalRange,
+            uri: ed.uri,
         };
     }
 }
