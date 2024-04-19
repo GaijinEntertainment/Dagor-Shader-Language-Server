@@ -21,3 +21,11 @@ export function isDeclarationAlreadyAdded(macro: Macro, md: MacroDeclaration): b
         (md2) => md2.uri === md.uri && positionsEqual(md2.originalRange.start, md.originalRange.start)
     );
 }
+
+export function toStringMacroParameters(m: Macro): string {
+    const md = m.declarations[0];
+    if (!md) {
+        return '';
+    }
+    return md.parameters.map((mp) => mp.name).join(', ');
+}

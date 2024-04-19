@@ -50,6 +50,7 @@ import { DefineStatement } from '../interface/define-statement';
 import { toStringFunctionParameters } from '../interface/function/function-declaration';
 import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
+import { toStringMacroParameters } from '../interface/macro/macro';
 import { ShaderStage } from '../interface/shader-stage';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
 import { EnumDeclaration, toStringEnumDeclaration } from '../interface/type/enum-declaration';
@@ -237,7 +238,14 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
             )
         )
     );
-    addCompletionItems(result, getMacros(snapshot, position), CompletionItemKind.Constant, 'macro');
+    const macros = snapshot.macros.filter((m) =>
+        m.declarations.some((md) => isBeforeOrEqual(md.codeCompletionPosition, position))
+    );
+    result.push(
+        ...macros.map<CompletionItem>((m) =>
+            getCompletionItem(m, CompletionItemKind.Constant, 'macro', `(${toStringMacroParameters(m)})`)
+        )
+    );
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, dshlSnippets, CompletionItemKind.Snippet, 'snippet');
     }
@@ -262,14 +270,6 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
         CompletionItemKind.Module,
         'block'
     );
-}
-
-function getMacros(snapshot: Snapshot, position: Position): LanguageElementInfo[] {
-    return snapshot.macros
-        .filter((m) => m.declarations.some((md) => isBeforeOrEqual(md.codeCompletionPosition, position)))
-        .map((m) => ({
-            name: m.name,
-        }));
 }
 
 function getMacroParameters(snapshot: Snapshot, position: Position): LanguageElementInfo[] {
