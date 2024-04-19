@@ -734,9 +734,17 @@ export class Snapshot {
         const result: TypeDeclaration[] = [];
         let scope: Scope | null = this.getScopeAt(position);
         while (scope) {
-            result.push(...scope.typeDeclarations.filter((td) => isBeforeOrEqual(td.originalRange.end, position)));
+            for (const td of scope.typeDeclarations) {
+                if (isBeforeOrEqual(td.originalRange.end, position) && result.every((r) => r.name !== td.name)) {
+                    result.push(td);
+                }
+            }
             for (const hb of scope.hlslBlocks) {
-                result.push(...hb.typeDeclarations.filter((td) => isBeforeOrEqual(td.originalRange.end, position)));
+                for (const td of hb.typeDeclarations) {
+                    if (isBeforeOrEqual(td.originalRange.end, position) && result.every((r) => r.name !== td.name)) {
+                        result.push(td);
+                    }
+                }
             }
             scope = scope.parent ?? null;
         }
@@ -747,9 +755,17 @@ export class Snapshot {
         const result: EnumDeclaration[] = [];
         let scope: Scope | null = this.getScopeAt(position);
         while (scope) {
-            result.push(...scope.enumDeclarations.filter((td) => isBeforeOrEqual(td.originalRange.end, position)));
+            for (const ed of scope.enumDeclarations) {
+                if (isBeforeOrEqual(ed.originalRange.end, position) && result.every((r) => r.name !== ed.name)) {
+                    result.push(ed);
+                }
+            }
             for (const hb of scope.hlslBlocks) {
-                result.push(...hb.enumDeclarations.filter((td) => isBeforeOrEqual(td.originalRange.end, position)));
+                for (const td of hb.enumDeclarations) {
+                    if (isBeforeOrEqual(td.originalRange.end, position) && result.every((r) => r.name !== td.name)) {
+                        result.push(td);
+                    }
+                }
             }
             scope = scope.parent ?? null;
         }
@@ -760,18 +776,28 @@ export class Snapshot {
         const result: VariableDeclaration[] = [];
         let scope: Scope | null = this.getScopeAt(position);
         while (scope) {
-            result.push(
-                ...scope.variableDeclarations.filter(
-                    (vd) => vd.isHlsl === hlsl && isBeforeOrEqual(vd.nameOriginalRange.end, position)
-                )
-            );
+            for (const vd of scope.variableDeclarations) {
+                if (
+                    vd.isHlsl === hlsl &&
+                    !result.some((r) => r.name === vd.name) &&
+                    isBeforeOrEqual(vd.originalRange.end, position)
+                ) {
+                    result.push(vd);
+                }
+            }
             for (const hb of scope.hlslBlocks) {
-                result.push(...hb.variableDeclarations.filter((vd) => isBeforeOrEqual(vd.originalRange.end, position)));
+                for (const vd of hb.variableDeclarations) {
+                    if (isBeforeOrEqual(vd.originalRange.end, position) && result.every((r) => r.name !== vd.name)) {
+                        result.push(vd);
+                    }
+                }
             }
             for (const psb of scope.preshaders) {
-                result.push(
-                    ...psb.variableDeclarations.filter((vd) => isBeforeOrEqual(vd.originalRange.end, position))
-                );
+                for (const vd of psb.variableDeclarations) {
+                    if (isBeforeOrEqual(vd.originalRange.end, position) && result.every((r) => r.name !== vd.name)) {
+                        result.push(vd);
+                    }
+                }
             }
             scope = scope.parent ?? null;
         }
@@ -782,9 +808,11 @@ export class Snapshot {
         const result: ShaderDeclaration[] = [];
         let scope: Scope | null = this.getScopeAt(position);
         while (scope) {
-            result.push(
-                ...scope.shaderDeclarations.filter((vd) => isBeforeOrEqual(vd.nameOriginalRange.end, position))
-            );
+            for (const sd of scope.shaderDeclarations) {
+                if (isBeforeOrEqual(sd.nameOriginalRange.end, position) && result.every((r) => r.name !== sd.name)) {
+                    result.push(sd);
+                }
+            }
             scope = scope.parent ?? null;
         }
         return result;
@@ -797,7 +825,11 @@ export class Snapshot {
             const bds = scope.children
                 .map((s) => s.blockDeclaration)
                 .filter((bd) => bd && isBeforeOrEqual(bd.nameOriginalRange.end, position)) as BlockDeclaration[];
-            result.push(...bds);
+            for (const bd of bds) {
+                if (result.every((r) => r.name !== bd.name)) {
+                    result.push(bd);
+                }
+            }
             scope = scope.parent ?? null;
         }
         return result;
