@@ -9,6 +9,8 @@ import { FunctionDeclaration } from '../interface/function/function-declaration'
 import { Macro } from '../interface/macro/macro';
 import { MacroParameter } from '../interface/macro/macro-parameter';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
+import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { TypeDeclaration } from '../interface/type/type-declaration';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 
 export async function documentHighlightProvider(
@@ -64,6 +66,44 @@ export async function documentHighlightProvider(
                 range: dc.nameOriginalRange,
                 kind: DocumentHighlightKind.Text,
             });
+        }
+        return result;
+    }
+    const td = getTypeDeclaration(snapshot, params);
+    if (td) {
+        const result: DocumentHighlight[] = [];
+        if (td.isVisible && td.uri === params.textDocument.uri) {
+            result.push({
+                range: td.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        for (const tu of td.usages) {
+            if (tu.isVisible) {
+                result.push({
+                    range: tu.originalRange,
+                    kind: DocumentHighlightKind.Text,
+                });
+            }
+        }
+        return result;
+    }
+    const ed = getEnumDeclaration(snapshot, params);
+    if (ed && ed.nameOriginalRange) {
+        const result: DocumentHighlight[] = [];
+        if (ed.isVisible && ed.uri === params.textDocument.uri) {
+            result.push({
+                range: ed.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        for (const eu of ed.usages) {
+            if (eu.isVisible) {
+                result.push({
+                    range: eu.originalRange,
+                    kind: DocumentHighlightKind.Text,
+                });
+            }
         }
         return result;
     }
@@ -199,6 +239,30 @@ function getMacroParameter(snapshot: Snapshot, params: DocumentHighlightParams):
                 mp.usages.some((mpu) => rangeContains(mpu.originalRange, params.position))
         ) ?? null
     );
+}
+
+function getTypeDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): TypeDeclaration | null {
+    const td = snapshot.getTypeDeclarationAt(params.position);
+    if (td) {
+        return td;
+    }
+    const tu = snapshot.getTypeUsageAt(params.position);
+    if (tu) {
+        return tu.declaration;
+    }
+    return null;
+}
+
+function getEnumDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): EnumDeclaration | null {
+    const ed = snapshot.getEnumDeclarationAt(params.position);
+    if (ed) {
+        return ed;
+    }
+    const eu = snapshot.getEnumUsageAt(params.position);
+    if (eu) {
+        return eu.declaration;
+    }
+    return null;
 }
 
 function getVariableDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): VariableDeclaration | null {
