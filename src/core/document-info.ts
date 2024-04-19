@@ -155,6 +155,7 @@ export class DocumentInfo {
                         typeDeclarations: [],
                         enumDeclarations: [],
                         typeUsages: [],
+                        enumUsages: [],
                         variableDeclarations: [],
                         variableUsages: [],
                         functionUsages: [],
@@ -221,6 +222,10 @@ export class DocumentInfo {
         for (const tu of scope.typeUsages) {
             offsetPosition(tu.originalRange.start, md.contentOriginalRange.start);
             offsetPosition(tu.originalRange.end, md.contentOriginalRange.start);
+        }
+        for (const eu of scope.enumUsages) {
+            offsetPosition(eu.originalRange.start, md.contentOriginalRange.start);
+            offsetPosition(eu.originalRange.end, md.contentOriginalRange.start);
         }
         for (const vd of scope.variableDeclarations) {
             offsetPosition(vd.originalRange.start, md.contentOriginalRange.start);

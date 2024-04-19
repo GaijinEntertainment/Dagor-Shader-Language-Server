@@ -36,7 +36,9 @@ import { shaderStageKeywordToEnum } from '../interface/shader-stage';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { EnumUsage } from '../interface/type/enum-usage';
 import { TypeDeclaration } from '../interface/type/type-declaration';
+import { TypeUsage } from '../interface/type/type-usage';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { VariableUsage } from '../interface/variable/variable-usage';
 
@@ -514,6 +516,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             originalRange,
             nameOriginalRange,
             isVisible: visible,
+            isBuiltIn: false,
             usages: [],
             members: [],
         };
@@ -551,6 +554,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 ),
                 originalRange: this.snapshot.getOriginalRange(em.start.startIndex, em.stop!.stopIndex + 1),
             })),
+            usages: [],
         };
         this.scope.enumDeclarations.push(ed);
         this.visitChildren(ctx);
@@ -573,8 +577,30 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 identifier.start.startIndex,
                 identifier.stop!.stopIndex + 1
             );
+            const td = this.snapshot.getTypeDeclarationFor(type.text, nameOriginalRange.start);
+            if (td) {
+                const tu: TypeUsage = {
+                    declaration: td,
+                    originalRange: this.snapshot.getOriginalRange(type.start.startIndex, type.stop!.stopIndex + 1),
+                    isVisible: visible,
+                };
+                td.usages.push(tu);
+                this.scope.typeUsages.push(tu);
+            }
+            const ed = this.snapshot.getEnumDeclarationFor(type.text, nameOriginalRange.start);
+            if (ed) {
+                const eu: EnumUsage = {
+                    declaration: ed,
+                    originalRange: this.snapshot.getOriginalRange(type.start.startIndex, type.stop!.stopIndex + 1),
+                    isVisible: visible,
+                };
+                ed.usages.push(eu);
+                this.scope.enumUsages.push(eu);
+            }
             const vd: VariableDeclaration = {
                 type: type.text,
+                typeDeclaration: td ?? undefined,
+                enumDeclaration: ed ?? undefined,
                 name: identifier.text,
                 nameEndPosition: ctx.stop!.stopIndex + 1,
                 originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
@@ -603,8 +629,30 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 identifier.start.startIndex,
                 identifier.stop!.stopIndex + 1
             );
+            const td = this.snapshot.getTypeDeclarationFor(type.text, nameOriginalRange.start);
+            if (td) {
+                const tu: TypeUsage = {
+                    declaration: td,
+                    originalRange: this.snapshot.getOriginalRange(type.start.startIndex, type.stop!.stopIndex + 1),
+                    isVisible: visible,
+                };
+                td.usages.push(tu);
+                this.scope.typeUsages.push(tu);
+            }
+            const ed = this.snapshot.getEnumDeclarationFor(type.text, nameOriginalRange.start);
+            if (ed) {
+                const eu: EnumUsage = {
+                    declaration: ed,
+                    originalRange: this.snapshot.getOriginalRange(type.start.startIndex, type.stop!.stopIndex + 1),
+                    isVisible: visible,
+                };
+                ed.usages.push(eu);
+                this.scope.enumUsages.push(eu);
+            }
             const vd: VariableDeclaration = {
                 type: type.text,
+                typeDeclaration: td ?? undefined,
+                enumDeclaration: ed ?? undefined,
                 name: identifier.text,
                 nameEndPosition: ctx.stop!.stopIndex + 1,
                 originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
@@ -663,6 +711,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             typeDeclarations: [],
             typeUsages: [],
             enumDeclarations: [],
+            enumUsages: [],
             variableDeclarations: [],
             variableUsages: [],
             functionDeclarations: [],

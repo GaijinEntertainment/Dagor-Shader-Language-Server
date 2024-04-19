@@ -1,5 +1,6 @@
 import { DocumentUri, Range } from 'vscode-languageserver';
 import { EnumMemberDeclaration } from './enum-member-declaration';
+import { EnumUsage } from './enum-usage';
 
 export interface EnumDeclaration {
     name?: string;
@@ -8,6 +9,7 @@ export interface EnumDeclaration {
     isClass: boolean;
     originalRange: Range;
     members: EnumMemberDeclaration[];
+    usages: EnumUsage[];
     isVisible: boolean;
     uri: DocumentUri;
 }
@@ -21,5 +23,5 @@ export function toStringEnumDeclaration(ed: EnumDeclaration): string {
     for (const member of ed.members) {
         members += `\t${member.name},\n`;
     }
-    return `${header} {\n${members}}`;
+    return `${header} {\n${members}};`;
 }

@@ -24,7 +24,9 @@ import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { SnapshotVersion } from '../interface/snapshot-version';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { EnumUsage } from '../interface/type/enum-usage';
 import { TypeDeclaration } from '../interface/type/type-declaration';
+import { TypeUsage } from '../interface/type/type-usage';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { VariableUsage } from '../interface/variable/variable-usage';
 import { getPredefineSnapshot } from '../processor/include-processor';
@@ -72,6 +74,7 @@ export class Snapshot {
             typeDeclarations: [],
             typeUsages: [],
             enumDeclarations: [],
+            enumUsages: [],
             variableDeclarations: [],
             variableUsages: [],
             functionDeclarations: [],
@@ -430,6 +433,30 @@ export class Snapshot {
         return this.directives.some((d) => isIntervalContains(d.startPosition, d.endPosition, position));
     }
 
+    public getTypeUsageAt(position: Position): TypeUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const tu = scope.typeUsages.find((tu) => tu.isVisible && rangeContains(tu.originalRange, position));
+            if (tu) {
+                return tu;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getEnumUsageAt(position: Position): EnumUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const eu = scope.enumUsages.find((eu) => eu.isVisible && rangeContains(eu.originalRange, position));
+            if (eu) {
+                return eu;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
     public getVariableUsageAt(position: Position): VariableUsage | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
@@ -507,6 +534,34 @@ export class Snapshot {
             );
             if (fu) {
                 return fu;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getTypeDeclarationAt(position: Position): TypeDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const td = scope.typeDeclarations.find(
+                (td) => td.isVisible && rangeContains(td.nameOriginalRange, position)
+            );
+            if (td) {
+                return td;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getEnumDeclarationAt(position: Position): EnumDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const ed = scope.enumDeclarations.find(
+                (ed) => ed.isVisible && rangeContains(ed.nameOriginalRange ?? ed.originalRange, position)
+            );
+            if (ed) {
+                return ed;
             }
             scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
         }
@@ -628,6 +683,44 @@ export class Snapshot {
                 .find((bd) => bd && bd.name === name && isBeforeOrEqual(bd.nameOriginalRange.end, position));
             if (bd) {
                 return bd;
+            }
+            if (onlyRoot) {
+                return null;
+            }
+            scope = scope.parent ?? null;
+        }
+        return null;
+    }
+
+    public getTypeDeclarationFor(name: string, position: Position, onlyRoot = false): TypeDeclaration | null {
+        let scope: Scope | null = onlyRoot ? this.rootScope : this.getScopeAt(position);
+        while (scope) {
+            const td = scope.typeDeclarations.find(
+                (td) => td && td.name === name && isBeforeOrEqual(td.nameOriginalRange.end, position)
+            );
+            if (td) {
+                return td;
+            }
+            if (onlyRoot) {
+                return null;
+            }
+            scope = scope.parent ?? null;
+        }
+        return null;
+    }
+
+    public getEnumDeclarationFor(name: string, position: Position, onlyRoot = false): EnumDeclaration | null {
+        let scope: Scope | null = onlyRoot ? this.rootScope : this.getScopeAt(position);
+        while (scope) {
+            const ed = scope.enumDeclarations.find(
+                (ed) =>
+                    ed &&
+                    ed.nameOriginalRange &&
+                    ed.name === name &&
+                    isBeforeOrEqual(ed.nameOriginalRange.end, position)
+            );
+            if (ed) {
+                return ed;
             }
             if (onlyRoot) {
                 return null;

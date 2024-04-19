@@ -10,6 +10,7 @@ export interface TypeDeclaration {
     members: VariableDeclaration[];
     isVisible: boolean;
     uri: DocumentUri;
+    isBuiltIn: boolean;
 }
 
 export function toStringTypeDeclaration(td: TypeDeclaration): string {
@@ -18,5 +19,5 @@ export function toStringTypeDeclaration(td: TypeDeclaration): string {
     for (const member of td.members) {
         members += `\t${toStringVariableDeclaration(member)}\n`;
     }
-    return `${header} {\n${members}}`;
+    return `${header} {\n${members}};`;
 }

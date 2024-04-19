@@ -1,9 +1,13 @@
 import { DocumentUri, Range } from 'vscode-languageserver';
 import { IntervalDeclaration } from '../interval-declaration';
+import { EnumDeclaration } from '../type/enum-declaration';
+import { TypeDeclaration } from '../type/type-declaration';
 import { VariableUsage } from './variable-usage';
 
 export interface VariableDeclaration {
     type: string;
+    typeDeclaration?: TypeDeclaration;
+    enumDeclaration?: EnumDeclaration;
     name: string;
     nameOriginalRange: Range;
     originalRange: Range;
