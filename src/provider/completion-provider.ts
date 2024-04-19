@@ -54,7 +54,7 @@ import { toStringMacroParameterList } from '../interface/macro/macro';
 import { ShaderStage } from '../interface/shader-stage';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
 import { EnumDeclaration, toStringEnumDeclaration } from '../interface/type/enum-declaration';
-import { TypeDeclaration, toStringTypeDeclaration } from '../interface/type/type-declaration';
+import { TypeDeclaration, TypeKeyword, toStringTypeDeclaration } from '../interface/type/type-declaration';
 import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
 import { getPredefineSnapshot } from '../processor/include-processor';
 import { getIncludeCompletionInfos } from '../processor/include-resolver';
@@ -116,8 +116,8 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     result.push(
         ...tds.map<CompletionItem>((td) => ({
             label: td.name,
-            kind: getKind(CompletionItemKind.Struct),
-            detail: getDetail(td, 'struct'),
+            kind: getTypeCompletionItemKind(td.type),
+            detail: getDetail(td, td.type),
             documentation: getTypeDeclarationDocumentation(td),
         }))
     );
@@ -154,6 +154,16 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     addCompletionItems(result, hlslFunctions, CompletionItemKind.Function, 'function');
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, hlslSnippets, CompletionItemKind.Snippet, 'snippet');
+    }
+}
+
+function getTypeCompletionItemKind(type: TypeKeyword): CompletionItemKind | undefined {
+    if (type === 'class') {
+        return getKind(CompletionItemKind.Class);
+    } else if (type === 'interface') {
+        return getKind(CompletionItemKind.Interface);
+    } else {
+        return getKind(CompletionItemKind.Struct);
     }
 }
 

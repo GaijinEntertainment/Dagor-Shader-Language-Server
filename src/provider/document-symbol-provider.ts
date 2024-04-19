@@ -20,6 +20,7 @@ import {
     toStringMacroDeclarationHeader,
     toStringMacroDeclarationParameterList,
 } from '../interface/macro/macro-declaration';
+import { TypeKeyword } from '../interface/type/type-declaration';
 import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
 
 export async function documentSymbolProvider(
@@ -52,10 +53,10 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
         if (td.isVisible) {
             dss.push({
                 name: td.name,
-                kind: getKind(SymbolKind.Struct),
+                kind: getTypeSymbolKind(td.type),
                 range: td.originalRange,
                 selectionRange: td.nameOriginalRange,
-                detail: 'struct',
+                detail: td.type,
                 children: td.members.map((m) => ({
                     name: m.name,
                     kind: getKind(SymbolKind.Field),
@@ -190,7 +191,7 @@ function createSymbolInformations(snapshot: Snapshot, uri: DocumentUri): SymbolI
     for (const td of tds) {
         result.push({
             name: td.name,
-            kind: getKind(SymbolKind.Struct),
+            kind: getTypeSymbolKind(td.type),
             containerName: td.name,
             location: {
                 range: td.originalRange,
@@ -252,5 +253,15 @@ function getKind(kind: SymbolKind): SymbolKind {
         }
     } else {
         return kinds.includes(kind) ? kind : SymbolKind.File;
+    }
+}
+
+function getTypeSymbolKind(type: TypeKeyword): SymbolKind {
+    if (type === 'class') {
+        return getKind(SymbolKind.Class);
+    } else if (type === 'interface') {
+        return getKind(SymbolKind.Interface);
+    } else {
+        return getKind(SymbolKind.Struct);
     }
 }

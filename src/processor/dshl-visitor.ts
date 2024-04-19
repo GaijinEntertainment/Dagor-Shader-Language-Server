@@ -37,7 +37,7 @@ import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
 import { EnumUsage } from '../interface/type/enum-usage';
-import { TypeDeclaration } from '../interface/type/type-declaration';
+import { TypeDeclaration, TypeKeyword } from '../interface/type/type-declaration';
 import { TypeUsage } from '../interface/type/type-usage';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { VariableUsage } from '../interface/variable/variable-usage';
@@ -511,6 +511,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             ? this.snapshot.getOriginalRange(identifier.start.startIndex, identifier.stop!.stopIndex + 1)
             : originalRange;
         const td: TypeDeclaration = {
+            type: this.getType(ctx.type_keyowrd().text),
             name: identifier ? identifier.text : '',
             uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
             originalRange,
@@ -524,6 +525,14 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         this.type = td;
         this.visitChildren(ctx);
         this.type = null;
+    }
+
+    private getType(type: string): TypeKeyword {
+        if (type === 'struct' || type === 'class' || type === 'interface') {
+            return type;
+        } else {
+            return 'struct';
+        }
     }
 
     public visitEnum_declaration(ctx: Enum_declarationContext): void {
