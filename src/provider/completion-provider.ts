@@ -46,11 +46,11 @@ import {
     hlslVectorMatrixStringTypes,
 } from '../helper/hlsl-info';
 import { toStringBlockType } from '../interface/block/block-declaration';
-import { DefineStatement } from '../interface/define-statement';
+import { DefineStatement, toStringDefineStatementParameterList } from '../interface/define-statement';
 import { toStringFunctionParameters } from '../interface/function/function-declaration';
 import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
-import { toStringMacroParameters } from '../interface/macro/macro';
+import { toStringMacroParameterList } from '../interface/macro/macro';
 import { ShaderStage } from '../interface/shader-stage';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
 import { EnumDeclaration, toStringEnumDeclaration } from '../interface/type/enum-declaration';
@@ -160,11 +160,15 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
 function addDefines(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
     const predefineSnapshot = getPredefineSnapshot();
     if (predefineSnapshot) {
-        addCompletionItems(
-            result,
-            predefineSnapshot.defineStatements.map((ds) => ({ name: ds.name })),
-            CompletionItemKind.Constant,
-            'define'
+        result.push(
+            ...predefineSnapshot.defineStatements.map<CompletionItem>((ds) =>
+                getCompletionItem(
+                    ds,
+                    CompletionItemKind.Constant,
+                    'define',
+                    `${toStringDefineStatementParameterList(ds)}`
+                )
+            )
         );
     }
     if (snapshot.uri.endsWith(HLSL_EXTENSION) || snapshot.uri.endsWith(HLSLI_EXTENSION)) {
@@ -205,7 +209,7 @@ function addDefinesInHlslBlocks(
 }
 
 function addDefinesIfAvailable(result: CompletionItem[], dss: DefineStatement[], position: Position): void {
-    const defines: LanguageElementInfo[] = [];
+    const defines: DefineStatement[] = [];
     for (const ds of dss) {
         if (
             isBeforeOrEqual(ds.codeCompletionPosition, position) &&
@@ -213,10 +217,14 @@ function addDefinesIfAvailable(result: CompletionItem[], dss: DefineStatement[],
             !result.some((r) => r.label === ds.name && r.kind === CompletionItemKind.Constant) &&
             !defines.some((d) => d.name === ds.name)
         ) {
-            defines.push({ name: ds.name });
+            defines.push(ds);
         }
     }
-    addCompletionItems(result, defines, CompletionItemKind.Constant, 'define');
+    result.push(
+        ...defines.map<CompletionItem>((ds) =>
+            getCompletionItem(ds, CompletionItemKind.Constant, 'define', `${toStringDefineStatementParameterList(ds)}`)
+        )
+    );
 }
 
 function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
@@ -243,7 +251,7 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     );
     result.push(
         ...macros.map<CompletionItem>((m) =>
-            getCompletionItem(m, CompletionItemKind.Constant, 'macro', `(${toStringMacroParameters(m)})`)
+            getCompletionItem(m, CompletionItemKind.Constant, 'macro', `${toStringMacroParameterList(m)}`)
         )
     );
     if (getCapabilities().completionSnippets) {

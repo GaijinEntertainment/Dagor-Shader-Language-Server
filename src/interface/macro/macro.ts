@@ -1,5 +1,5 @@
 import { positionsEqual } from '../../helper/helper';
-import { MacroDeclaration } from './macro-declaration';
+import { MacroDeclaration, toStringMacroDeclarationParameterList } from './macro-declaration';
 import { MacroUsage } from './macro-usage';
 
 export interface Macro {
@@ -22,10 +22,10 @@ export function isDeclarationAlreadyAdded(macro: Macro, md: MacroDeclaration): b
     );
 }
 
-export function toStringMacroParameters(m: Macro): string {
+export function toStringMacroParameterList(m: Macro): string {
     const md = m.declarations[0];
     if (!md) {
-        return '';
+        return '()';
     }
-    return md.parameters.map((mp) => mp.name).join(', ');
+    return toStringMacroDeclarationParameterList(md);
 }
