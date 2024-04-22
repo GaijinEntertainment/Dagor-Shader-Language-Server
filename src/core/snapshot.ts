@@ -701,6 +701,14 @@ export class Snapshot {
             if (td) {
                 return td;
             }
+            for (const hb of scope.hlslBlocks) {
+                const td = hb.typeDeclarations.find(
+                    (td) => isBeforeOrEqual(td.originalRange.end, position) && td.name === name
+                );
+                if (td) {
+                    return td;
+                }
+            }
             if (onlyRoot) {
                 return null;
             }
@@ -721,6 +729,14 @@ export class Snapshot {
             );
             if (ed) {
                 return ed;
+            }
+            for (const hb of scope.hlslBlocks) {
+                const ed = hb.enumDeclarations.find(
+                    (ed) => isBeforeOrEqual(ed.originalRange.end, position) && ed.name === name
+                );
+                if (ed) {
+                    return ed;
+                }
             }
             if (onlyRoot) {
                 return null;
