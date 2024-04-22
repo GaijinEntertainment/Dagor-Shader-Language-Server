@@ -35,7 +35,14 @@ async function refreshConfiguration(initial = false): Promise<void> {
     const newLaunchOptions = await connection.workspace.getConfiguration(LAUNCH_OPTION_CURRENT_CONFIG);
     newConfiguration.launchOptions = {};
     newConfiguration.launchOptions.buildCommand = newLaunchOptions?.Driver?.BuildCommand;
-    newConfiguration.launchOptions.game = newLaunchOptions?.Game;
+    const game = newLaunchOptions?.Game;
+    if (game) {
+        if (typeof game === 'string') {
+            newConfiguration.launchOptions.game = game;
+        } else if (typeof game === 'object') {
+            newConfiguration.launchOptions.game = game.Name;
+        }
+    }
     newConfiguration.launchOptions.platform = newLaunchOptions?.Platform;
     configuration = newConfiguration;
     if (!initial) {

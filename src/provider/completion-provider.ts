@@ -46,12 +46,15 @@ import {
     hlslVectorMatrixStringTypes,
 } from '../helper/hlsl-info';
 import { toStringBlockType } from '../interface/block/block-declaration';
-import { DefineStatement } from '../interface/define-statement';
+import { DefineStatement, toStringDefineStatementParameterList } from '../interface/define-statement';
 import { toStringFunctionParameters } from '../interface/function/function-declaration';
 import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
+import { toStringMacroParameterList } from '../interface/macro/macro';
 import { ShaderStage } from '../interface/shader-stage';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
+import { EnumDeclaration, toStringEnumDeclaration } from '../interface/type/enum-declaration';
+import { TypeDeclaration, TypeKeyword, toStringTypeDeclaration } from '../interface/type/type-declaration';
 import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
 import { getPredefineSnapshot } from '../processor/include-processor';
 import { getIncludeCompletionInfos } from '../processor/include-resolver';
@@ -109,6 +112,26 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
         CompletionItemKind.Keyword,
         'DSHL preprocessor directive'
     );
+    const tds = snapshot.getTypeDeclarationsInScope(position);
+    result.push(
+        ...tds.map<CompletionItem>((td) => ({
+            label: td.name,
+            kind: getTypeCompletionItemKind(td.type),
+            detail: getDetail(td, td.type),
+            documentation: getTypeDeclarationDocumentation(td),
+        }))
+    );
+    const eds = snapshot.getEnumDeclarationsInScope(position);
+    result.push(
+        ...eds
+            .filter((ed) => ed.name)
+            .map<CompletionItem>((ed) => ({
+                label: ed.name!,
+                kind: getKind(CompletionItemKind.Enum),
+                detail: `${ed.name} - enum ${ed.isClass ? 'class' : ''}`,
+                documentation: getEnumDeclarationDocumentation(ed),
+            }))
+    );
     const vds = snapshot.getVariableDeclarationsInScope(position, true);
     addCompletionItems(
         result,
@@ -134,14 +157,28 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     }
 }
 
+function getTypeCompletionItemKind(type: TypeKeyword): CompletionItemKind | undefined {
+    if (type === 'class') {
+        return getKind(CompletionItemKind.Class);
+    } else if (type === 'interface') {
+        return getKind(CompletionItemKind.Interface);
+    } else {
+        return getKind(CompletionItemKind.Struct);
+    }
+}
+
 function addDefines(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
     const predefineSnapshot = getPredefineSnapshot();
     if (predefineSnapshot) {
-        addCompletionItems(
-            result,
-            predefineSnapshot.defineStatements.map((ds) => ({ name: ds.name })),
-            CompletionItemKind.Constant,
-            'define'
+        result.push(
+            ...predefineSnapshot.defineStatements.map<CompletionItem>((ds) =>
+                getCompletionItem(
+                    ds,
+                    CompletionItemKind.Constant,
+                    'define',
+                    `${toStringDefineStatementParameterList(ds)}`
+                )
+            )
         );
     }
     if (snapshot.uri.endsWith(HLSL_EXTENSION) || snapshot.uri.endsWith(HLSLI_EXTENSION)) {
@@ -182,7 +219,7 @@ function addDefinesInHlslBlocks(
 }
 
 function addDefinesIfAvailable(result: CompletionItem[], dss: DefineStatement[], position: Position): void {
-    const defines: LanguageElementInfo[] = [];
+    const defines: DefineStatement[] = [];
     for (const ds of dss) {
         if (
             isBeforeOrEqual(ds.codeCompletionPosition, position) &&
@@ -190,10 +227,14 @@ function addDefinesIfAvailable(result: CompletionItem[], dss: DefineStatement[],
             !result.some((r) => r.label === ds.name && r.kind === CompletionItemKind.Constant) &&
             !defines.some((d) => d.name === ds.name)
         ) {
-            defines.push({ name: ds.name });
+            defines.push(ds);
         }
     }
-    addCompletionItems(result, defines, CompletionItemKind.Constant, 'define');
+    result.push(
+        ...defines.map<CompletionItem>((ds) =>
+            getCompletionItem(ds, CompletionItemKind.Constant, 'define', `${toStringDefineStatementParameterList(ds)}`)
+        )
+    );
 }
 
 function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
@@ -215,7 +256,14 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
             )
         )
     );
-    addCompletionItems(result, getMacros(snapshot, position), CompletionItemKind.Constant, 'macro');
+    const macros = snapshot.macros.filter((m) =>
+        m.declarations.some((md) => isBeforeOrEqual(md.codeCompletionPosition, position))
+    );
+    result.push(
+        ...macros.map<CompletionItem>((m) =>
+            getCompletionItem(m, CompletionItemKind.Constant, 'macro', `${toStringMacroParameterList(m)}`)
+        )
+    );
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, dshlSnippets, CompletionItemKind.Snippet, 'snippet');
     }
@@ -240,14 +288,6 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
         CompletionItemKind.Module,
         'block'
     );
-}
-
-function getMacros(snapshot: Snapshot, position: Position): LanguageElementInfo[] {
-    return snapshot.macros
-        .filter((m) => m.declarations.some((md) => isBeforeOrEqual(md.codeCompletionPosition, position)))
-        .map((m) => ({
-            name: m.name,
-        }));
 }
 
 function getMacroParameters(snapshot: Snapshot, position: Position): LanguageElementInfo[] {
@@ -319,6 +359,40 @@ function getDocumentation(item: LanguageElementInfo): MarkupContent | undefined 
         return {
             kind: MarkupKind.Markdown,
             value: documentationText + createDocumentationLinks(item.links),
+        };
+    } else if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.PlainText)) {
+        return {
+            kind: MarkupKind.PlainText,
+            value: documentationText,
+        };
+    } else {
+        return undefined;
+    }
+}
+
+function getTypeDeclarationDocumentation(td: TypeDeclaration): MarkupContent | undefined {
+    const documentationText = toStringTypeDeclaration(td);
+    if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.Markdown)) {
+        return {
+            kind: MarkupKind.Markdown,
+            value: '```hlsl\n' + documentationText + '\n```',
+        };
+    } else if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.PlainText)) {
+        return {
+            kind: MarkupKind.PlainText,
+            value: documentationText,
+        };
+    } else {
+        return undefined;
+    }
+}
+
+function getEnumDeclarationDocumentation(ed: EnumDeclaration): MarkupContent | undefined {
+    const documentationText = toStringEnumDeclaration(ed);
+    if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.Markdown)) {
+        return {
+            kind: MarkupKind.Markdown,
+            value: '```hlsl\n' + documentationText + '\n```',
         };
     } else if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.PlainText)) {
         return {

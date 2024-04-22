@@ -14,6 +14,7 @@ const capabilities: Capabilities = {
     diagnostics: false,
     diagnosticsVersion: false,
     documentSymbolHierarchy: false,
+    documentSymbolSymbolKinds: [],
     foldingRangeKinds: [],
     hoverFormat: [],
     implementationLink: false,
@@ -38,6 +39,8 @@ export function initializeCapabilities(clientCapabilities: ClientCapabilities): 
     capabilities.diagnosticsVersion = !!clientCapabilities.textDocument?.publishDiagnostics?.versionSupport;
     capabilities.documentSymbolHierarchy =
         !!clientCapabilities.textDocument?.documentSymbol?.hierarchicalDocumentSymbolSupport;
+    capabilities.documentSymbolSymbolKinds =
+        clientCapabilities.textDocument?.documentSymbol?.symbolKind?.valueSet ?? [];
     capabilities.foldingRangeKinds = clientCapabilities.textDocument?.foldingRange?.foldingRangeKind?.valueSet ?? [];
     capabilities.hoverFormat = clientCapabilities.textDocument?.hover?.contentFormat ?? [];
     capabilities.implementationLink = !!clientCapabilities.textDocument?.implementation?.linkSupport;

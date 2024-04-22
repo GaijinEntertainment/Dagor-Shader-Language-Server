@@ -20,6 +20,7 @@ import {
     toStringMacroDeclarationHeader,
     toStringMacroDeclarationParameterList,
 } from '../interface/macro/macro-declaration';
+import { TypeKeyword } from '../interface/type/type-declaration';
 import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
 
 export async function documentSymbolProvider(
@@ -52,16 +53,33 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
         if (td.isVisible) {
             dss.push({
                 name: td.name,
-                kind: SymbolKind.Struct,
+                kind: getTypeSymbolKind(td.type),
                 range: td.originalRange,
                 selectionRange: td.nameOriginalRange,
-                detail: 'struct',
+                detail: td.type,
                 children: td.members.map((m) => ({
                     name: m.name,
-                    kind: SymbolKind.Field,
+                    kind: getKind(SymbolKind.Field),
                     range: m.originalRange,
                     selectionRange: m.nameOriginalRange,
                     detail: m.type,
+                })),
+            });
+        }
+    }
+    for (const ed of scope.enumDeclarations) {
+        if (ed.isVisible) {
+            dss.push({
+                name: ed.name ?? '<anonymous>',
+                kind: getKind(SymbolKind.Enum),
+                range: ed.originalRange,
+                selectionRange: ed.nameOriginalRange ?? ed.originalRange,
+                detail: 'enum' + (ed.isClass ? ' class' : '') + (ed.type ? ` (${ed.type})` : ''),
+                children: ed.members.map((m) => ({
+                    name: m.name,
+                    kind: getKind(SymbolKind.EnumMember),
+                    range: m.originalRange,
+                    selectionRange: m.originalRange,
                 })),
             });
         }
@@ -70,7 +88,7 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
         if (vd.isVisible) {
             dss.push({
                 name: vd.name,
-                kind: SymbolKind.Variable,
+                kind: getKind(SymbolKind.Variable),
                 range: vd.originalRange,
                 selectionRange: vd.nameOriginalRange,
                 detail: getVariableTypeWithInterval(vd),
@@ -82,7 +100,7 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
             const sdss: DocumentSymbol[] = [];
             dss.push({
                 name: childScope.shaderDeclarations.map((sd) => sd.name).join(', '),
-                kind: SymbolKind.Module,
+                kind: getKind(SymbolKind.Module),
                 range: childScope.shaderDeclarations[0].originalRange,
                 selectionRange: childScope.shaderDeclarations[0].originalRange,
                 detail: 'shader',
@@ -96,7 +114,7 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
                 const sdss: DocumentSymbol[] = [];
                 dss.push({
                     name: childScope.blockDeclaration.name,
-                    kind: SymbolKind.Module,
+                    kind: getKind(SymbolKind.Module),
                     range: childScope.blockDeclaration.originalRange,
                     selectionRange: childScope.blockDeclaration.originalRange,
                     detail: toStringBlockType(childScope.blockDeclaration),
@@ -113,7 +131,7 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
                 );
                 dss.push({
                     name: childScope.macroDeclaration.name,
-                    kind: SymbolKind.Constant,
+                    kind: getKind(SymbolKind.Constant),
                     range: childScope.macroDeclaration.originalRange,
                     selectionRange: childScope.macroDeclaration.nameOriginalRange,
                     detail: toStringMacroDeclarationParameterList(childScope.macroDeclaration),
@@ -132,7 +150,7 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
 function defineToDocumentSymbol(ds: DefineStatement): DocumentSymbol {
     return {
         name: ds.name,
-        kind: SymbolKind.Constant,
+        kind: getKind(SymbolKind.Constant),
         range: ds.originalRange,
         selectionRange: ds.nameOriginalRange,
         detail: toStringDefineStatementParameterList(ds),
@@ -146,7 +164,7 @@ function createSymbolInformations(snapshot: Snapshot, uri: DocumentUri): SymbolI
         const macroHeader = toStringMacroDeclarationHeader(md);
         result.push({
             name: macroHeader,
-            kind: SymbolKind.Constant,
+            kind: getKind(SymbolKind.Constant),
             containerName: macroHeader,
             location: {
                 range: md.originalRange,
@@ -157,11 +175,35 @@ function createSymbolInformations(snapshot: Snapshot, uri: DocumentUri): SymbolI
     }
     const dss = snapshot.defineStatements.filter((ds) => ds.isVisible);
     addDefines(result, dss, uri);
+    const eds = snapshot.getAllEnumDeclarations();
+    for (const ed of eds) {
+        result.push({
+            name: ed.name ?? '<anonymous>',
+            kind: getKind(SymbolKind.Enum),
+            containerName: ed.name ?? '<anonymous>',
+            location: {
+                range: ed.originalRange,
+                uri: ed.uri,
+            },
+        });
+    }
+    const tds = snapshot.getAllTypeDeclarations();
+    for (const td of tds) {
+        result.push({
+            name: td.name,
+            kind: getTypeSymbolKind(td.type),
+            containerName: td.name,
+            location: {
+                range: td.originalRange,
+                uri: td.uri,
+            },
+        });
+    }
     const vds = snapshot.getAllVariableDeclarations();
     for (const vd of vds) {
         result.push({
             name: vd.name,
-            kind: SymbolKind.Variable,
+            kind: getKind(SymbolKind.Variable),
             containerName: vd.name,
             location: {
                 range: vd.originalRange,
@@ -174,7 +216,7 @@ function createSymbolInformations(snapshot: Snapshot, uri: DocumentUri): SymbolI
             const name = scope.shaderDeclarations.map((sd) => sd.name).join(', ');
             result.push({
                 name,
-                kind: SymbolKind.Module,
+                kind: getKind(SymbolKind.Module),
                 containerName: name,
                 location: {
                     uri: scope.shaderDeclarations[0].uri,
@@ -191,12 +233,35 @@ function addDefines(result: SymbolInformation[], dss: DefineStatement[], uri: Do
         const defineHeader = toStringDefineStatementHeader(ds);
         result.push({
             name: defineHeader,
-            kind: SymbolKind.Constant,
+            kind: getKind(SymbolKind.Constant),
             containerName: defineHeader,
             location: {
                 range: ds.originalRange,
                 uri,
             },
         });
+    }
+}
+
+function getKind(kind: SymbolKind): SymbolKind {
+    const kinds = getCapabilities().documentSymbolSymbolKinds;
+    if (!kinds) {
+        if (kind <= SymbolKind.Array) {
+            return kind;
+        } else {
+            return SymbolKind.File;
+        }
+    } else {
+        return kinds.includes(kind) ? kind : SymbolKind.File;
+    }
+}
+
+function getTypeSymbolKind(type: TypeKeyword): SymbolKind {
+    if (type === 'class') {
+        return getKind(SymbolKind.Class);
+    } else if (type === 'interface') {
+        return getKind(SymbolKind.Interface);
+    } else {
+        return getKind(SymbolKind.Struct);
     }
 }

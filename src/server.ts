@@ -35,6 +35,7 @@ import { hoverProvider } from './provider/hover-provider';
 import { implementationProvider } from './provider/implementation-provider';
 import { inlayHintProvider } from './provider/inlay-hint-provider';
 import { signatureHelpProvider } from './provider/signature-help-provider';
+import { typeDefinitionProvider } from './provider/type-definition-provider';
 
 export abstract class Server {
     private static server: Server;
@@ -114,6 +115,7 @@ export abstract class Server {
             },
             declarationProvider: true,
             definitionProvider: true,
+            typeDefinitionProvider: true,
             documentHighlightProvider: true,
             documentSymbolProvider: true,
             foldingRangeProvider: true,
@@ -172,6 +174,7 @@ export abstract class Server {
         this.connection.onCompletion(completionProvider);
         this.connection.onDeclaration(declarationProvider);
         this.connection.onDefinition(definitionProvider);
+        this.connection.onTypeDefinition(typeDefinitionProvider);
         this.connection.onDocumentHighlight(documentHighlightProvider);
         this.connection.onDocumentSymbol(documentSymbolProvider);
         this.connection.onFoldingRanges(foldingRangesProvider);

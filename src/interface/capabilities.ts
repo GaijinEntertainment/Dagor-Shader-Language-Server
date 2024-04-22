@@ -1,4 +1,4 @@
-import { CompletionItemKind, FoldingRangeKind, MarkupKind } from 'vscode-languageserver';
+import { CompletionItemKind, FoldingRangeKind, MarkupKind, SymbolKind } from 'vscode-languageserver';
 
 export interface Capabilities {
     completionDocumentationFormat: MarkupKind[];
@@ -12,6 +12,7 @@ export interface Capabilities {
     diagnostics: boolean;
     diagnosticsVersion: boolean;
     documentSymbolHierarchy: boolean;
+    documentSymbolSymbolKinds: SymbolKind[];
     foldingRangeKinds: FoldingRangeKind[];
     hoverFormat: MarkupKind[];
     implementationLink: boolean;

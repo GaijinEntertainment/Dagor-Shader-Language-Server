@@ -199,7 +199,7 @@ type_declaration:
 
 enum_declaration:
 	ENUM CLASS? (hlsl_identifier (COLON hlsl_identifier)?)? LCB (
-		enum_member ( COMMA enum_member)*
+		enum_member ( COMMA enum_member)* COMMA?
 	)? RCB;
 
 enum_member: hlsl_identifier (ASSIGN expression)?;
@@ -239,6 +239,7 @@ statement:
 	| shader_constant
 	| variable_declaration_statement
 	| type_declaration_statement
+	| enum_declaration_statement
 	| return_statement
 	| break_statement
 	| continue_statement

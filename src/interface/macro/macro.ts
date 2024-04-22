@@ -1,5 +1,5 @@
 import { positionsEqual } from '../../helper/helper';
-import { MacroDeclaration } from './macro-declaration';
+import { MacroDeclaration, toStringMacroDeclarationParameterList } from './macro-declaration';
 import { MacroUsage } from './macro-usage';
 
 export interface Macro {
@@ -20,4 +20,12 @@ export function isDeclarationAlreadyAdded(macro: Macro, md: MacroDeclaration): b
     return macro.declarations.some(
         (md2) => md2.uri === md.uri && positionsEqual(md2.originalRange.start, md.originalRange.start)
     );
+}
+
+export function toStringMacroParameterList(m: Macro): string {
+    const md = m.declarations[0];
+    if (!md) {
+        return '()';
+    }
+    return toStringMacroDeclarationParameterList(md);
 }

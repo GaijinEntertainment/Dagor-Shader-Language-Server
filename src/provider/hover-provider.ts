@@ -13,6 +13,8 @@ import { toStringMacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroUsage, getBestMacroDeclaration } from '../interface/macro/macro-usage';
 import { toStringShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
+import { EnumDeclaration, toStringEnumDeclaration } from '../interface/type/enum-declaration';
+import { TypeDeclaration, toStringTypeDeclaration } from '../interface/type/type-declaration';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 
 export async function hoverProvider(params: HoverParams): Promise<Hover | undefined | null> {
@@ -34,6 +36,20 @@ export async function hoverProvider(params: HoverParams): Promise<Hover | undefi
         return {
             contents: createDefineHoverContent(dc),
             range: dc.nameOriginalRange,
+        };
+    }
+    const tu = snapshot.getTypeUsageAt(params.position);
+    if (tu) {
+        return {
+            contents: createTypeHoverContent(tu.declaration),
+            range: tu.originalRange,
+        };
+    }
+    const eu = snapshot.getEnumUsageAt(params.position);
+    if (eu) {
+        return {
+            contents: createEnumHoverContent(eu.declaration),
+            range: eu.originalRange,
         };
     }
     const id = snapshot.getIntervalDeclarationAt(params.position);
@@ -121,6 +137,42 @@ function getDefineValue(dc: DefineContext): string {
         } else {
             return `${define}\nExpands to:\n${dc.expansion}`;
         }
+    } else {
+        return '';
+    }
+}
+
+function createTypeHoverContent(td: TypeDeclaration): MarkupContent {
+    return {
+        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
+        value: getTypeValue(td),
+    };
+}
+
+function getTypeValue(td: TypeDeclaration): string {
+    const declaration = toStringTypeDeclaration(td);
+    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
+        return `\`\`\`hlsl\n${declaration}\n\`\`\``;
+    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
+        return declaration;
+    } else {
+        return '';
+    }
+}
+
+function createEnumHoverContent(ed: EnumDeclaration): MarkupContent {
+    return {
+        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
+        value: getEnumValue(ed),
+    };
+}
+
+function getEnumValue(ed: EnumDeclaration): string {
+    const declaration = toStringEnumDeclaration(ed);
+    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
+        return `\`\`\`hlsl\n${declaration}\n\`\`\``;
+    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
+        return declaration;
     } else {
         return '';
     }

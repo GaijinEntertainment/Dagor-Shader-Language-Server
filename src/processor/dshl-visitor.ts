@@ -15,6 +15,7 @@ import {
     Dshl_statement_blockContext,
     Dshl_supports_statementContext,
     Dshl_variable_declarationContext,
+    Enum_declarationContext,
     ExpressionContext,
     ParameterContext,
     State_objectContext,
@@ -34,7 +35,10 @@ import { IntervalDeclaration } from '../interface/interval-declaration';
 import { shaderStageKeywordToEnum } from '../interface/shader-stage';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
-import { TypeDeclaration } from '../interface/type/type-declaration';
+import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { EnumUsage } from '../interface/type/enum-usage';
+import { TypeDeclaration, TypeKeyword } from '../interface/type/type-declaration';
+import { TypeUsage } from '../interface/type/type-usage';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { VariableUsage } from '../interface/variable/variable-usage';
 
@@ -507,11 +511,13 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             ? this.snapshot.getOriginalRange(identifier.start.startIndex, identifier.stop!.stopIndex + 1)
             : originalRange;
         const td: TypeDeclaration = {
+            type: this.getType(ctx.type_keyowrd().text),
             name: identifier ? identifier.text : '',
             uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
             originalRange,
             nameOriginalRange,
             isVisible: visible,
+            isBuiltIn: false,
             usages: [],
             members: [],
         };
@@ -519,6 +525,48 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         this.type = td;
         this.visitChildren(ctx);
         this.type = null;
+    }
+
+    private getType(type: string): TypeKeyword {
+        if (type === 'struct' || type === 'class' || type === 'interface') {
+            return type;
+        } else {
+            return 'struct';
+        }
+    }
+
+    public visitEnum_declaration(ctx: Enum_declarationContext): void {
+        const visible = this.isVisible(ctx.LCB().symbol.startIndex);
+        if (visible) {
+            const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
+            this.snapshot.foldingRanges.push(range);
+        }
+        const identifier = ctx.hlsl_identifier().length ? ctx.hlsl_identifier(0) : null;
+        const type = ctx.hlsl_identifier().length > 1 ? ctx.hlsl_identifier(1) : null;
+        const originalRange = this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const nameOriginalRange = identifier
+            ? this.snapshot.getOriginalRange(identifier.start.startIndex, identifier.stop!.stopIndex + 1)
+            : undefined;
+        const ed: EnumDeclaration = {
+            name: identifier ? identifier.text : undefined,
+            type: type ? type.text : undefined,
+            isClass: !!ctx.CLASS(),
+            uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
+            originalRange,
+            nameOriginalRange,
+            isVisible: visible,
+            members: ctx.enum_member().map((em) => ({
+                name: em.hlsl_identifier().text,
+                nameOriginalRange: this.snapshot.getOriginalRange(
+                    em.hlsl_identifier().start.startIndex,
+                    em.hlsl_identifier().stop!.stopIndex + 1
+                ),
+                originalRange: this.snapshot.getOriginalRange(em.start.startIndex, em.stop!.stopIndex + 1),
+            })),
+            usages: [],
+        };
+        this.scope.enumDeclarations.push(ed);
+        this.visitChildren(ctx);
     }
 
     public visitState_object(ctx: State_objectContext): void {
@@ -538,8 +586,30 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 identifier.start.startIndex,
                 identifier.stop!.stopIndex + 1
             );
+            const td = this.snapshot.getTypeDeclarationFor(type.text, nameOriginalRange.start);
+            if (td) {
+                const tu: TypeUsage = {
+                    declaration: td,
+                    originalRange: this.snapshot.getOriginalRange(type.start.startIndex, type.stop!.stopIndex + 1),
+                    isVisible: visible,
+                };
+                td.usages.push(tu);
+                this.scope.typeUsages.push(tu);
+            }
+            const ed = this.snapshot.getEnumDeclarationFor(type.text, nameOriginalRange.start);
+            if (ed) {
+                const eu: EnumUsage = {
+                    declaration: ed,
+                    originalRange: this.snapshot.getOriginalRange(type.start.startIndex, type.stop!.stopIndex + 1),
+                    isVisible: visible,
+                };
+                ed.usages.push(eu);
+                this.scope.enumUsages.push(eu);
+            }
             const vd: VariableDeclaration = {
                 type: type.text,
+                typeDeclaration: td ?? undefined,
+                enumDeclaration: ed ?? undefined,
                 name: identifier.text,
                 nameEndPosition: ctx.stop!.stopIndex + 1,
                 originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
@@ -568,8 +638,30 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 identifier.start.startIndex,
                 identifier.stop!.stopIndex + 1
             );
+            const td = this.snapshot.getTypeDeclarationFor(type.text, nameOriginalRange.start);
+            if (td) {
+                const tu: TypeUsage = {
+                    declaration: td,
+                    originalRange: this.snapshot.getOriginalRange(type.start.startIndex, type.stop!.stopIndex + 1),
+                    isVisible: visible,
+                };
+                td.usages.push(tu);
+                this.scope.typeUsages.push(tu);
+            }
+            const ed = this.snapshot.getEnumDeclarationFor(type.text, nameOriginalRange.start);
+            if (ed) {
+                const eu: EnumUsage = {
+                    declaration: ed,
+                    originalRange: this.snapshot.getOriginalRange(type.start.startIndex, type.stop!.stopIndex + 1),
+                    isVisible: visible,
+                };
+                ed.usages.push(eu);
+                this.scope.enumUsages.push(eu);
+            }
             const vd: VariableDeclaration = {
                 type: type.text,
+                typeDeclaration: td ?? undefined,
+                enumDeclaration: ed ?? undefined,
                 name: identifier.text,
                 nameEndPosition: ctx.stop!.stopIndex + 1,
                 originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
@@ -627,6 +719,8 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             shaderUsages: [],
             typeDeclarations: [],
             typeUsages: [],
+            enumDeclarations: [],
+            enumUsages: [],
             variableDeclarations: [],
             variableUsages: [],
             functionDeclarations: [],

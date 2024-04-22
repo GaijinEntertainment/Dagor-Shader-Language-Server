@@ -7,6 +7,8 @@ import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { ShaderStage } from '../interface/shader-stage';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
+import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { EnumUsage } from '../interface/type/enum-usage';
 import { TypeDeclaration } from '../interface/type/type-declaration';
 import { TypeUsage } from '../interface/type/type-usage';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
@@ -15,6 +17,8 @@ import { VariableUsage } from '../interface/variable/variable-usage';
 export interface Scope {
     shaderDeclarations: ShaderDeclaration[];
     shaderUsages: ShaderUsage[];
+    enumDeclarations: EnumDeclaration[];
+    enumUsages: EnumUsage[];
     typeDeclarations: TypeDeclaration[];
     typeUsages: TypeUsage[];
     variableDeclarations: VariableDeclaration[];
