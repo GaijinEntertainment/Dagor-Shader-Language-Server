@@ -737,6 +737,23 @@ export class DshlVisitor
                         }
                     }
                 }
+            } else if (ctx.DOUBLE_COLON()) {
+                const identifier = ctx.hlsl_identifier(0);
+                const position = identifier.start.startIndex;
+                const originalPosition = this.snapshot.getOriginalPosition(position, true);
+                const ed = this.snapshot.getEnumDeclarationFor(identifier.text, originalPosition);
+                if (ed) {
+                    const eu: EnumUsage = {
+                        declaration: ed,
+                        originalRange: this.snapshot.getOriginalRange(
+                            identifier.start.startIndex,
+                            identifier.stop!.stopIndex + 1
+                        ),
+                        isVisible: visible,
+                    };
+                    ed.usages.push(eu);
+                    this.scope.enumUsages.push(eu);
+                }
             }
         }
         this.visitChildren(ctx);
