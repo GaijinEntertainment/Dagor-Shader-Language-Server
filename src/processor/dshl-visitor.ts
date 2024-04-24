@@ -28,6 +28,7 @@ import { Snapshot } from '../core/snapshot';
 import { Scope } from '../helper/scope';
 import { BlockDeclaration } from '../interface/block/block-declaration';
 import { BlockUsage } from '../interface/block/block-usage';
+import { ExpressionResult } from '../interface/expression-result';
 import { FunctionArgument } from '../interface/function/function-argument';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
@@ -42,7 +43,10 @@ import { TypeUsage } from '../interface/type/type-usage';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { VariableUsage } from '../interface/variable/variable-usage';
 
-export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlParserVisitor<void> {
+export class DshlVisitor
+    extends AbstractParseTreeVisitor<ExpressionResult | null>
+    implements DshlParserVisitor<ExpressionResult | null>
+{
     private snapshot: Snapshot;
     private scope: Scope;
     private rootSnapshot?: Snapshot;
@@ -71,7 +75,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
 
     // region DSHL
 
-    public visitDshl_statement_block(ctx: Dshl_statement_blockContext): void {
+    public visitDshl_statement_block(ctx: Dshl_statement_blockContext): ExpressionResult | null {
         if (this.isVisible(ctx.LCB().symbol.startIndex)) {
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
             this.snapshot.foldingRanges.push(range);
@@ -86,6 +90,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         this.scope = scope;
         this.visitChildren(ctx);
         this.scope = scope.parent!;
+        return null;
     }
 
     private getRange(startPosition: number, endPosition: number): Range {
@@ -104,7 +109,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         return this.snapshot.getOriginalRange(startPosition, endPosition);
     }
 
-    public visitDshl_hlsl_block(ctx: Dshl_hlsl_blockContext): void {
+    public visitDshl_hlsl_block(ctx: Dshl_hlsl_blockContext): ExpressionResult | null {
         if (this.isVisible(ctx.LCB().symbol.startIndex)) {
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
             this.snapshot.foldingRanges.push(range);
@@ -132,9 +137,10 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             this.globalHlslBlocks.push(scope);
         }
         this.scope = scope.parent!;
+        return null;
     }
 
-    public visitDshl_variable_declaration(ctx: Dshl_variable_declarationContext): void {
+    public visitDshl_variable_declaration(ctx: Dshl_variable_declarationContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         const type = ctx.IDENTIFIER(0);
         const identifier = ctx.IDENTIFIER(1);
@@ -162,13 +168,14 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         // }
         this.scope.variableDeclarations.push(vd);
         this.visitChildren(ctx);
+        return null;
     }
 
     private toSnakeCase(name: string): string {
         return name.replace(/(?<=[a-z0-9])([A-Z]+)/g, '_$1').toLowerCase();
     }
 
-    public visitDshl_expression?(ctx: Dshl_expressionContext): void {
+    public visitDshl_expression?(ctx: Dshl_expressionContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         if (visible) {
             const identifier = ctx.IDENTIFIER();
@@ -179,7 +186,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 if (vd) {
                     this.createVariableUsage(vd, identifier.symbol, visible);
                     this.visitChildren(ctx);
-                    return;
+                    return null;
                 } else if (this.rootSnapshot && this.contentStartPosition) {
                     const vd = this.rootSnapshot.getVariableDeclarationFor(
                         identifier.text,
@@ -189,7 +196,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     if (vd) {
                         this.createVariableUsage(vd, identifier.symbol, visible);
                         this.visitChildren(ctx);
-                        return;
+                        return null;
                     }
                 }
                 const sd = this.snapshot.getShaderDeclarationFor(identifier.text, originalPosition);
@@ -205,7 +212,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     this.scope.shaderUsages.push(su);
                     sd.usages.push(su);
                     this.visitChildren(ctx);
-                    return;
+                    return null;
                 } else if (this.rootSnapshot && this.contentStartPosition) {
                     const sd = this.snapshot.getShaderDeclarationFor(identifier.text, this.contentStartPosition, true);
                     if (sd) {
@@ -220,15 +227,16 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                         this.scope.shaderUsages.push(su);
                         sd.usages.push(su);
                         this.visitChildren(ctx);
-                        return;
+                        return null;
                     }
                 }
             }
         }
         this.visitChildren(ctx);
+        return null;
     }
 
-    public visitDshl_function_call(ctx: Dshl_function_callContext): void {
+    public visitDshl_function_call(ctx: Dshl_function_callContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         if (visible) {
             const name = ctx.IDENTIFIER();
@@ -255,6 +263,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+        return null;
     }
 
     private getFunctionArguments(ctx: Dshl_function_callContext, fd: FunctionDeclaration): FunctionArgument[] {
@@ -277,7 +286,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         return fas;
     }
 
-    public visitDshl_shader_declaration(ctx: Dshl_shader_declarationContext): void {
+    public visitDshl_shader_declaration(ctx: Dshl_shader_declarationContext): ExpressionResult | null {
         const scope = this.createScope(ctx);
         this.scope.children.push(scope);
         this.scope = scope;
@@ -302,9 +311,10 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         this.preshaders = [];
         this.shader = null;
         this.scope = scope.parent!;
+        return null;
     }
 
-    public visitDshl_interval_declaration(ctx: Dshl_interval_declarationContext): void {
+    public visitDshl_interval_declaration(ctx: Dshl_interval_declarationContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         if (visible) {
             const identifier = ctx.IDENTIFIER(0);
@@ -326,9 +336,10 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+        return null;
     }
 
-    public visitDshl_block_block(ctx: Dshl_block_blockContext): void {
+    public visitDshl_block_block(ctx: Dshl_block_blockContext): ExpressionResult | null {
         const scope = this.createScope(ctx);
         this.scope.children.push(scope);
         this.scope = scope;
@@ -349,9 +360,10 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         this.scope.blockDeclaration = bd;
         this.visitChildren(ctx);
         this.scope = scope.parent!;
+        return null;
     }
 
-    public visitDshl_supports_statement(ctx: Dshl_supports_statementContext): void {
+    public visitDshl_supports_statement(ctx: Dshl_supports_statementContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         if (visible) {
             const identifier = ctx.IDENTIFIER();
@@ -386,9 +398,10 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+        return null;
     }
 
-    public visitDshl_assignment(ctx: Dshl_assignmentContext): void {
+    public visitDshl_assignment(ctx: Dshl_assignmentContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         if (ctx.AT() && !ctx.dshl_hlsl_block()) {
             const identifier = ctx.IDENTIFIER(0);
@@ -429,6 +442,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+        return null;
     }
 
     private dshlToHlslType(dshtlType: string): string {
@@ -462,7 +476,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         }
     }
 
-    public visitDshl_assume_statement(ctx: Dshl_assume_statementContext): void {
+    public visitDshl_assume_statement(ctx: Dshl_assume_statementContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         if (visible) {
             const identifier = ctx.IDENTIFIER();
@@ -483,11 +497,12 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+        return null;
     }
 
     // region HLSL
 
-    public visitStatement_block(ctx: Statement_blockContext): void {
+    public visitStatement_block(ctx: Statement_blockContext): ExpressionResult | null {
         if (this.isVisible(ctx.start.startIndex)) {
             const range = this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex);
             this.snapshot.foldingRanges.push(range);
@@ -497,9 +512,10 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         this.scope = scope;
         this.visitChildren(ctx);
         this.scope = scope.parent!;
+        return null;
     }
 
-    public visitType_declaration(ctx: Type_declarationContext): void {
+    public visitType_declaration(ctx: Type_declarationContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.LCB().symbol.startIndex);
         if (visible) {
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
@@ -525,6 +541,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         this.type = td;
         this.visitChildren(ctx);
         this.type = null;
+        return null;
     }
 
     private getType(type: string): TypeKeyword {
@@ -535,7 +552,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         }
     }
 
-    public visitEnum_declaration(ctx: Enum_declarationContext): void {
+    public visitEnum_declaration(ctx: Enum_declarationContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.LCB().symbol.startIndex);
         if (visible) {
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
@@ -567,17 +584,19 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         };
         this.scope.enumDeclarations.push(ed);
         this.visitChildren(ctx);
+        return null;
     }
 
-    public visitState_object(ctx: State_objectContext): void {
+    public visitState_object(ctx: State_objectContext): ExpressionResult | null {
         if (this.isVisible(ctx.LCB().symbol.startIndex)) {
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
             this.snapshot.foldingRanges.push(range);
         }
         this.visitChildren(ctx);
+        return null;
     }
 
-    public visitVariable_declaration(ctx: Variable_declarationContext): void {
+    public visitVariable_declaration(ctx: Variable_declarationContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         for (const vi of ctx.variable_initialization()) {
             const type = ctx.type();
@@ -626,9 +645,10 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+        return null;
     }
 
-    public visitParameter(ctx: ParameterContext): void {
+    public visitParameter(ctx: ParameterContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         const type = ctx.type();
         if (visible && type) {
@@ -674,17 +694,23 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             this.scope.variableDeclarations.push(vd);
         }
         this.visitChildren(ctx);
+        return null;
     }
 
-    public visitExpression(ctx: ExpressionContext): void {
+    public visitExpression(ctx: ExpressionContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
+        let result: ExpressionResult | null = null;
         if (visible) {
-            for (const identifier of ctx.hlsl_identifier()) {
+            if (ctx.hlsl_identifier().length === 1 && !ctx.DOT()) {
+                const identifier = ctx.hlsl_identifier(0);
                 const position = identifier.start.startIndex;
                 const originalPosition = this.snapshot.getOriginalPosition(position, true);
                 const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
                 if (vd) {
                     this.createVariableUsage(vd, identifier.start, visible);
+                    if (vd.typeDeclaration) {
+                        result = { type: vd.typeDeclaration };
+                    }
                 } else if (this.rootSnapshot && this.contentStartPosition) {
                     const vd = this.rootSnapshot.getVariableDeclarationFor(
                         identifier.text,
@@ -693,11 +719,28 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     );
                     if (vd) {
                         this.createVariableUsage(vd, identifier.start, visible);
+                        if (vd.typeDeclaration) {
+                            result = { type: vd.typeDeclaration };
+                        }
+                    }
+                }
+            } else if (ctx.hlsl_identifier().length === 1 && ctx.DOT()) {
+                const exp = ctx.expression(0);
+                const expResult = this.visit(exp);
+                const identifier = ctx.hlsl_identifier(0);
+                if (expResult) {
+                    const m = expResult.type.members.find((m) => m.name === identifier.text);
+                    if (m) {
+                        this.createVariableUsage(m, identifier.start, visible);
+                        if (m.typeDeclaration) {
+                            result = { type: m.typeDeclaration };
+                        }
                     }
                 }
             }
         }
         this.visitChildren(ctx);
+        return result;
     }
 
     // region shared
@@ -735,5 +778,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         };
     }
 
-    protected defaultResult(): void {}
+    protected defaultResult(): ExpressionResult | null {
+        return null;
+    }
 }

@@ -571,9 +571,15 @@ export class Snapshot {
     public getVariableDeclarationAt(position: Position): VariableDeclaration | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
-            const vd = scope.variableDeclarations.find(
+            let vd = scope.variableDeclarations.find(
                 (vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, position)
             );
+            if (vd) {
+                return vd;
+            }
+            vd = scope.typeDeclarations
+                .flatMap((td) => td.members)
+                .find((vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, position));
             if (vd) {
                 return vd;
             }

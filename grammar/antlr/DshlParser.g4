@@ -331,6 +331,7 @@ expression:
 		| array_subscript
 		| DOT hlsl_identifier
 		| DOT function_call
+		| DOT
 	)
 	| (
 		INCREMENT
