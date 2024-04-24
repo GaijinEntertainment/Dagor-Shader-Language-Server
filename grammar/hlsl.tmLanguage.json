@@ -370,7 +370,7 @@
         "user-type": {
             "comment": "USER TYPE",
             "name": "entity.name.type.hlsl",
-            "match": "[a-zA-Z_]\\w*(?=((\\s|/\\*.*?\\*/)+[a-zA-Z_]\\w*))"
+            "match": "[a-zA-Z_]\\w*(?=((\\s|/\\*.*?\\*/|::)+[a-zA-Z_]\\w*))"
         },
         "variable": {
             "comment": "VARIABLE",
