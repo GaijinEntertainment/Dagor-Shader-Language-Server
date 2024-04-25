@@ -8,6 +8,7 @@ import { BlockUsage } from '../interface/block/block-usage';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
+import { ExpressionRange } from '../interface/expression-range';
 import { FunctionUsage } from '../interface/function/function-usage';
 import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
@@ -62,6 +63,7 @@ export class Snapshot {
     public rootScope: Scope;
     public preprocessingOffsets: PreprocessingOffset[] = [];
     public diagnostics: Diagnostic[] = [];
+    public expressionRanges: ExpressionRange[] = [];
 
     public constructor(version: SnapshotVersion, uri: DocumentUri, text: string, isPredefined = false) {
         this.version = version;

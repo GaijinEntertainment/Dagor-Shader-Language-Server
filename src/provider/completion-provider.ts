@@ -97,6 +97,18 @@ function isCursorInCommentOrString(snapshot: Snapshot, position: Position): bool
 }
 
 function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
+    const er = snapshot.expressionRanges.find((er) => rangeContains(er.originalRange, position));
+    if (er) {
+        result.push(
+            ...er.typeDeclaration.members.map((m) => ({
+                label: m.name,
+                kind: getKind(CompletionItemKind.Field),
+                detail: `${m.name} - member variable`,
+                labelDetails: getLabelDetails(m),
+            }))
+        );
+        return;
+    }
     addDefines(result, snapshot, position);
     addCompletionItems(result, hlslKeywords, CompletionItemKind.Keyword, 'keyword');
     addCompletionItems(result, hlslPreprocessorDirectives, CompletionItemKind.Keyword, 'preprocessor directive');

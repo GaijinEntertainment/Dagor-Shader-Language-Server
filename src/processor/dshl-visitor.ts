@@ -740,16 +740,23 @@ export class DshlVisitor
                         }
                     }
                 }
-            } else if (ctx.hlsl_identifier().length === 1 && ctx.DOT()) {
+            } else if (ctx.DOT()) {
                 const exp = ctx.expression(0);
                 const expResult = this.visit(exp);
-                const identifier = ctx.hlsl_identifier(0);
                 if (expResult) {
-                    const m = expResult.type.members.find((m) => m.name === identifier.text);
-                    if (m) {
-                        this.createVariableUsage(m, identifier.start, visible);
-                        if (m.typeDeclaration) {
-                            result = { type: m.typeDeclaration };
+                    const range = this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+                    this.snapshot.expressionRanges.push({
+                        originalRange: range,
+                        typeDeclaration: expResult.type,
+                    });
+                    if (ctx.hlsl_identifier().length === 1) {
+                        const identifier = ctx.hlsl_identifier(0);
+                        const m = expResult.type.members.find((m) => m.name === identifier.text);
+                        if (m) {
+                            this.createVariableUsage(m, identifier.start, visible);
+                            if (m.typeDeclaration) {
+                                result = { type: m.typeDeclaration };
+                            }
                         }
                     }
                 }

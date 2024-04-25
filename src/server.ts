@@ -108,7 +108,7 @@ export abstract class Server {
         return {
             textDocumentSync: TextDocumentSyncKind.Incremental,
             completionProvider: {
-                triggerCharacters: ['"', '<', '/', '\\'],
+                triggerCharacters: ['"', '<', '/', '\\', '.'],
                 completionItem: {
                     labelDetailsSupport: true,
                 },
