@@ -14,6 +14,7 @@ import { MacroUsage, getBestMacroDeclaration } from '../interface/macro/macro-us
 import { toStringShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { EnumDeclaration, toStringEnumDeclaration } from '../interface/type/enum-declaration';
+import { EnumMemberDeclaration, toStringEnumMemberDeclaration } from '../interface/type/enum-member-declaration';
 import { TypeDeclaration, toStringTypeDeclaration } from '../interface/type/type-declaration';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 
@@ -50,6 +51,13 @@ export async function hoverProvider(params: HoverParams): Promise<Hover | undefi
         return {
             contents: createEnumHoverContent(eu.declaration),
             range: eu.originalRange,
+        };
+    }
+    const emu = snapshot.getEnumMemberUsageAt(params.position);
+    if (emu) {
+        return {
+            contents: createEnumMemberHoverContent(emu.declaration),
+            range: emu.originalRange,
         };
     }
     const id = snapshot.getIntervalDeclarationAt(params.position);
@@ -169,6 +177,24 @@ function createEnumHoverContent(ed: EnumDeclaration): MarkupContent {
 
 function getEnumValue(ed: EnumDeclaration): string {
     const declaration = toStringEnumDeclaration(ed);
+    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
+        return `\`\`\`hlsl\n${declaration}\n\`\`\``;
+    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
+        return declaration;
+    } else {
+        return '';
+    }
+}
+
+function createEnumMemberHoverContent(emd: EnumMemberDeclaration): MarkupContent {
+    return {
+        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
+        value: getEnumMemberValue(emd),
+    };
+}
+
+function getEnumMemberValue(emd: EnumMemberDeclaration): string {
+    const declaration = toStringEnumMemberDeclaration(emd);
     if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
         return `\`\`\`hlsl\n${declaration}\n\`\`\``;
     } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {

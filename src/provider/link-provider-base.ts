@@ -10,6 +10,7 @@ import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroParameter } from '../interface/macro/macro-parameter';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { EnumMemberDeclaration } from '../interface/type/enum-member-declaration';
 import { TypeDeclaration } from '../interface/type/type-declaration';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { getIncludedDocumentUri } from '../processor/include-resolver';
@@ -108,6 +109,14 @@ export async function linkProviderBase(
     }
     if (vu) {
         return getVariableDeclarationLocation(vu.declaration, linkSupport);
+    }
+    const emd = snapshot.getEnumMemberDeclarationAt(position);
+    if (emd) {
+        return getEnumMemberDeclarationLocation(emd, linkSupport);
+    }
+    const emu = snapshot.getEnumMemberUsageAt(position);
+    if (emu) {
+        return getEnumMemberDeclarationLocation(emu.declaration, linkSupport);
     }
     const id = snapshot.getIntervalDeclarationAt(position);
     if (id) {
@@ -214,6 +223,29 @@ function getEnumDeclarationLocation(ed: EnumDeclaration, linkSupport: boolean): 
         return {
             range: ed.nameOriginalRange,
             uri: ed.uri,
+        };
+    }
+}
+
+function getEnumMemberDeclarationLocation(
+    emd: EnumMemberDeclaration,
+    linkSupport: boolean
+): LocationLink[] | Location | null {
+    if (!emd.nameOriginalRange) {
+        return null;
+    }
+    if (linkSupport) {
+        return [
+            {
+                targetRange: emd.originalRange,
+                targetSelectionRange: emd.nameOriginalRange,
+                targetUri: emd.uri,
+            },
+        ];
+    } else {
+        return {
+            range: emd.nameOriginalRange,
+            uri: emd.uri,
         };
     }
 }

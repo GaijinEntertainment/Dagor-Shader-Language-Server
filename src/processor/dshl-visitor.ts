@@ -37,6 +37,8 @@ import { shaderStageKeywordToEnum } from '../interface/shader-stage';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { EnumMemberDeclaration } from '../interface/type/enum-member-declaration';
+import { EnumMemberUsage } from '../interface/type/enum-member-usage';
 import { EnumUsage } from '../interface/type/enum-usage';
 import { TypeDeclaration, TypeKeyword } from '../interface/type/type-declaration';
 import { TypeUsage } from '../interface/type/type-usage';
@@ -572,16 +574,30 @@ export class DshlVisitor
             originalRange,
             nameOriginalRange,
             isVisible: visible,
-            members: ctx.enum_member().map((em) => ({
-                name: em.hlsl_identifier().text,
-                nameOriginalRange: this.snapshot.getOriginalRange(
-                    em.hlsl_identifier().start.startIndex,
-                    em.hlsl_identifier().stop!.stopIndex + 1
-                ),
-                originalRange: this.snapshot.getOriginalRange(em.start.startIndex, em.stop!.stopIndex + 1),
-            })),
+            members: [],
             usages: [],
         };
+        for (const memberContext of ctx.enum_member()) {
+            const value = memberContext.expression()?.literal()?.INT_LITERAL()?.text;
+            const emd: EnumMemberDeclaration = {
+                enumDeclaration: ed,
+                name: memberContext.hlsl_identifier().text,
+                nameOriginalRange: this.snapshot.getOriginalRange(
+                    memberContext.hlsl_identifier().start.startIndex,
+                    memberContext.hlsl_identifier().stop!.stopIndex + 1
+                ),
+                originalRange: this.snapshot.getOriginalRange(
+                    memberContext.start.startIndex,
+                    memberContext.stop!.stopIndex + 1
+                ),
+                usages: [],
+                isVisible: visible,
+                uri: this.snapshot.getIncludeContextDeepAt(memberContext.start.startIndex)?.uri ?? this.snapshot.uri,
+                value: value !== undefined ? parseInt(value) : undefined,
+            };
+            ed.members.push(emd);
+            this.scope.enumMemberDeclarations.push(emd);
+        }
         this.scope.enumDeclarations.push(ed);
         this.visitChildren(ctx);
         return null;
@@ -739,6 +755,7 @@ export class DshlVisitor
                 }
             } else if (ctx.DOUBLE_COLON()) {
                 const identifier = ctx.hlsl_identifier(0);
+                const memberIdentifier = ctx.hlsl_identifier(1);
                 const position = identifier.start.startIndex;
                 const originalPosition = this.snapshot.getOriginalPosition(position, true);
                 const ed = this.snapshot.getEnumDeclarationFor(identifier.text, originalPosition);
@@ -753,6 +770,19 @@ export class DshlVisitor
                     };
                     ed.usages.push(eu);
                     this.scope.enumUsages.push(eu);
+                    const emd = ed.members.find((m) => m.name === memberIdentifier.text);
+                    if (emd) {
+                        const emu: EnumMemberUsage = {
+                            declaration: emd,
+                            originalRange: this.snapshot.getOriginalRange(
+                                memberIdentifier.start.startIndex,
+                                memberIdentifier.stop!.stopIndex + 1
+                            ),
+                            isVisible: visible,
+                        };
+                        this.scope.enumMemberUsages.push(emu);
+                        emd.usages.push(emu);
+                    }
                 }
             }
         }
@@ -781,6 +811,8 @@ export class DshlVisitor
             typeUsages: [],
             enumDeclarations: [],
             enumUsages: [],
+            enumMemberDeclarations: [],
+            enumMemberUsages: [],
             variableDeclarations: [],
             variableUsages: [],
             functionDeclarations: [],

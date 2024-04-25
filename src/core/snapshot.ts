@@ -24,6 +24,8 @@ import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { SnapshotVersion } from '../interface/snapshot-version';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { EnumMemberDeclaration } from '../interface/type/enum-member-declaration';
+import { EnumMemberUsage } from '../interface/type/enum-member-usage';
 import { EnumUsage } from '../interface/type/enum-usage';
 import { TypeDeclaration } from '../interface/type/type-declaration';
 import { TypeUsage } from '../interface/type/type-usage';
@@ -75,6 +77,8 @@ export class Snapshot {
             typeUsages: [],
             enumDeclarations: [],
             enumUsages: [],
+            enumMemberDeclarations: [],
+            enumMemberUsages: [],
             variableDeclarations: [],
             variableUsages: [],
             functionDeclarations: [],
@@ -562,6 +566,34 @@ export class Snapshot {
             );
             if (ed) {
                 return ed;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getEnumMemberDeclarationAt(position: Position): EnumMemberDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const emd = scope.enumMemberDeclarations.find(
+                (emd) => emd.isVisible && rangeContains(emd.nameOriginalRange, position)
+            );
+            if (emd) {
+                return emd;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getEnumMemberUsageAt(position: Position): EnumMemberUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const emu = scope.enumMemberUsages.find(
+                (emu) => emu.isVisible && rangeContains(emu.originalRange, position)
+            );
+            if (emu) {
+                return emu;
             }
             scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
         }
