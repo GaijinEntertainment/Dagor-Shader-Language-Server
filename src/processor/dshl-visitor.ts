@@ -716,6 +716,7 @@ export class DshlVisitor
     public visitExpression(ctx: ExpressionContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         let result: ExpressionResult | null = null;
+        const dot = ctx.DOT();
         if (visible) {
             if (ctx.hlsl_identifier().length === 1 && !ctx.DOT()) {
                 const identifier = ctx.hlsl_identifier(0);
@@ -740,11 +741,11 @@ export class DshlVisitor
                         }
                     }
                 }
-            } else if (ctx.DOT()) {
+            } else if (dot) {
                 const exp = ctx.expression(0);
                 const expResult = this.visit(exp);
                 if (expResult) {
-                    const range = this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+                    const range = this.snapshot.getOriginalRange(dot.symbol.startIndex, ctx.stop!.stopIndex + 1);
                     this.snapshot.expressionRanges.push({
                         originalRange: range,
                         typeDeclaration: expResult.type,
