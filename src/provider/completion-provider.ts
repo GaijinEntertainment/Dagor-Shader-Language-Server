@@ -100,12 +100,19 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     const er = snapshot.expressionRanges.find((er) => rangeContains(er.originalRange, position));
     if (er) {
         result.push(
-            ...er.typeDeclaration.members.map((m) => ({
-                label: m.name,
-                kind: getKind(CompletionItemKind.Field),
-                detail: `${m.name} - member variable`,
-                labelDetails: getLabelDetails(m),
-            }))
+            ...(er.type === 'type'
+                ? er.typeDeclaration.members.map((m) => ({
+                      label: m.name,
+                      kind: getKind(CompletionItemKind.Field),
+                      detail: `${m.name} - member variable`,
+                      labelDetails: getLabelDetails(m),
+                  }))
+                : er.enumDeclaration.members.map((m) => ({
+                      label: m.name,
+                      kind: getKind(CompletionItemKind.EnumMember),
+                      detail: `${m.name} - enum value`,
+                      labelDetails: getLabelDetails(m),
+                  })))
         );
         return;
     }

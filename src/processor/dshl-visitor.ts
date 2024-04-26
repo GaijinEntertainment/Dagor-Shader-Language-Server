@@ -28,6 +28,7 @@ import { Snapshot } from '../core/snapshot';
 import { Scope } from '../helper/scope';
 import { BlockDeclaration } from '../interface/block/block-declaration';
 import { BlockUsage } from '../interface/block/block-usage';
+import { ExpressionRange } from '../interface/expression-range';
 import { ExpressionResult } from '../interface/expression-result';
 import { FunctionArgument } from '../interface/function/function-argument';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
@@ -717,8 +718,9 @@ export class DshlVisitor
         const visible = this.isVisible(ctx.start.startIndex);
         let result: ExpressionResult | null = null;
         const dot = ctx.DOT();
+        const doubleColon = ctx.DOUBLE_COLON();
         if (visible) {
-            if (ctx.hlsl_identifier().length === 1 && !ctx.DOT()) {
+            if (ctx.hlsl_identifier().length === 1 && !dot && !doubleColon) {
                 const identifier = ctx.hlsl_identifier(0);
                 const position = identifier.start.startIndex;
                 const originalPosition = this.snapshot.getOriginalPosition(position, true);
@@ -746,10 +748,12 @@ export class DshlVisitor
                 const expResult = this.visit(exp);
                 if (expResult) {
                     const range = this.snapshot.getOriginalRange(dot.symbol.startIndex, ctx.stop!.stopIndex + 1);
-                    this.snapshot.expressionRanges.push({
+                    const er: ExpressionRange = {
+                        type: 'type',
                         originalRange: range,
                         typeDeclaration: expResult.type,
-                    });
+                    };
+                    this.snapshot.expressionRanges.push(er);
                     if (ctx.hlsl_identifier().length === 1) {
                         const identifier = ctx.hlsl_identifier(0);
                         const m = expResult.type.members.find((m) => m.name === identifier.text);
@@ -761,35 +765,47 @@ export class DshlVisitor
                         }
                     }
                 }
-            } else if (ctx.DOUBLE_COLON()) {
+            } else if (doubleColon) {
                 const identifier = ctx.hlsl_identifier(0);
-                const memberIdentifier = ctx.hlsl_identifier(1);
                 const position = identifier.start.startIndex;
                 const originalPosition = this.snapshot.getOriginalPosition(position, true);
                 const ed = this.snapshot.getEnumDeclarationFor(identifier.text, originalPosition);
                 if (ed) {
-                    const eu: EnumUsage = {
-                        declaration: ed,
-                        originalRange: this.snapshot.getOriginalRange(
-                            identifier.start.startIndex,
-                            identifier.stop!.stopIndex + 1
-                        ),
-                        isVisible: visible,
+                    const range = this.snapshot.getOriginalRange(
+                        doubleColon.symbol.startIndex,
+                        ctx.stop!.stopIndex + 1
+                    );
+                    const er: ExpressionRange = {
+                        type: 'enum',
+                        originalRange: range,
+                        enumDeclaration: ed,
                     };
-                    ed.usages.push(eu);
-                    this.scope.enumUsages.push(eu);
-                    const emd = ed.members.find((m) => m.name === memberIdentifier.text);
-                    if (emd) {
-                        const emu: EnumMemberUsage = {
-                            declaration: emd,
+                    this.snapshot.expressionRanges.push(er);
+                    if (ctx.hlsl_identifier().length === 2) {
+                        const memberIdentifier = ctx.hlsl_identifier(1);
+                        const eu: EnumUsage = {
+                            declaration: ed,
                             originalRange: this.snapshot.getOriginalRange(
-                                memberIdentifier.start.startIndex,
-                                memberIdentifier.stop!.stopIndex + 1
+                                identifier.start.startIndex,
+                                identifier.stop!.stopIndex + 1
                             ),
                             isVisible: visible,
                         };
-                        this.scope.enumMemberUsages.push(emu);
-                        emd.usages.push(emu);
+                        ed.usages.push(eu);
+                        this.scope.enumUsages.push(eu);
+                        const emd = ed.members.find((m) => m.name === memberIdentifier.text);
+                        if (emd) {
+                            const emu: EnumMemberUsage = {
+                                declaration: emd,
+                                originalRange: this.snapshot.getOriginalRange(
+                                    memberIdentifier.start.startIndex,
+                                    memberIdentifier.stop!.stopIndex + 1
+                                ),
+                                isVisible: visible,
+                            };
+                            this.scope.enumMemberUsages.push(emu);
+                            emd.usages.push(emu);
+                        }
                     }
                 }
             }

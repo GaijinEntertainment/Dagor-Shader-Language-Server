@@ -321,7 +321,7 @@ expression:
 	(
 		literal
 		| function_call
-		| hlsl_identifier (DOUBLE_COLON hlsl_identifier)?
+		| hlsl_identifier (DOUBLE_COLON hlsl_identifier?)?
 		| LCB expression_list RCB
 	)
 	| LRB expression_list RRB
