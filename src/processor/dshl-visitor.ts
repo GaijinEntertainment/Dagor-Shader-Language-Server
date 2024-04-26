@@ -59,6 +59,7 @@ export class DshlVisitor
     private localHlslBlocks: Scope[] = [];
     private preshaders: Scope[] = [];
     private type: TypeDeclaration | null = null;
+    private enum: EnumDeclaration | null = null;
 
     public constructor(snapshot: Snapshot, rootSnapshot?: Snapshot, contentStartPosition?: Position) {
         super();
@@ -600,7 +601,9 @@ export class DshlVisitor
             this.scope.enumMemberDeclarations.push(emd);
         }
         this.scope.enumDeclarations.push(ed);
+        this.enum = ed;
         this.visitChildren(ctx);
+        this.enum = null;
         return null;
     }
 
@@ -741,6 +744,20 @@ export class DshlVisitor
                         if (vd.typeDeclaration) {
                             result = { type: vd.typeDeclaration };
                         }
+                    }
+                } else if (this.enum) {
+                    const emd = this.enum.members.find((m) => m.name === identifier.text);
+                    if (emd) {
+                        const emu: EnumMemberUsage = {
+                            declaration: emd,
+                            originalRange: this.snapshot.getOriginalRange(
+                                identifier.start.startIndex,
+                                identifier.stop!.stopIndex + 1
+                            ),
+                            isVisible: visible,
+                        };
+                        this.scope.enumMemberUsages.push(emu);
+                        emd.usages.push(emu);
                     }
                 }
             } else if (dot) {
