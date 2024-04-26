@@ -9,27 +9,67 @@ export const dshlKeywords: LanguageElementInfo[] = [
     { name: 'if' },
     { name: 'else' },
     { name: 'compile' },
-    { name: 'include' },
-    { name: 'include_optional' },
-    { name: 'assume' },
+    {
+        name: 'include',
+        description:
+            'Includes in `*.dshl` files are always included one time, and should not be confused with `#include` directive in hlsl files and blocks, where they follow the regular preprocessor rules (and can be included multiple times).',
+    },
+    {
+        name: 'include_optional',
+        description:
+            'Includes in `*.dshl` files are always included one time, and should not be confused with `#include` directive in hlsl files and blocks, where they follow the regular preprocessor rules (and can be included multiple times).',
+    },
+    {
+        name: 'assume',
+        description:
+            'Shader variables can be assigned a fixed value when the shader is compiled via `assume`. Such shader vars may not be changed at runtime, their values will be constant in the binary. This allows to reduce number of shader variants or disable specific features for specific platforms.',
+    },
     { name: 'dont_render' },
     { name: 'no_dynstcode' },
     { name: 'render_trans' },
     { name: 'no_ablend' },
     { name: 'render_stage' },
-    { name: 'interval' },
+    {
+        name: 'interval',
+        description:
+            'Intervals are a way to generate multiple variants of a single `shader`, based on whether the value of a special variable falls into specific range.',
+    },
     { name: 'macro' },
     { name: 'define_macro_if_not_defined' },
     { name: 'endmacro' },
     { name: 'shader' },
-    { name: 'block' },
-    { name: 'supports' },
-    { name: 'vs' },
-    { name: 'hs' },
-    { name: 'ds' },
-    { name: 'gs' },
-    { name: 'ps' },
-    { name: 'cs' },
+    {
+        name: 'block',
+        description:
+            'Shader Blocks are an extension of the Preshader idea and define variables/constants which are common for multiple shaders that `support` them. The intent is to optimize constant/texture switching.',
+    },
+    {
+        name: 'supports',
+    },
+    {
+        name: 'vs',
+        description: 'Vertex Shader',
+    },
+    {
+        name: 'hs',
+        description: 'Hull Shader',
+    },
+    {
+        name: 'ds',
+        description: 'Domain Shader',
+    },
+    {
+        name: 'gs',
+        description: 'Geometry Shader',
+    },
+    {
+        name: 'ps',
+        description: 'Pixel Shader',
+    },
+    {
+        name: 'cs',
+        description: 'Compute Shader',
+    },
 ];
 
 export const dshlEnumValues: LanguageElementInfo[] = [
@@ -66,7 +106,11 @@ export const dshlEnumValues: LanguageElementInfo[] = [
 ];
 
 export const dshlModifiers: LanguageElementInfo[] = [
-    { name: 'always_referenced' },
+    {
+        name: 'always_referenced',
+        description:
+            '`always_referenced` flag disallows shader compiler to remove any unused in global shader variables. This is helpful for providing some information for C++ code, i.e. the value of such variable can be obtained in C++ code.',
+    },
     { name: 'static' },
     { name: 'dynamic' },
     { name: 'local' },
