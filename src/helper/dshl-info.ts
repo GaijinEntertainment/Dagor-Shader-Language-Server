@@ -118,7 +118,6 @@ export const dshlModifiers: LanguageElementInfo[] = [
     { name: 'no_warnings' },
     { name: 'const' },
     { name: 'undefined_value' },
-    { name: 'public' },
     { name: 'signed_pack' },
     { name: 'unsigned_pack' },
     { name: 'mul_1k' },

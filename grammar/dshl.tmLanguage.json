@@ -202,7 +202,7 @@
         "modifier": {
             "comment": "MODIFIER",
             "name": "storage.modifier.dshl",
-            "match": "\\b(always_referenced|static|dynamic|local|channel|no_warnings|const|undefined_value|public|signed_pack|unsigned_pack|mul_1k|mul_2k|mul_4k|mul_8k|mul_16k|mul_32767|bounding_pack|optional|global)\\b"
+            "match": "\\b(always_referenced|static|dynamic|local|channel|no_warnings|const|undefined_value|signed_pack|unsigned_pack|mul_1k|mul_2k|mul_4k|mul_8k|mul_16k|mul_32767|bounding_pack|optional|global)\\b"
         },
         "function": {
             "comment": "FUNCTION",
