@@ -786,6 +786,37 @@ export class Snapshot {
         return null;
     }
 
+    public getEnumMemberDeclarationFor(
+        name: string,
+        position: Position,
+        onlyRoot = false
+    ): EnumMemberDeclaration | null {
+        let scope: Scope | null = onlyRoot ? this.rootScope : this.getScopeAt(position);
+        while (scope) {
+            const emd = scope.enumDeclarations
+                .filter((ed) => !ed.isClass)
+                .flatMap((ed) => ed.members)
+                .find((emd) => emd && emd.name === name && isBeforeOrEqual(emd.nameOriginalRange.end, position));
+            if (emd) {
+                return emd;
+            }
+            for (const hb of scope.hlslBlocks) {
+                const emd = hb.enumDeclarations
+                    .filter((ed) => !ed.isClass)
+                    .flatMap((ed) => ed.members)
+                    .find((emd) => emd && emd.name === name && isBeforeOrEqual(emd.nameOriginalRange.end, position));
+                if (emd) {
+                    return emd;
+                }
+            }
+            if (onlyRoot) {
+                return null;
+            }
+            scope = scope.parent ?? null;
+        }
+        return null;
+    }
+
     public getTypeDeclarationsInScope(position: Position): TypeDeclaration[] {
         const result: TypeDeclaration[] = [];
         let scope: Scope | null = this.getScopeAt(position);

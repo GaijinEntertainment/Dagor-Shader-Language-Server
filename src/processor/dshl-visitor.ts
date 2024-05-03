@@ -728,6 +728,7 @@ export class DshlVisitor
                 const position = identifier.start.startIndex;
                 const originalPosition = this.snapshot.getOriginalPosition(position, true);
                 const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
+                const emd = this.snapshot.getEnumMemberDeclarationFor(identifier.text, originalPosition);
                 if (vd) {
                     this.createVariableUsage(vd, identifier.start, visible);
                     if (vd.typeDeclaration) {
@@ -745,6 +746,17 @@ export class DshlVisitor
                             result = { type: vd.typeDeclaration };
                         }
                     }
+                } else if (emd) {
+                    const emu: EnumMemberUsage = {
+                        declaration: emd,
+                        originalRange: this.snapshot.getOriginalRange(
+                            identifier.start.startIndex,
+                            identifier.stop!.stopIndex + 1
+                        ),
+                        isVisible: visible,
+                    };
+                    this.scope.enumMemberUsages.push(emu);
+                    emd.usages.push(emu);
                 } else if (this.enum) {
                     const emd = this.enum.members.find((m) => m.name === identifier.text);
                     if (emd) {
