@@ -340,7 +340,7 @@ expression:
 		| SUBTRACT
 		| NOT
 		| BITWISE_NOT
-		| LRB IDENTIFIER RRB
+		| LRB hlsl_identifier RRB
 	) expression
 	| expression (MULTIPLY | DIVIDE | MODULO) expression
 	| expression (ADD | SUBTRACT) expression

@@ -729,22 +729,12 @@ export class DshlVisitor
                 const originalPosition = this.snapshot.getOriginalPosition(position, true);
                 const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
                 const emd = this.snapshot.getEnumMemberDeclarationFor(identifier.text, originalPosition);
+                const td = this.snapshot.getTypeDeclarationFor(identifier.text, originalPosition);
+                const ed = this.snapshot.getEnumDeclarationFor(identifier.text, originalPosition);
                 if (vd) {
                     this.createVariableUsage(vd, identifier.start, visible);
                     if (vd.typeDeclaration) {
                         result = { type: vd.typeDeclaration };
-                    }
-                } else if (this.rootSnapshot && this.contentStartPosition) {
-                    const vd = this.rootSnapshot.getVariableDeclarationFor(
-                        identifier.text,
-                        this.contentStartPosition,
-                        true
-                    );
-                    if (vd) {
-                        this.createVariableUsage(vd, identifier.start, visible);
-                        if (vd.typeDeclaration) {
-                            result = { type: vd.typeDeclaration };
-                        }
                     }
                 } else if (emd) {
                     const emu: EnumMemberUsage = {
@@ -757,6 +747,28 @@ export class DshlVisitor
                     };
                     this.scope.enumMemberUsages.push(emu);
                     emd.usages.push(emu);
+                } else if (td) {
+                    const tu: TypeUsage = {
+                        declaration: td,
+                        originalRange: this.snapshot.getOriginalRange(
+                            identifier.start.startIndex,
+                            identifier.stop!.stopIndex + 1
+                        ),
+                        isVisible: visible,
+                    };
+                    this.scope.typeUsages.push(tu);
+                    td.usages.push(tu);
+                } else if (ed) {
+                    const eu: EnumUsage = {
+                        declaration: ed,
+                        originalRange: this.snapshot.getOriginalRange(
+                            identifier.start.startIndex,
+                            identifier.stop!.stopIndex + 1
+                        ),
+                        isVisible: visible,
+                    };
+                    this.scope.enumUsages.push(eu);
+                    ed.usages.push(eu);
                 } else if (this.enum) {
                     const emd = this.enum.members.find((m) => m.name === identifier.text);
                     if (emd) {
@@ -770,6 +782,66 @@ export class DshlVisitor
                         };
                         this.scope.enumMemberUsages.push(emu);
                         emd.usages.push(emu);
+                    }
+                } else if (this.rootSnapshot && this.contentStartPosition) {
+                    const vd = this.rootSnapshot.getVariableDeclarationFor(
+                        identifier.text,
+                        this.contentStartPosition,
+                        true
+                    );
+                    const emd = this.rootSnapshot.getEnumMemberDeclarationFor(
+                        identifier.text,
+                        this.contentStartPosition,
+                        true
+                    );
+                    const td = this.rootSnapshot.getTypeDeclarationFor(
+                        identifier.text,
+                        this.contentStartPosition,
+                        true
+                    );
+                    const ed = this.rootSnapshot.getEnumDeclarationFor(
+                        identifier.text,
+                        this.contentStartPosition,
+                        true
+                    );
+                    if (vd) {
+                        this.createVariableUsage(vd, identifier.start, visible);
+                        if (vd.typeDeclaration) {
+                            result = { type: vd.typeDeclaration };
+                        }
+                    } else if (emd) {
+                        const emu: EnumMemberUsage = {
+                            declaration: emd,
+                            originalRange: this.snapshot.getOriginalRange(
+                                identifier.start.startIndex,
+                                identifier.stop!.stopIndex + 1
+                            ),
+                            isVisible: visible,
+                        };
+                        this.scope.enumMemberUsages.push(emu);
+                        emd.usages.push(emu);
+                    } else if (td) {
+                        const tu: TypeUsage = {
+                            declaration: td,
+                            originalRange: this.snapshot.getOriginalRange(
+                                identifier.start.startIndex,
+                                identifier.stop!.stopIndex + 1
+                            ),
+                            isVisible: visible,
+                        };
+                        this.scope.typeUsages.push(tu);
+                        td.usages.push(tu);
+                    } else if (ed) {
+                        const eu: EnumUsage = {
+                            declaration: ed,
+                            originalRange: this.snapshot.getOriginalRange(
+                                identifier.start.startIndex,
+                                identifier.stop!.stopIndex + 1
+                            ),
+                            isVisible: visible,
+                        };
+                        this.scope.enumUsages.push(eu);
+                        ed.usages.push(eu);
                     }
                 }
             } else if (dot) {
