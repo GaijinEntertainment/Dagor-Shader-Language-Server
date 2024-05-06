@@ -47,6 +47,7 @@ import {
 } from '../helper/hlsl-info';
 import { toStringBlockType } from '../interface/block/block-declaration';
 import { DefineStatement, toStringDefineStatementParameterList } from '../interface/define-statement';
+import { ExpressionRange } from '../interface/expression-range';
 import { toStringFunctionParameters } from '../interface/function/function-declaration';
 import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
@@ -101,12 +102,7 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     if (er) {
         result.push(
             ...(er.type === 'type'
-                ? er.typeDeclaration.members.map((m) => ({
-                      label: m.name,
-                      kind: getKind(CompletionItemKind.Field),
-                      detail: `${m.name} - member variable`,
-                      labelDetails: getLabelDetails(m),
-                  }))
+                ? getMembers(er)
                 : er.enumDeclaration.members.map((m) => ({
                       label: m.name,
                       kind: getKind(CompletionItemKind.EnumMember),
@@ -173,6 +169,26 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     addCompletionItems(result, hlslFunctions, CompletionItemKind.Function, 'function');
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, hlslSnippets, CompletionItemKind.Snippet, 'snippet');
+    }
+}
+
+function getMembers(er: ExpressionRange & { type: 'type' }): CompletionItem[] {
+    const result: CompletionItem[] = [];
+    addMembers(result, er.typeDeclaration);
+    return result;
+}
+
+function addMembers(result: CompletionItem[], td: TypeDeclaration): void {
+    result.push(
+        ...td.members.map((m) => ({
+            label: m.name,
+            kind: getKind(CompletionItemKind.Field),
+            detail: `${m.name} - member variable`,
+            labelDetails: getLabelDetails(m),
+        }))
+    );
+    for (const superTd of td.superTypes) {
+        addMembers(result, superTd);
     }
 }
 
