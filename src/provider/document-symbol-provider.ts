@@ -9,6 +9,7 @@ import {
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
+import { getKind, getTypeSymbolKind } from '../helper/helper';
 import { Scope } from '../helper/scope';
 import { toStringBlockType } from '../interface/block/block-declaration';
 import {
@@ -20,7 +21,6 @@ import {
     toStringMacroDeclarationHeader,
     toStringMacroDeclarationParameterList,
 } from '../interface/macro/macro-declaration';
-import { TypeKeyword } from '../interface/type/type-declaration';
 import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
 
 export async function documentSymbolProvider(
@@ -240,28 +240,5 @@ function addDefines(result: SymbolInformation[], dss: DefineStatement[], uri: Do
                 uri,
             },
         });
-    }
-}
-
-function getKind(kind: SymbolKind): SymbolKind {
-    const kinds = getCapabilities().documentSymbolSymbolKinds;
-    if (!kinds) {
-        if (kind <= SymbolKind.Array) {
-            return kind;
-        } else {
-            return SymbolKind.File;
-        }
-    } else {
-        return kinds.includes(kind) ? kind : SymbolKind.File;
-    }
-}
-
-function getTypeSymbolKind(type: TypeKeyword): SymbolKind {
-    if (type === 'class') {
-        return getKind(SymbolKind.Class);
-    } else if (type === 'interface') {
-        return getKind(SymbolKind.Interface);
-    } else {
-        return getKind(SymbolKind.Struct);
     }
 }

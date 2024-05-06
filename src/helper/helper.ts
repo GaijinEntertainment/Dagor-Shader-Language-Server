@@ -1,6 +1,8 @@
 import { ANTLRInputStream } from 'antlr4ts';
-import { Position, Range } from 'vscode-languageserver';
+import { Position, Range, SymbolKind } from 'vscode-languageserver';
 import { DshlLexer } from '../_generated/DshlLexer';
+import { getCapabilities } from '../core/capability-manager';
+import { TypeKeyword } from '../interface/type/type-declaration';
 
 export const defaultPosition: Position = { line: 0, character: 0 };
 export const defaultRange: Range = { start: defaultPosition, end: defaultPosition };
@@ -59,4 +61,27 @@ export function createLexer(text: string): DshlLexer {
     const charStream = new ANTLRInputStream(text);
     const lexer = new DshlLexer(charStream);
     return lexer;
+}
+
+export function getTypeSymbolKind(type: TypeKeyword): SymbolKind {
+    if (type === 'class') {
+        return getKind(SymbolKind.Class);
+    } else if (type === 'interface') {
+        return getKind(SymbolKind.Interface);
+    } else {
+        return getKind(SymbolKind.Struct);
+    }
+}
+
+export function getKind(kind: SymbolKind): SymbolKind {
+    const kinds = getCapabilities().documentSymbolSymbolKinds;
+    if (!kinds) {
+        if (kind <= SymbolKind.Array) {
+            return kind;
+        } else {
+            return SymbolKind.File;
+        }
+    } else {
+        return kinds.includes(kind) ? kind : SymbolKind.File;
+    }
 }

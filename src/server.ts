@@ -9,6 +9,9 @@ import {
     ServerCapabilities,
     TextDocumentSyncKind,
     TextDocuments,
+    TypeHierarchyPrepareRequest,
+    TypeHierarchySubtypesRequest,
+    TypeHierarchySupertypesRequest,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
@@ -36,6 +39,11 @@ import { implementationProvider } from './provider/implementation-provider';
 import { inlayHintProvider } from './provider/inlay-hint-provider';
 import { signatureHelpProvider } from './provider/signature-help-provider';
 import { typeDefinitionProvider } from './provider/type-definition-provider';
+import {
+    typeHierarchyPrepareProvider,
+    typeHierarchySubtypesProvider,
+    typeHierarchySupertypesProvider,
+} from './provider/type-hierarchy-provider';
 
 export abstract class Server {
     private static server: Server;
@@ -125,6 +133,7 @@ export abstract class Server {
             signatureHelpProvider: { triggerCharacters: ['(', ','] },
             documentFormattingProvider: true,
             documentRangeFormattingProvider: { rangesSupport: true },
+            typeHierarchyProvider: true,
         };
     }
 
@@ -184,6 +193,9 @@ export abstract class Server {
         this.connection.onDocumentFormatting(documentFormattingProvider);
         this.connection.onDocumentRangeFormatting(documentRangeFormattingProvider);
         this.connection.onRequest(DocumentRangesFormattingRequest.type, documentRangesFormattingProvider);
+        this.connection.onRequest(TypeHierarchyPrepareRequest.type, typeHierarchyPrepareProvider);
+        this.connection.onRequest(TypeHierarchySupertypesRequest.type, typeHierarchySupertypesProvider);
+        this.connection.onRequest(TypeHierarchySubtypesRequest.type, typeHierarchySubtypesProvider);
         this.connection.onRequest(InlayHintRequest.type, inlayHintProvider);
         this.documents.onDidChangeContent((_change) => {
             this.refreshInlayHints();
