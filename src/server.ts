@@ -6,6 +6,8 @@ import {
     InitializedParams,
     InlayHintRequest,
     PublishDiagnosticsParams,
+    SemanticTokenTypes,
+    SemanticTokensRequest,
     ServerCapabilities,
     TextDocumentSyncKind,
     TextDocuments,
@@ -37,6 +39,7 @@ import {
 import { hoverProvider } from './provider/hover-provider';
 import { implementationProvider } from './provider/implementation-provider';
 import { inlayHintProvider } from './provider/inlay-hint-provider';
+import { semanticTokensProvider } from './provider/semantic-token-provider';
 import { signatureHelpProvider } from './provider/signature-help-provider';
 import { typeDefinitionProvider } from './provider/type-definition-provider';
 import {
@@ -134,6 +137,14 @@ export abstract class Server {
             documentFormattingProvider: true,
             documentRangeFormattingProvider: { rangesSupport: true },
             typeHierarchyProvider: true,
+            semanticTokensProvider: {
+                full: true,
+                documentSelector: [{ language: 'dshl' }, { language: 'hlsl' }],
+                legend: {
+                    tokenTypes: [SemanticTokenTypes.type, SemanticTokenTypes.variable],
+                    tokenModifiers: [],
+                },
+            },
         };
     }
 
@@ -197,6 +208,7 @@ export abstract class Server {
         this.connection.onRequest(TypeHierarchySupertypesRequest.type, typeHierarchySupertypesProvider);
         this.connection.onRequest(TypeHierarchySubtypesRequest.type, typeHierarchySubtypesProvider);
         this.connection.onRequest(InlayHintRequest.type, inlayHintProvider);
+        this.connection.onRequest(SemanticTokensRequest.type, semanticTokensProvider);
         this.documents.onDidChangeContent((_change) => {
             this.refreshInlayHints();
         });
