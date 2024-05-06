@@ -14,10 +14,16 @@ export interface TypeDeclaration {
     isVisible: boolean;
     uri: DocumentUri;
     isBuiltIn: boolean;
+    superTypes: TypeDeclaration[];
+    subTypes: TypeDeclaration[];
 }
 
 export function toStringTypeDeclaration(td: TypeDeclaration): string {
-    const header = `${td.type} ${td.name}`;
+    let superTypes = '';
+    if (td.superTypes.length) {
+        superTypes = ` : ${td.superTypes.map((td) => td.name).join(', ')}`;
+    }
+    const header = `${td.type} ${td.name}${superTypes}`;
     let members = '';
     for (const member of td.members) {
         members += `\t${toStringVariableDeclaration(member)}\n`;

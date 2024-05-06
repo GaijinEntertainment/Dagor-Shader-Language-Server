@@ -525,7 +525,7 @@ export class DshlVisitor
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
             this.snapshot.foldingRanges.push(range);
         }
-        const identifier = ctx.hlsl_identifier();
+        const identifier = ctx.hlsl_identifier(0);
         const originalRange = this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
         const nameOriginalRange = identifier
             ? this.snapshot.getOriginalRange(identifier.start.startIndex, identifier.stop!.stopIndex + 1)
@@ -540,8 +540,27 @@ export class DshlVisitor
             isBuiltIn: false,
             usages: [],
             members: [],
+            superTypes: [],
+            subTypes: [],
         };
         this.scope.typeDeclarations.push(td);
+        for (let i = 1; i < ctx.hlsl_identifier().length; i++) {
+            const superTd = this.snapshot.getTypeDeclarationFor(ctx.hlsl_identifier(i).text, nameOriginalRange.start);
+            if (superTd) {
+                const superTu: TypeUsage = {
+                    declaration: superTd,
+                    originalRange: this.snapshot.getOriginalRange(
+                        ctx.hlsl_identifier(i).start.startIndex,
+                        ctx.hlsl_identifier(i).stop!.stopIndex + 1
+                    ),
+                    isVisible: visible,
+                };
+                this.scope.typeUsages.push(superTu);
+                superTd.usages.push(superTu);
+                td.superTypes.push(superTd);
+                superTd.subTypes.push(td);
+            }
+        }
         this.type = td;
         this.visitChildren(ctx);
         this.type = null;
@@ -857,7 +876,7 @@ export class DshlVisitor
                     this.snapshot.expressionRanges.push(er);
                     if (ctx.hlsl_identifier().length === 1) {
                         const identifier = ctx.hlsl_identifier(0);
-                        const m = expResult.type.members.find((m) => m.name === identifier.text);
+                        const m = this.findMember(expResult.type, identifier.text);
                         if (m) {
                             this.createVariableUsage(m, identifier.start, visible);
                             if (m.typeDeclaration) {
@@ -913,6 +932,20 @@ export class DshlVisitor
         }
         this.visitChildren(ctx);
         return result;
+    }
+
+    private findMember(td: TypeDeclaration, name: string): VariableDeclaration | null {
+        const vd = td.members.find((m) => m.name === name);
+        if (vd) {
+            return vd;
+        }
+        for (const superTd of td.superTypes) {
+            const vd = this.findMember(superTd, name);
+            if (vd) {
+                return vd;
+            }
+        }
+        return null;
     }
 
     // region shared

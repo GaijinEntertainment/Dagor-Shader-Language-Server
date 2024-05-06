@@ -195,7 +195,9 @@ variable_initialization:
 	)?;
 
 type_declaration:
-	template? type_keyowrd hlsl_identifier? LCB struct_member_declaration* RCB;
+	template? type_keyowrd hlsl_identifier? (
+		COLON hlsl_identifier (COMMA hlsl_identifier)*
+	)? LCB struct_member_declaration* RCB;
 
 enum_declaration:
 	ENUM CLASS? (hlsl_identifier (COLON hlsl_identifier)?)? LCB (
