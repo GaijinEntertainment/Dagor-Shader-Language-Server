@@ -23,6 +23,7 @@ Language Server for the Dagor Shader Language. At the moment it's work in progre
 | Signature help       |       |           | ✓         |                     |         |                  | ✓      |          |
 | Inlay hints          |       |           | ✓         |                     |         |                  | ✓      |          |
 | Document symbols     |       | ✓         |           |                     | ✓       | ✓                | ✓      |          |
+| Semantic highlight   |       | ✓         |           |                     |         |                  |        |          |
 
 ### HLSL
 
@@ -38,6 +39,8 @@ Language Server for the Dagor Shader Language. At the moment it's work in progre
 | Signature help        |       |           |              |          |           |           |            |         |          |                         |
 | Inlay hints           |       |           |              |          |           |           |            | ✓       |          |                         |
 | Document symbols      | ✓     | ✓         |              |          |           |           |            | ✓       |          |                         |
+| Type hierarchy        | ✓     |           |              |          |           |           |            |         |          |                         |
+| Semantic highlight    | ✓     | ✓         |              |          |           |           |            |         |          |                         |
 
 ### Features that are part of the repository, but not part of the actual language server
 
