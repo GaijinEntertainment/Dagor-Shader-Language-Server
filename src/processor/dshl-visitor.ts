@@ -2,6 +2,7 @@ import { ParserRuleContext, Token } from 'antlr4ts';
 import { AbstractParseTreeVisitor } from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import { Position, Range } from 'vscode-languageserver';
 import {
+    Do_statementContext,
     DshlParser,
     Dshl_assignmentContext,
     Dshl_assume_statementContext,
@@ -17,11 +18,16 @@ import {
     Dshl_variable_declarationContext,
     Enum_declarationContext,
     ExpressionContext,
+    For_statementContext,
+    Function_definitionContext,
+    If_statementContext,
     ParameterContext,
     State_objectContext,
     Statement_blockContext,
+    Switch_statementContext,
     Type_declarationContext,
     Variable_declarationContext,
+    While_statementContext,
 } from '../_generated/DshlParser';
 import { DshlParserVisitor } from '../_generated/DshlParserVisitor';
 import { Snapshot } from '../core/snapshot';
@@ -80,11 +86,13 @@ export class DshlVisitor
     // region DSHL
 
     public visitDshl_statement_block(ctx: Dshl_statement_blockContext): ExpressionResult | null {
-        if (this.isVisible(ctx.LCB().symbol.startIndex)) {
+        const visible = this.isVisible(ctx.LCB().symbol.startIndex);
+        if (visible) {
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
             this.snapshot.foldingRanges.push(range);
         }
-        const scope = this.createScope(ctx);
+        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
         if (ctx.parent?.ruleIndex === DshlParser.RULE_dshl_preshader_block) {
             this.preshaders.push(scope);
             const preshaderCtx = ctx.parent as Dshl_preshader_blockContext;
@@ -97,28 +105,14 @@ export class DshlVisitor
         return null;
     }
 
-    private getRange(startPosition: number, endPosition: number): Range {
-        const ic = this.snapshot.getIncludeContextAt(startPosition);
-        if (ic) {
-            return ic.originalRange;
-        }
-        const mc = this.snapshot.getMacroContextAt(startPosition);
-        if (mc) {
-            return mc.originalRange;
-        }
-        const dc = this.snapshot.getDefineContextAt(startPosition);
-        if (dc) {
-            return dc.originalRange;
-        }
-        return this.snapshot.getOriginalRange(startPosition, endPosition);
-    }
-
     public visitDshl_hlsl_block(ctx: Dshl_hlsl_blockContext): ExpressionResult | null {
-        if (this.isVisible(ctx.LCB().symbol.startIndex)) {
+        const visible = this.isVisible(ctx.LCB().symbol.startIndex);
+        if (visible) {
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
             this.snapshot.foldingRanges.push(range);
         }
-        const scope = this.createScope(ctx);
+        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
         const identifier = ctx.IDENTIFIER();
         if (identifier) {
             scope.hlslStage = shaderStageKeywordToEnum(identifier.text);
@@ -291,7 +285,9 @@ export class DshlVisitor
     }
 
     public visitDshl_shader_declaration(ctx: Dshl_shader_declarationContext): ExpressionResult | null {
-        const scope = this.createScope(ctx);
+        const visible = this.isVisible(ctx.start.startIndex);
+        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
         this.scope.children.push(scope);
         this.scope = scope;
         for (const shader of ctx.IDENTIFIER()) {
@@ -303,7 +299,7 @@ export class DshlVisitor
                     shader.symbol.startIndex,
                     shader.symbol.stopIndex + 1
                 ),
-                isVisible: this.isVisible(ctx.start.startIndex),
+                isVisible: visible,
                 uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
                 usages: [],
             };
@@ -344,7 +340,9 @@ export class DshlVisitor
     }
 
     public visitDshl_block_block(ctx: Dshl_block_blockContext): ExpressionResult | null {
-        const scope = this.createScope(ctx);
+        const visible = this.isVisible(ctx.start.startIndex);
+        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
         this.scope.children.push(scope);
         this.scope = scope;
         const type = ctx.IDENTIFIER(0);
@@ -358,7 +356,7 @@ export class DshlVisitor
                 identifier.symbol.stopIndex + 1
             ),
             uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
-            isVisible: this.isVisible(ctx.start.startIndex),
+            isVisible: visible,
             usages: [],
         };
         this.scope.blockDeclaration = bd;
@@ -507,11 +505,13 @@ export class DshlVisitor
     // region HLSL
 
     public visitStatement_block(ctx: Statement_blockContext): ExpressionResult | null {
-        if (this.isVisible(ctx.start.startIndex)) {
+        const visible = this.isVisible(ctx.start.startIndex);
+        if (visible) {
             const range = this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex);
             this.snapshot.foldingRanges.push(range);
         }
-        const scope = this.createScope(ctx);
+        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
         this.scope.children.push(scope);
         this.scope = scope;
         this.visitChildren(ctx);
@@ -948,6 +948,49 @@ export class DshlVisitor
         return null;
     }
 
+    public visitFunction_definition(ctx: Function_definitionContext): ExpressionResult | null {
+        return this.createScopeAndVisit(ctx);
+    }
+
+    public visitFor_statement(ctx: For_statementContext): ExpressionResult | null {
+        return this.createScopeAndVisit(ctx);
+    }
+
+    public visitWhile_statement(ctx: While_statementContext): ExpressionResult | null {
+        return this.createScopeAndVisit(ctx);
+    }
+
+    public visitDo_statement(ctx: Do_statementContext): ExpressionResult | null {
+        return this.createScopeAndVisit(ctx);
+    }
+
+    public visitIf_statement(ctx: If_statementContext): ExpressionResult | null {
+        let visible = this.isVisible(ctx.start.startIndex);
+        let range = this.getRange(ctx.start.startIndex, ctx.statement(0).stop!.stopIndex + 1);
+        let scope = this.createScope(visible, range);
+        this.scope.children.push(scope);
+        this.scope = scope;
+        this.visit(ctx.expression());
+        this.visit(ctx.statement(0));
+        this.scope = scope.parent!;
+        const elseCtx = ctx.ELSE();
+        if (elseCtx) {
+            const elseStatement = ctx.statement(1);
+            visible = this.isVisible(elseCtx.symbol.startIndex);
+            range = this.getRange(elseStatement.start.startIndex, elseStatement.stop!.stopIndex + 1);
+            scope = this.createScope(visible, range);
+            this.scope.children.push(scope);
+            this.scope = scope;
+            this.visit(ctx.statement(1));
+            this.scope = scope.parent!;
+        }
+        return null;
+    }
+
+    public visitSwitch_statement(ctx: Switch_statementContext): ExpressionResult | null {
+        return this.createScopeAndVisit(ctx);
+    }
+
     // region shared
 
     private createVariableUsage(vd: VariableDeclaration, identifier: Token, visible: boolean): VariableUsage {
@@ -961,7 +1004,18 @@ export class DshlVisitor
         return vu;
     }
 
-    private createScope(ctx: ParserRuleContext): Scope {
+    private createScopeAndVisit(ctx: ParserRuleContext): null {
+        const visible = this.isVisible(ctx.start.startIndex);
+        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
+        this.scope.children.push(scope);
+        this.scope = scope;
+        this.visitChildren(ctx);
+        this.scope = scope.parent!;
+        return null;
+    }
+
+    private createScope(visible: boolean, range: Range): Scope {
         return {
             shaderDeclarations: [],
             shaderUsages: [],
@@ -976,13 +1030,29 @@ export class DshlVisitor
             functionDeclarations: [],
             functionUsages: [],
             blockUsages: [],
-            originalRange: this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+            originalRange: range,
             children: [],
             parent: this.scope,
-            isVisible: this.isVisible(ctx.start.startIndex),
+            isVisible: visible,
             hlslBlocks: [],
             preshaders: [],
         };
+    }
+
+    private getRange(startPosition: number, endPosition: number): Range {
+        const ic = this.snapshot.getIncludeContextAt(startPosition);
+        if (ic) {
+            return ic.originalRange;
+        }
+        const mc = this.snapshot.getMacroContextAt(startPosition);
+        if (mc) {
+            return mc.originalRange;
+        }
+        const dc = this.snapshot.getDefineContextAt(startPosition);
+        if (dc) {
+            return dc.originalRange;
+        }
+        return this.snapshot.getOriginalRange(startPosition, endPosition);
     }
 
     protected defaultResult(): ExpressionResult | null {
