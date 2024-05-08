@@ -107,7 +107,6 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
                       label: m.name,
                       kind: getKind(CompletionItemKind.EnumMember),
                       detail: `${m.name} - enum value`,
-                      labelDetails: getLabelDetails(m),
                   })))
         );
         return;
@@ -175,7 +174,34 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
 function getMembers(er: ExpressionRange & { type: 'type' }): CompletionItem[] {
     const result: CompletionItem[] = [];
     addMembers(result, er.typeDeclaration);
+    addEmbeddedItems(result, er.typeDeclaration);
     return result;
+}
+
+function addEmbeddedItems(result: CompletionItem[], td: TypeDeclaration): void {
+    for (const etd of td.embeddedTypes) {
+        result.push({
+            label: etd.name,
+            kind: getTypeCompletionItemKind(etd.type),
+            detail: getDetail(etd, etd.type),
+            documentation: getTypeDeclarationDocumentation(etd),
+        });
+    }
+    for (const eed of td.embeddedEnums.filter((eed) => eed.name)) {
+        result.push({
+            label: eed.name!,
+            kind: getKind(CompletionItemKind.Enum),
+            detail: `${eed.name} - enum`,
+            documentation: getEnumDeclarationDocumentation(eed),
+        });
+    }
+    for (const eemd of td.embeddedEnums.filter((eed) => !eed.name).flatMap((eed) => eed.members)) {
+        result.push({
+            label: eemd.name,
+            kind: getKind(CompletionItemKind.EnumMember),
+            detail: `${eemd.name} - enum value`,
+        });
+    }
 }
 
 function addMembers(result: CompletionItem[], td: TypeDeclaration): void {

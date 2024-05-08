@@ -21,6 +21,8 @@ import {
     toStringMacroDeclarationHeader,
     toStringMacroDeclarationParameterList,
 } from '../interface/macro/macro-declaration';
+import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { TypeDeclaration } from '../interface/type/type-declaration';
 import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
 
 export async function documentSymbolProvider(
@@ -49,41 +51,8 @@ function createDocumentSymbols(snapshot: Snapshot, uri: DocumentUri): DocumentSy
 }
 
 function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri): void {
-    for (const td of scope.typeDeclarations) {
-        if (td.isVisible) {
-            dss.push({
-                name: td.name,
-                kind: getTypeSymbolKind(td.type),
-                range: td.originalRange,
-                selectionRange: td.nameOriginalRange,
-                detail: td.type,
-                children: td.members.map((m) => ({
-                    name: m.name,
-                    kind: getKind(SymbolKind.Field),
-                    range: m.originalRange,
-                    selectionRange: m.nameOriginalRange,
-                    detail: m.type,
-                })),
-            });
-        }
-    }
-    for (const ed of scope.enumDeclarations) {
-        if (ed.isVisible) {
-            dss.push({
-                name: ed.name ?? '<anonymous>',
-                kind: getKind(SymbolKind.Enum),
-                range: ed.originalRange,
-                selectionRange: ed.nameOriginalRange ?? ed.originalRange,
-                detail: 'enum' + (ed.isClass ? ' class' : '') + (ed.type ? ` (${ed.type})` : ''),
-                children: ed.members.map((m) => ({
-                    name: m.name,
-                    kind: getKind(SymbolKind.EnumMember),
-                    range: m.originalRange,
-                    selectionRange: m.originalRange,
-                })),
-            });
-        }
-    }
+    addTypes(scope.typeDeclarations, dss);
+    addEnums(scope.enumDeclarations, dss);
     for (const vd of scope.variableDeclarations) {
         if (vd.isVisible) {
             dss.push({
@@ -147,6 +116,50 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
     }
 }
 
+function addEnums(eds: EnumDeclaration[], dss: DocumentSymbol[]): void {
+    for (const ed of eds) {
+        if (ed.isVisible) {
+            dss.push({
+                name: ed.name ?? '<anonymous>',
+                kind: getKind(SymbolKind.Enum),
+                range: ed.originalRange,
+                selectionRange: ed.nameOriginalRange ?? ed.originalRange,
+                detail: 'enum' + (ed.isClass ? ' class' : '') + (ed.type ? ` (${ed.type})` : ''),
+                children: ed.members.map((m) => ({
+                    name: m.name,
+                    kind: getKind(SymbolKind.EnumMember),
+                    range: m.originalRange,
+                    selectionRange: m.originalRange,
+                })),
+            });
+        }
+    }
+}
+
+function addTypes(tds: TypeDeclaration[], dss: DocumentSymbol[]): void {
+    for (const td of tds) {
+        if (td.isVisible) {
+            const children: DocumentSymbol[] = td.members.map((m) => ({
+                name: m.name,
+                kind: getKind(SymbolKind.Field),
+                range: m.originalRange,
+                selectionRange: m.nameOriginalRange,
+                detail: m.type,
+            }));
+            addTypes(td.embeddedTypes, children);
+            addEnums(td.embeddedEnums, children);
+            dss.push({
+                name: td.name ?? '<anonymous>',
+                kind: getTypeSymbolKind(td.type),
+                range: td.originalRange,
+                selectionRange: td.nameOriginalRange,
+                detail: td.type,
+                children,
+            });
+        }
+    }
+}
+
 function defineToDocumentSymbol(ds: DefineStatement): DocumentSymbol {
     return {
         name: ds.name,
@@ -190,9 +203,9 @@ function createSymbolInformations(snapshot: Snapshot, uri: DocumentUri): SymbolI
     const tds = snapshot.getAllTypeDeclarations();
     for (const td of tds) {
         result.push({
-            name: td.name,
+            name: td.name ?? '<anonymous>',
             kind: getTypeSymbolKind(td.type),
-            containerName: td.name,
+            containerName: td.name ?? '<anonymous>',
             location: {
                 range: td.originalRange,
                 uri: td.uri,

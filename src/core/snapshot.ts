@@ -549,9 +549,13 @@ export class Snapshot {
     public getTypeDeclarationAt(position: Position): TypeDeclaration | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
-            const td = scope.typeDeclarations.find(
-                (td) => td.isVisible && rangeContains(td.nameOriginalRange, position)
-            );
+            let td =
+                scope.typeDeclarations.find((td) => td.isVisible && rangeContains(td.nameOriginalRange, position)) ??
+                null;
+            if (td) {
+                return td;
+            }
+            td = this.getEmbeddedTypeDeclaration(scope.typeDeclarations, position);
             if (td) {
                 return td;
             }
@@ -560,16 +564,55 @@ export class Snapshot {
         return null;
     }
 
+    private getEmbeddedTypeDeclaration(tds: TypeDeclaration[], position: Position): TypeDeclaration | null {
+        for (const td of tds) {
+            let etd =
+                td.embeddedTypes.find(
+                    (etd) => etd.isVisible && rangeContains(etd.nameOriginalRange ?? etd.originalRange, position)
+                ) ?? null;
+            if (etd) {
+                return etd;
+            }
+            etd = this.getEmbeddedTypeDeclaration(td.embeddedTypes, position);
+            if (etd) {
+                return etd;
+            }
+        }
+        return null;
+    }
+
     public getEnumDeclarationAt(position: Position): EnumDeclaration | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
-            const ed = scope.enumDeclarations.find(
-                (ed) => ed.isVisible && rangeContains(ed.nameOriginalRange ?? ed.originalRange, position)
-            );
+            let ed =
+                scope.enumDeclarations.find(
+                    (ed) => ed.isVisible && rangeContains(ed.nameOriginalRange ?? ed.originalRange, position)
+                ) ?? null;
+            if (ed) {
+                return ed;
+            }
+            ed = this.getEmbeddedEnumDeclaration(scope.typeDeclarations, position);
             if (ed) {
                 return ed;
             }
             scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    private getEmbeddedEnumDeclaration(tds: TypeDeclaration[], position: Position): EnumDeclaration | null {
+        for (const td of tds) {
+            let ed =
+                td.embeddedEnums.find(
+                    (ed) => ed.isVisible && rangeContains(ed.nameOriginalRange ?? ed.originalRange, position)
+                ) ?? null;
+            if (ed) {
+                return ed;
+            }
+            ed = this.getEmbeddedEnumDeclaration(td.embeddedTypes, position);
+            if (ed) {
+                return ed;
+            }
         }
         return null;
     }
@@ -605,19 +648,43 @@ export class Snapshot {
     public getVariableDeclarationAt(position: Position): VariableDeclaration | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
-            let vd = scope.variableDeclarations.find(
-                (vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, position)
-            );
+            let vd =
+                scope.variableDeclarations.find(
+                    (vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, position)
+                ) ?? null;
             if (vd) {
                 return vd;
             }
-            vd = scope.typeDeclarations
-                .flatMap((td) => td.members)
-                .find((vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, position));
+            vd =
+                scope.typeDeclarations
+                    .flatMap((td) => td.members)
+                    .find((vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, position)) ?? null;
+            if (vd) {
+                return vd;
+            }
+            vd = this.getEmbeddedVariableDeclaration(scope.typeDeclarations, position);
             if (vd) {
                 return vd;
             }
             scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    private getEmbeddedVariableDeclaration(tds: TypeDeclaration[], position: Position): VariableDeclaration | null {
+        for (const td of tds) {
+            let emd =
+                td.embeddedTypes
+                    .flatMap((etd) => etd.members)
+                    .find((ed) => ed.isVisible && rangeContains(ed.nameOriginalRange ?? ed.originalRange, position)) ??
+                null;
+            if (emd) {
+                return emd;
+            }
+            emd = this.getEmbeddedVariableDeclaration(td.embeddedTypes, position);
+            if (emd) {
+                return emd;
+            }
         }
         return null;
     }

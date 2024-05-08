@@ -1,5 +1,14 @@
+import { EnumDeclaration } from './type/enum-declaration';
 import { TypeDeclaration } from './type/type-declaration';
 
-export interface ExpressionResult {
-    type: TypeDeclaration;
+interface TypeExpressionResult {
+    type: 'type';
+    typeDeclaration: TypeDeclaration;
 }
+
+interface EnumExpressionResult {
+    type: 'enum';
+    enumDeclaration: EnumDeclaration;
+}
+
+export type ExpressionResult = TypeExpressionResult | EnumExpressionResult;

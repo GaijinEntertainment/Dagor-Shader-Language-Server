@@ -206,6 +206,24 @@ export class DocumentInfo {
                 offsetPosition(m.nameOriginalRange.start, md.contentOriginalRange.start);
                 offsetPosition(m.nameOriginalRange.end, md.contentOriginalRange.start);
             }
+            for (const ed of td.embeddedEnums) {
+                offsetPosition(ed.originalRange.start, md.contentOriginalRange.start);
+                offsetPosition(ed.originalRange.end, md.contentOriginalRange.start);
+                if (ed.nameOriginalRange) {
+                    offsetPosition(ed.nameOriginalRange.start, md.contentOriginalRange.start);
+                    offsetPosition(ed.nameOriginalRange.end, md.contentOriginalRange.start);
+                }
+                for (const m of ed.members) {
+                    offsetPosition(m.originalRange.start, md.contentOriginalRange.start);
+                    offsetPosition(m.originalRange.end, md.contentOriginalRange.start);
+                    offsetPosition(m.nameOriginalRange.start, md.contentOriginalRange.start);
+                    offsetPosition(m.nameOriginalRange.end, md.contentOriginalRange.start);
+                    for (const mu of m.usages) {
+                        offsetPosition(mu.originalRange.start, md.contentOriginalRange.start);
+                        offsetPosition(mu.originalRange.end, md.contentOriginalRange.start);
+                    }
+                }
+            }
         }
         for (const ed of scope.enumDeclarations) {
             offsetPosition(ed.originalRange.start, md.contentOriginalRange.start);

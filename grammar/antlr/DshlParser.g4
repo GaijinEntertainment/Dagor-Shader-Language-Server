@@ -323,7 +323,7 @@ expression:
 	(
 		literal
 		| function_call
-		| hlsl_identifier (DOUBLE_COLON hlsl_identifier?)?
+		| hlsl_identifier
 		| LCB expression_list RCB
 		| variable_declaration
 	)
@@ -335,6 +335,7 @@ expression:
 		| DOT hlsl_identifier
 		| DOT function_call
 		| DOT
+		| DOUBLE_COLON hlsl_identifier?
 	)
 	| (
 		INCREMENT
@@ -382,7 +383,9 @@ clipplanes: hlsl_identifier LRB expression RRB; // clipplanes
 array_subscript: LSB expression? RSB;
 
 type:
-	hlsl_identifier (LAB expression_list? RAB)* array_subscript*;
+	hlsl_identifier (DOUBLE_COLON hlsl_identifier)* (
+		LAB expression_list? RAB
+	)* array_subscript*;
 
 hlsl_identifier:
 	IDENTIFIER

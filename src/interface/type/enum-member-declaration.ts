@@ -14,7 +14,13 @@ export interface EnumMemberDeclaration {
 }
 
 export function toStringEnumMemberDeclaration(declaration: EnumMemberDeclaration): string {
-    const enumType = `${declaration.enumDeclaration.name}::${declaration.name}`;
-    const assignment = declaration.value != undefined ? ` = ${declaration.value}` : '';
-    return enumType + assignment;
+    let result = '';
+    if (declaration.enumDeclaration.name) {
+        result += `${declaration.enumDeclaration.name}::`;
+    }
+    result += declaration.name;
+    if (declaration.value != undefined) {
+        result += ` = ${declaration.value}`;
+    }
+    return result;
 }
