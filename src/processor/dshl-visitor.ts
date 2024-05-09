@@ -20,6 +20,7 @@ import {
     ExpressionContext,
     For_statementContext,
     Function_definitionContext,
+    Function_headerContext,
     If_statementContext,
     ParameterContext,
     State_objectContext,
@@ -532,7 +533,7 @@ export class DshlVisitor
             ? this.snapshot.getOriginalRange(identifier.start.startIndex, identifier.stop!.stopIndex + 1)
             : originalRange;
         const td: TypeDeclaration = {
-            type: this.getType(ctx.type_keyowrd().text),
+            type: this.getTypeKeyword(ctx.type_keyowrd().text),
             name: identifier ? identifier.text : '',
             uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
             originalRange,
@@ -574,7 +575,7 @@ export class DshlVisitor
         return null;
     }
 
-    private getType(type: string): TypeKeyword {
+    private getTypeKeyword(type: string): TypeKeyword {
         if (type === 'struct' || type === 'class' || type === 'interface') {
             return type;
         } else {
@@ -648,7 +649,7 @@ export class DshlVisitor
 
     public visitVariable_declaration(ctx: Variable_declarationContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
-        const expResult = this.getTypeX(ctx.type(), visible);
+        const expResult = this.getType(ctx.type(), visible);
         for (const vi of ctx.variable_initialization()) {
             const identifier = vi.hlsl_identifier();
             const nameOriginalRange = this.snapshot.getOriginalRange(
@@ -678,7 +679,7 @@ export class DshlVisitor
         return null;
     }
 
-    private getTypeX(ctx: TypeContext, visible: boolean): ExpressionResult | null {
+    private getType(ctx: TypeContext, visible: boolean): ExpressionResult | null {
         let td: TypeDeclaration | null = null;
         let ed: EnumDeclaration | null = null;
         for (const id of ctx.hlsl_identifier()) {
@@ -1056,6 +1057,15 @@ export class DshlVisitor
                 return vd;
             }
         }
+        return null;
+    }
+
+    public visitFunction_header(ctx: Function_headerContext): ExpressionResult | null {
+        const visible = this.isVisible(ctx.start.startIndex);
+        if (visible) {
+            this.getType(ctx.type(), visible);
+        }
+        this.visitChildren(ctx);
         return null;
     }
 
