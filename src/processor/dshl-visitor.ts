@@ -2,6 +2,7 @@ import { ParserRuleContext, Token } from 'antlr4ts';
 import { AbstractParseTreeVisitor } from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import { Position, Range } from 'vscode-languageserver';
 import {
+    Array_subscriptContext,
     Do_statementContext,
     DshlParser,
     Dshl_assignmentContext,
@@ -158,6 +159,7 @@ export class DshlVisitor
             isVisible: visible,
             usages: [],
             isHlsl: false,
+            arraySizes: [],
         };
         // if (visible && identifier.text.toLowerCase() !== identifier.text) {
         //     this.snapshot.diagnostics.push({
@@ -424,6 +426,7 @@ export class DshlVisitor
                 isVisible: visible,
                 usages: [],
                 isHlsl: true,
+                arraySizes: [],
             };
             this.scope.variableDeclarations.push(vd);
         }
@@ -572,7 +575,7 @@ export class DshlVisitor
         this.type.push(td);
         this.visitChildren(ctx);
         this.type.pop();
-        return { type: 'type', typeDeclaration: td };
+        return { type: 'type', typeDeclaration: td, arraySizes: [] };
     }
 
     private getTypeKeyword(type: string): TypeKeyword {
@@ -635,7 +638,7 @@ export class DshlVisitor
         this.enum = ed;
         this.visitChildren(ctx);
         this.enum = null;
-        return { type: 'enum', enumDeclaration: ed };
+        return { type: 'enum', enumDeclaration: ed, arraySizes: [] };
     }
 
     public visitState_object(ctx: State_objectContext): ExpressionResult | null {
@@ -673,6 +676,7 @@ export class DshlVisitor
                 isVisible: visible,
                 usages: [],
                 isHlsl: true,
+                arraySizes: this.getArraySize(vi.array_subscript()),
             };
             if (this.type.length) {
                 this.type[this.type.length - 1].members.push(vd);
@@ -683,6 +687,10 @@ export class DshlVisitor
 
         this.visitChildren(ctx);
         return null;
+    }
+
+    private getArraySize(ctx: Array_subscriptContext[]): number[] {
+        return ctx.map((actx) => Number.parseInt(actx.expression()?.text ?? ''));
     }
 
     private getType(ctx: TypeContext, visible: boolean): ExpressionResult | null {
@@ -736,10 +744,11 @@ export class DshlVisitor
                 return null;
             }
         }
+        const arraySizes = this.getArraySize(ctx.array_subscript());
         if (td) {
-            return { type: 'type', typeDeclaration: td };
+            return { type: 'type', typeDeclaration: td, arraySizes };
         } else if (ed) {
-            return { type: 'enum', enumDeclaration: ed };
+            return { type: 'enum', enumDeclaration: ed, arraySizes };
         } else {
             return null;
         }
@@ -787,6 +796,7 @@ export class DshlVisitor
                 isVisible: visible,
                 usages: [],
                 isHlsl: true,
+                arraySizes: this.getArraySize(ctx.array_subscript()),
             };
             this.scope.variableDeclarations.push(vd);
         }
@@ -811,7 +821,7 @@ export class DshlVisitor
                 if (vd) {
                     this.createVariableUsage(vd, identifier.start, visible);
                     if (vd.typeDeclaration) {
-                        result = { type: 'type', typeDeclaration: vd.typeDeclaration };
+                        result = { type: 'type', typeDeclaration: vd.typeDeclaration, arraySizes: vd.arraySizes };
                     }
                 } else if (emd) {
                     const emu: EnumMemberUsage = {
@@ -835,7 +845,7 @@ export class DshlVisitor
                     };
                     this.scope.typeUsages.push(tu);
                     td.usages.push(tu);
-                    result = { type: 'type', typeDeclaration: td };
+                    result = { type: 'type', typeDeclaration: td, arraySizes: [] };
                 } else if (ed) {
                     const eu: EnumUsage = {
                         declaration: ed,
@@ -847,7 +857,7 @@ export class DshlVisitor
                     };
                     this.scope.enumUsages.push(eu);
                     ed.usages.push(eu);
-                    result = { type: 'enum', enumDeclaration: ed };
+                    result = { type: 'enum', enumDeclaration: ed, arraySizes: [] };
                 } else if (this.enum) {
                     const emd = this.enum.members.find((m) => m.name === identifier.text);
                     if (emd) {
@@ -886,7 +896,7 @@ export class DshlVisitor
                     if (vd) {
                         this.createVariableUsage(vd, identifier.start, visible);
                         if (vd.typeDeclaration) {
-                            result = { type: 'type', typeDeclaration: vd.typeDeclaration };
+                            result = { type: 'type', typeDeclaration: vd.typeDeclaration, arraySizes: vd.arraySizes };
                         }
                     } else if (emd) {
                         const emu: EnumMemberUsage = {
@@ -910,7 +920,7 @@ export class DshlVisitor
                         };
                         this.scope.typeUsages.push(tu);
                         td.usages.push(tu);
-                        result = { type: 'type', typeDeclaration: td };
+                        result = { type: 'type', typeDeclaration: td, arraySizes: [] };
                     } else if (ed) {
                         const eu: EnumUsage = {
                             declaration: ed,
@@ -922,7 +932,7 @@ export class DshlVisitor
                         };
                         this.scope.enumUsages.push(eu);
                         ed.usages.push(eu);
-                        result = { type: 'enum', enumDeclaration: ed };
+                        result = { type: 'enum', enumDeclaration: ed, arraySizes: [] };
                     }
                 }
             } else if (dot) {
@@ -941,7 +951,7 @@ export class DshlVisitor
                         if (m) {
                             this.createVariableUsage(m, identifier.start, visible);
                             if (m.typeDeclaration) {
-                                result = { type: 'type', typeDeclaration: m.typeDeclaration };
+                                result = { type: 'type', typeDeclaration: m.typeDeclaration, arraySizes: [] };
                             }
                         }
                     }
@@ -998,7 +1008,7 @@ export class DshlVisitor
                                     typeDeclaration: expResult.typeDeclaration,
                                 };
                                 this.snapshot.expressionRanges.push(er);
-                                result = { type: 'type', typeDeclaration: etd };
+                                result = { type: 'type', typeDeclaration: etd, arraySizes: [] };
                             } else if (eed) {
                                 const eu: EnumUsage = {
                                     declaration: eed,
@@ -1016,7 +1026,7 @@ export class DshlVisitor
                                     typeDeclaration: expResult.typeDeclaration,
                                 };
                                 this.snapshot.expressionRanges.push(er);
-                                result = { type: 'enum', enumDeclaration: eed };
+                                result = { type: 'enum', enumDeclaration: eed, arraySizes: [] };
                             } else if (emd) {
                                 const emu: EnumMemberUsage = {
                                     declaration: emd,

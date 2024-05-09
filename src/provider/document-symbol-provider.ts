@@ -23,7 +23,7 @@ import {
 } from '../interface/macro/macro-declaration';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
 import { TypeDeclaration } from '../interface/type/type-declaration';
-import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
+import { toStringVariableType } from '../interface/variable/variable-declaration';
 
 export async function documentSymbolProvider(
     params: DocumentSymbolParams
@@ -60,7 +60,7 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
                 kind: getKind(SymbolKind.Variable),
                 range: vd.originalRange,
                 selectionRange: vd.nameOriginalRange,
-                detail: getVariableTypeWithInterval(vd),
+                detail: toStringVariableType(vd),
             });
         }
     }

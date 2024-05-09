@@ -56,7 +56,7 @@ import { ShaderStage } from '../interface/shader-stage';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
 import { EnumDeclaration, toStringEnumDeclaration } from '../interface/type/enum-declaration';
 import { TypeDeclaration, TypeKeyword, toStringTypeDeclaration } from '../interface/type/type-declaration';
-import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
+import { toStringVariableType } from '../interface/variable/variable-declaration';
 import { getPredefineSnapshot } from '../processor/include-processor';
 import { getIncludeCompletionInfos } from '../processor/include-resolver';
 
@@ -149,7 +149,7 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     const vds = snapshot.getVariableDeclarationsInScope(position, true);
     addCompletionItems(
         result,
-        vds.map((vd) => ({ name: vd.name, type: getVariableTypeWithInterval(vd) })),
+        vds.map((vd) => ({ name: vd.name, type: toStringVariableType(vd) })),
         CompletionItemKind.Variable,
         'variable'
     );
@@ -331,7 +331,7 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     const vds = snapshot.getVariableDeclarationsInScope(position, false);
     addCompletionItems(
         result,
-        vds.map((vd) => ({ name: vd.name, type: getVariableTypeWithInterval(vd) })),
+        vds.map((vd) => ({ name: vd.name, type: toStringVariableType(vd) })),
         CompletionItemKind.Variable,
         'variable'
     );

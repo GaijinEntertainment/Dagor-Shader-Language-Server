@@ -173,7 +173,7 @@ template_parameter_list:
 parameter_list: parameter (COMMA parameter)*;
 
 parameter:
-	input_modifier* type hlsl_identifier semantic* hlsl_identifier* (
+	input_modifier* type hlsl_identifier array_subscript* semantic* hlsl_identifier* (
 		COLON interpolation_modifier
 	)* (ASSIGN expression)?
 	| function_call hlsl_identifier;

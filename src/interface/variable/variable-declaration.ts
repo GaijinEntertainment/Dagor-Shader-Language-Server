@@ -17,13 +17,28 @@ export interface VariableDeclaration {
     uri: DocumentUri;
     interval?: IntervalDeclaration;
     isHlsl: boolean;
+    arraySizes: number[];
 }
 
-export function getVariableTypeWithInterval(vd: VariableDeclaration): string {
-    const interval = vd.interval ? 'interval ' : '';
-    return interval + vd.type;
+export function toStringVariableType(vd: VariableDeclaration, array = true): string {
+    let result = vd.type;
+    if (vd.typeDeclaration) {
+        result = vd.typeDeclaration.name ?? '<anonymous>';
+    } else if (vd.enumDeclaration) {
+        result = vd.enumDeclaration.name ?? '<anonymous>';
+    }
+    if (array) {
+        result += toStringArray(vd.arraySizes);
+    }
+    return result;
 }
 
 export function toStringVariableDeclaration(vd: VariableDeclaration): string {
-    return `${vd.type} ${vd.name};`;
+    const type = toStringVariableType(vd, false);
+    const array = toStringArray(vd.arraySizes);
+    return `${type} ${vd.name}${array};`;
+}
+
+function toStringArray(arraySizes: number[]): string {
+    return arraySizes.map((size) => `[${Number.isNaN(size) ? '' : size}]`).join('');
 }

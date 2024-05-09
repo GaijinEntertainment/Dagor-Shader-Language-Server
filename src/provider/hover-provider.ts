@@ -16,7 +16,7 @@ import { ShaderUsage } from '../interface/shader/shader-usage';
 import { EnumDeclaration, toStringEnumDeclaration } from '../interface/type/enum-declaration';
 import { EnumMemberDeclaration, toStringEnumMemberDeclaration } from '../interface/type/enum-member-declaration';
 import { TypeDeclaration, toStringTypeDeclaration } from '../interface/type/type-declaration';
-import { VariableDeclaration } from '../interface/variable/variable-declaration';
+import { VariableDeclaration, toStringVariableDeclaration } from '../interface/variable/variable-declaration';
 
 export async function hoverProvider(params: HoverParams): Promise<Hover | undefined | null> {
     const snapshot = await getSnapshot(params.textDocument.uri);
@@ -212,7 +212,7 @@ function createVariableHoverContent(vd: VariableDeclaration): MarkupContent {
 }
 
 function getVariableValue(vd: VariableDeclaration): string {
-    const declaration = `${vd.type ? vd.type : '<anonymous>'} ${vd.name};`;
+    const declaration = toStringVariableDeclaration(vd);
     if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
         const language = vd.isHlsl ? 'hlsl' : 'dshl';
         return `\`\`\`${language}\n${declaration}\n\`\`\``;
