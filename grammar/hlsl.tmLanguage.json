@@ -295,7 +295,7 @@
         },
         "struct-class-interface-declaration": {
             "comment": "STRUCT, CLASS, INTERFACE DECLARATION",
-            "match": "\\b(struct|class|interface)((?:\\s|/\\*.*?\\*/)+)([a-zA-Z_]\\w*)(?:((?:\\s|/\\*.*?\\*/)*):((?:\\s|/\\*.*?\\*/)*)([a-zA-Z_]\\w*)(?:((?:\\s|/\\*.*?\\*/)*),((?:\\s|/\\*.*?\\*/)*)([a-zA-Z_]\\w*))*)?\\b",
+            "match": "\\b(struct|class|interface)(?:((?:\\s|/\\*.*?\\*/)+)([a-zA-Z_]\\w*)(?:((?:\\s|/\\*.*?\\*/)*):((?:\\s|/\\*.*?\\*/)*)([a-zA-Z_]\\w*)(?:((?:\\s|/\\*.*?\\*/)*),((?:\\s|/\\*.*?\\*/)*)([a-zA-Z_]\\w*))*)?)?\\b",
             "captures": {
                 "1": { "name": "storage.type.hlsl" },
                 "2": { "name": "comment.block.hlsl" },

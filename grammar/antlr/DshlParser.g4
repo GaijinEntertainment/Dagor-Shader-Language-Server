@@ -185,9 +185,11 @@ precise: hlsl_identifier; // precise
 semantic: COLON expression;
 
 variable_declaration:
-	variable_storage_class* type_modifier* type variable_initialization (
-		COMMA variable_initialization
-	)*;
+	variable_storage_class* type_modifier* (
+		type
+		| type_declaration
+		| enum_declaration
+	) variable_initialization (COMMA variable_initialization)*;
 
 variable_initialization:
 	hlsl_identifier (AT IDENTIFIER)? array_subscript* semantic* packoffset* register* (

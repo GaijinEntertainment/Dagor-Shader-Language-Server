@@ -126,12 +126,12 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
         CompletionItemKind.Keyword,
         'DSHL preprocessor directive'
     );
-    const tds = snapshot.getTypeDeclarationsInScope(position);
+    const tds = snapshot.getTypeDeclarationsInScope(position).filter((td) => td.name);
     result.push(
         ...tds.map<CompletionItem>((td) => ({
-            label: td.name,
+            label: td.name!,
             kind: getTypeCompletionItemKind(td.type),
-            detail: getDetail(td, td.type),
+            detail: `${td.name} - ${td.type}`,
             documentation: getTypeDeclarationDocumentation(td),
         }))
     );
@@ -179,11 +179,11 @@ function getMembers(er: ExpressionRange & { type: 'type' }): CompletionItem[] {
 }
 
 function addEmbeddedItems(result: CompletionItem[], td: TypeDeclaration): void {
-    for (const etd of td.embeddedTypes) {
+    for (const etd of td.embeddedTypes.filter((etd) => etd.name)) {
         result.push({
-            label: etd.name,
+            label: etd.name!,
             kind: getTypeCompletionItemKind(etd.type),
-            detail: getDetail(etd, etd.type),
+            detail: `${etd.name} - ${etd.type}`,
             documentation: getTypeDeclarationDocumentation(etd),
         });
     }

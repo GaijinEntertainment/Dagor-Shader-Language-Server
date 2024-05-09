@@ -212,7 +212,7 @@ function createVariableHoverContent(vd: VariableDeclaration): MarkupContent {
 }
 
 function getVariableValue(vd: VariableDeclaration): string {
-    const declaration = `${vd.type} ${vd.name};`;
+    const declaration = `${vd.type ? vd.type : '<anonymous>'} ${vd.name};`;
     if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
         const language = vd.isHlsl ? 'hlsl' : 'dshl';
         return `\`\`\`${language}\n${declaration}\n\`\`\``;

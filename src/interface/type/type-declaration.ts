@@ -8,7 +8,7 @@ export type TypeKeyword = 'struct' | 'class' | 'interface';
 
 export interface TypeDeclaration {
     type: TypeKeyword;
-    name: string;
+    name?: string;
     nameOriginalRange: Range;
     originalRange: Range;
     usages: TypeUsage[];

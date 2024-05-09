@@ -59,7 +59,7 @@ async function getTypeDeclaration(item: TypeHierarchyItem): Promise<TypeDeclarat
 function mapTypeDeclaration(td: TypeDeclaration): TypeHierarchyItem {
     return {
         kind: getTypeSymbolKind(td.type),
-        name: td.name,
+        name: td.name ?? '<anonymous>',
         range: td.originalRange,
         selectionRange: td.nameOriginalRange,
         uri: td.uri,

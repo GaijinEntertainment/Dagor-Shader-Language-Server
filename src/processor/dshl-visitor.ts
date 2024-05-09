@@ -527,14 +527,14 @@ export class DshlVisitor
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
             this.snapshot.foldingRanges.push(range);
         }
-        const identifier = ctx.hlsl_identifier(0);
+        const identifier = ctx.hlsl_identifier().length ? ctx.hlsl_identifier(0) : null;
         const originalRange = this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
         const nameOriginalRange = identifier
             ? this.snapshot.getOriginalRange(identifier.start.startIndex, identifier.stop!.stopIndex + 1)
             : originalRange;
         const td: TypeDeclaration = {
             type: this.getTypeKeyword(ctx.type_keyowrd().text),
-            name: identifier ? identifier.text : '',
+            name: identifier?.text,
             uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
             originalRange,
             nameOriginalRange,
@@ -572,7 +572,7 @@ export class DshlVisitor
         this.type.push(td);
         this.visitChildren(ctx);
         this.type.pop();
-        return null;
+        return { type: 'type', typeDeclaration: td };
     }
 
     private getTypeKeyword(type: string): TypeKeyword {
@@ -635,7 +635,7 @@ export class DshlVisitor
         this.enum = ed;
         this.visitChildren(ctx);
         this.enum = null;
-        return null;
+        return { type: 'enum', enumDeclaration: ed };
     }
 
     public visitState_object(ctx: State_objectContext): ExpressionResult | null {
@@ -649,7 +649,9 @@ export class DshlVisitor
 
     public visitVariable_declaration(ctx: Variable_declarationContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
-        const expResult = this.getType(ctx.type(), visible);
+        const type = ctx.type();
+        const tdCtx = ctx.type_declaration();
+        const expResult = type ? this.getType(type, visible) : this.visit(tdCtx!);
         for (const vi of ctx.variable_initialization()) {
             const identifier = vi.hlsl_identifier();
             const nameOriginalRange = this.snapshot.getOriginalRange(
@@ -657,7 +659,10 @@ export class DshlVisitor
                 identifier.stop!.stopIndex + 1
             );
             const vd: VariableDeclaration = {
-                type: ctx.type().text,
+                type:
+                    type?.text ??
+                    (expResult?.type === 'type' ? expResult.typeDeclaration.name : expResult?.enumDeclaration.name) ??
+                    '',
                 typeDeclaration: expResult?.type === 'type' ? expResult.typeDeclaration : undefined,
                 enumDeclaration: expResult?.type === 'enum' ? expResult.enumDeclaration : undefined,
                 name: identifier.text,
@@ -675,6 +680,7 @@ export class DshlVisitor
                 this.scope.variableDeclarations.push(vd);
             }
         }
+
         this.visitChildren(ctx);
         return null;
     }

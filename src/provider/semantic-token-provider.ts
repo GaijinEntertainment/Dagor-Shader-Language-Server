@@ -33,7 +33,7 @@ function addTokens(scope: Scope, stb: SemanticItem[]): void {
         if (tu.isVisible) {
             stb.push({
                 position: tu.originalRange.start,
-                length: tu.declaration.name.length,
+                length: tu.declaration.name?.length ?? 0,
                 type: TYPE,
             });
         }
