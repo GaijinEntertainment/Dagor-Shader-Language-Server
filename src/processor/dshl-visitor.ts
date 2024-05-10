@@ -5,6 +5,7 @@ import {
     Array_subscriptContext,
     Do_statementContext,
     DshlParser,
+    Dshl_array_subscriptContext,
     Dshl_assignmentContext,
     Dshl_assume_statementContext,
     Dshl_block_blockContext,
@@ -159,7 +160,7 @@ export class DshlVisitor
             isVisible: visible,
             usages: [],
             isHlsl: false,
-            arraySizes: [],
+            arraySizes: this.getDshlArraySize(ctx.dshl_array_subscript()),
         };
         // if (visible && identifier.text.toLowerCase() !== identifier.text) {
         //     this.snapshot.diagnostics.push({
@@ -426,7 +427,7 @@ export class DshlVisitor
                 isVisible: visible,
                 usages: [],
                 isHlsl: true,
-                arraySizes: [],
+                arraySizes: this.getDshlArraySize(ctx.dshl_array_subscript()),
             };
             this.scope.variableDeclarations.push(vd);
         }
@@ -691,6 +692,10 @@ export class DshlVisitor
 
     private getArraySize(ctx: Array_subscriptContext[]): number[] {
         return ctx.map((actx) => Number.parseInt(actx.expression()?.text ?? ''));
+    }
+
+    private getDshlArraySize(ctx: Dshl_array_subscriptContext[]): number[] {
+        return ctx.map((actx) => Number.parseInt(actx.dshl_expression()?.text ?? ''));
     }
 
     private getType(ctx: TypeContext, visible: boolean): ExpressionResult | null {

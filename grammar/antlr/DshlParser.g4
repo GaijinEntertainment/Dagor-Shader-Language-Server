@@ -16,7 +16,7 @@ dshl_interval_declaration:
 	INTERVAL IDENTIFIER COLON (dshl_expression COMMA)* IDENTIFIER SEMICOLON;
 
 dshl_variable_declaration:
-	dshl_modifier* IDENTIFIER IDENTIFIER dshl_array_subscript? (
+	dshl_modifier* IDENTIFIER IDENTIFIER dshl_array_subscript* (
 		ASSIGN dshl_expression
 	)? (ALWAYS_REFERENCED | NO_WARNINGS | dshl_modifier)* SEMICOLON;
 
@@ -47,7 +47,7 @@ dshl_assume_statement:
 
 dshl_assignment:
 	IDENTIFIER ASSIGN dshl_expression SEMICOLON
-	| IDENTIFIER AT IDENTIFIER dshl_array_subscript? (
+	| IDENTIFIER AT IDENTIFIER dshl_array_subscript* (
 		ASSIGN IDENTIFIER dshl_hlsl_block SEMICOLON?
 		| COLON IDENTIFIER LRB dshl_expression RRB dshl_hlsl_block SEMICOLON?
 		| ASSIGN dshl_expression SEMICOLON?
