@@ -20,9 +20,12 @@ export async function typeHierarchyPrepareProvider(
     const td = snapshot.getTypeDeclarationAt(params.position);
     if (td) {
         return [mapTypeDeclaration(td)];
-    } else {
-        return null;
     }
+    const tu = snapshot.getTypeUsageAt(params.position);
+    if (tu) {
+        return [mapTypeDeclaration(tu.declaration)];
+    }
+    return null;
 }
 
 export async function typeHierarchySupertypesProvider(
@@ -53,7 +56,15 @@ async function getTypeDeclaration(item: TypeHierarchyItem): Promise<TypeDeclarat
         return null;
     }
     const position = item.data as Position;
-    return snapshot.getTypeDeclarationAt(position);
+    const td = snapshot.getTypeDeclarationAt(position);
+    if (td) {
+        return td;
+    }
+    const tu = snapshot.getTypeUsageAt(position);
+    if (tu) {
+        return tu.declaration;
+    }
+    return null;
 }
 
 function mapTypeDeclaration(td: TypeDeclaration): TypeHierarchyItem {
