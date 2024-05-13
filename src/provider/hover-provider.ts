@@ -11,12 +11,11 @@ import { toStringFunctionDeclaration } from '../interface/function/function-decl
 import { FunctionUsage } from '../interface/function/function-usage';
 import { toStringMacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroUsage, getBestMacroDeclaration } from '../interface/macro/macro-usage';
-import { toStringShaderDeclaration } from '../interface/shader/shader-declaration';
-import { ShaderUsage } from '../interface/shader/shader-usage';
-import { EnumDeclaration, toStringEnumDeclaration } from '../interface/type/enum-declaration';
-import { EnumMemberDeclaration, toStringEnumMemberDeclaration } from '../interface/type/enum-member-declaration';
-import { TypeDeclaration, toStringTypeDeclaration } from '../interface/type/type-declaration';
-import { VariableDeclaration, toStringVariableDeclaration } from '../interface/variable/variable-declaration';
+import { getShaderInfo } from '../interface/shader/shader-declaration';
+import { getEnumInfo } from '../interface/type/enum-declaration';
+import { getEnumMemberInfo } from '../interface/type/enum-member-declaration';
+import { getTypeInfo } from '../interface/type/type-declaration';
+import { getVariableInfo } from '../interface/variable/variable-declaration';
 
 export async function hoverProvider(params: HoverParams): Promise<Hover | undefined | null> {
     const snapshot = await getSnapshot(params.textDocument.uri);
@@ -42,35 +41,35 @@ export async function hoverProvider(params: HoverParams): Promise<Hover | undefi
     const tu = snapshot.getTypeUsageAt(params.position);
     if (tu) {
         return {
-            contents: createTypeHoverContent(tu.declaration),
+            contents: getTypeInfo(tu.declaration, getCapabilities().hoverFormat) ?? [],
             range: tu.originalRange,
         };
     }
     const eu = snapshot.getEnumUsageAt(params.position);
     if (eu) {
         return {
-            contents: createEnumHoverContent(eu.declaration),
+            contents: getEnumInfo(eu.declaration, getCapabilities().hoverFormat) ?? [],
             range: eu.originalRange,
         };
     }
     const emu = snapshot.getEnumMemberUsageAt(params.position);
     if (emu) {
         return {
-            contents: createEnumMemberHoverContent(emu.declaration),
+            contents: getEnumMemberInfo(emu.declaration, getCapabilities().completionDocumentationFormat) ?? [],
             range: emu.originalRange,
         };
     }
     const id = snapshot.getIntervalDeclarationAt(params.position);
     if (id) {
         return {
-            contents: createVariableHoverContent(id.variable),
+            contents: getVariableInfo(id.variable, getCapabilities().hoverFormat) ?? [],
             range: id.nameOriginalRange,
         };
     }
     const vu = snapshot.getVariableUsageAt(params.position);
     if (vu) {
         return {
-            contents: createVariableHoverContent(vu.declaration),
+            contents: getVariableInfo(vu.declaration, getCapabilities().hoverFormat) ?? [],
             range: vu.originalRange,
         };
     }
@@ -84,7 +83,7 @@ export async function hoverProvider(params: HoverParams): Promise<Hover | undefi
     const su = snapshot.getShaderUsageAt(params.position);
     if (su) {
         return {
-            contents: createShaderHoverContent(su),
+            contents: getShaderInfo(su.declaration, getCapabilities().hoverFormat) ?? [],
             range: su.originalRange,
         };
     }
@@ -150,79 +149,6 @@ function getDefineValue(dc: DefineContext): string {
     }
 }
 
-function createTypeHoverContent(td: TypeDeclaration): MarkupContent {
-    return {
-        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
-        value: getTypeValue(td),
-    };
-}
-
-function getTypeValue(td: TypeDeclaration): string {
-    const declaration = toStringTypeDeclaration(td);
-    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
-        return `\`\`\`hlsl\n${declaration}\n\`\`\``;
-    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
-        return declaration;
-    } else {
-        return '';
-    }
-}
-
-function createEnumHoverContent(ed: EnumDeclaration): MarkupContent {
-    return {
-        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
-        value: getEnumValue(ed),
-    };
-}
-
-function getEnumValue(ed: EnumDeclaration): string {
-    const declaration = toStringEnumDeclaration(ed);
-    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
-        return `\`\`\`hlsl\n${declaration}\n\`\`\``;
-    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
-        return declaration;
-    } else {
-        return '';
-    }
-}
-
-function createEnumMemberHoverContent(emd: EnumMemberDeclaration): MarkupContent {
-    return {
-        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
-        value: getEnumMemberValue(emd),
-    };
-}
-
-function getEnumMemberValue(emd: EnumMemberDeclaration): string {
-    const declaration = toStringEnumMemberDeclaration(emd);
-    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
-        return `\`\`\`hlsl\n${declaration}\n\`\`\``;
-    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
-        return declaration;
-    } else {
-        return '';
-    }
-}
-
-function createVariableHoverContent(vd: VariableDeclaration): MarkupContent {
-    return {
-        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
-        value: getVariableValue(vd),
-    };
-}
-
-function getVariableValue(vd: VariableDeclaration): string {
-    const declaration = toStringVariableDeclaration(vd);
-    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
-        const language = vd.isHlsl ? 'hlsl' : 'dshl';
-        return `\`\`\`${language}\n${declaration}\n\`\`\``;
-    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
-        return declaration;
-    } else {
-        return '';
-    }
-}
-
 function createFunctionHoverContent(fu: FunctionUsage): MarkupContent {
     return {
         kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
@@ -235,25 +161,6 @@ function getFunctionValue(fu: FunctionUsage): string {
     const declaration = toStringFunctionDeclaration(fd);
     if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
         return `\`\`\`hlsl\n${declaration}\n\`\`\``;
-    } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
-        return declaration;
-    } else {
-        return '';
-    }
-}
-
-function createShaderHoverContent(su: ShaderUsage): MarkupContent {
-    return {
-        kind: getCapabilities().hoverFormat.includes(MarkupKind.Markdown) ? MarkupKind.Markdown : MarkupKind.PlainText,
-        value: getShaderValue(su),
-    };
-}
-
-function getShaderValue(su: ShaderUsage): string {
-    const sd = su.declaration;
-    const declaration = toStringShaderDeclaration(sd);
-    if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
-        return `\`\`\`dshl\n${declaration}\n\`\`\``;
     } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
         return declaration;
     } else {

@@ -5,12 +5,15 @@ import { ParseTree } from 'antlr4ts/tree/ParseTree';
 import { URI } from 'vscode-uri';
 import { DshlLexer } from '../_generated/DshlLexer';
 import { DshlParser } from '../_generated/DshlParser';
-import { createLexer, offsetPosition } from '../helper/helper';
+import { createLexer, defaultRange, offsetPosition } from '../helper/helper';
+import { hlslEnumTypes, hlslStructTypes } from '../helper/hlsl-info';
 import { Scope } from '../helper/scope';
 import { getDocuments, syncInitialization } from '../helper/server-helper';
 import { DocumentVersion } from '../interface/document-version';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { SnapshotVersion, invalidVersion } from '../interface/snapshot-version';
+import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { TypeDeclaration } from '../interface/type/type-declaration';
 import { DshlVisitor } from '../processor/dshl-visitor';
 import { getShaderConfigVersion, syncIncludeFoldersCollection } from '../processor/include-processor';
 import { preprocess } from '../processor/preprocessor';
@@ -110,11 +113,12 @@ export class DocumentInfo {
         if (this.analyzedVersion <= snapshot.version) {
             this.analyzedVersion = snapshot.version;
             this.snapshot = snapshot;
-            // sendDiagnostics({ uri: snapshot.uri, diagnostics: snapshot.diagnostics });
         }
     }
 
     private analyzeSnapshot(snapshot: Snapshot): void {
+        this.addBuiltInStructs(snapshot);
+        this.addBuiltInEnums(snapshot);
         const lexer = createLexer(snapshot.text);
         const parser = this.createParser(lexer);
         let tree: ParseTree;
@@ -130,6 +134,76 @@ export class DocumentInfo {
             // catching any error during the parsing to prevent the server from crashing
         }
         this.addMacroDefinitions(snapshot);
+    }
+
+    private addBuiltInStructs(snapshot: Snapshot): void {
+        for (const hst of hlslStructTypes.filter((hst) => hst.keyword === 'struct')) {
+            const td: TypeDeclaration = {
+                embeddedEnums: [],
+                embeddedTypes: [],
+                isBuiltIn: true,
+                isVisible: false,
+                members: [],
+                nameOriginalRange: defaultRange,
+                originalRange: defaultRange,
+                subTypes: [],
+                superTypes: [],
+                type: 'struct',
+                uri: '',
+                usages: [],
+                name: hst.name,
+                description: hst.description,
+                links: hst.links,
+            };
+            td.members =
+                hst.members?.map((hstm) => ({
+                    arraySizes: [],
+                    isHlsl: true,
+                    isVisible: false,
+                    name: hstm.name,
+                    nameEndPosition: 0,
+                    nameOriginalRange: defaultRange,
+                    originalRange: defaultRange,
+                    type: hstm.type ?? '',
+                    uri: '',
+                    usages: [],
+                    containerType: td,
+                    description: hstm.description,
+                })) ?? [];
+            snapshot.rootScope.typeDeclarations.push(td);
+        }
+    }
+
+    private addBuiltInEnums(snapshot: Snapshot): void {
+        for (const het of hlslEnumTypes) {
+            const ed: EnumDeclaration = {
+                isBuiltIn: true,
+                isClass: false,
+                isVisible: false,
+                members: [],
+                originalRange: defaultRange,
+                nameOriginalRange: defaultRange,
+                uri: '',
+                usages: [],
+                name: het.name,
+                type: het.type,
+                description: het.description,
+                links: het.links,
+            };
+            ed.members =
+                het.members?.map((hemt) => ({
+                    enumDeclaration: ed,
+                    isVisible: false,
+                    name: hemt.name,
+                    nameOriginalRange: defaultRange,
+                    originalRange: defaultRange,
+                    uri: '',
+                    usages: [],
+                    value: hemt.value,
+                    description: hemt.description,
+                })) ?? [];
+            snapshot.rootScope.enumDeclarations.push(ed);
+        }
     }
 
     private addMacroDefinitions(snapshot: Snapshot): void {
@@ -305,11 +379,9 @@ export class DocumentInfo {
             this.analyzationInProgressVersion = invalidVersion;
             this.analyzationInProgress = Promise.resolve();
         }
-        // sendDiagnostics({ uri: this.document.uri, diagnostics: this.snapshot.diagnostics });
     }
 
     public closed(): void {
         this.lastTimeClosed = Date.now();
-        // sendDiagnostics({ uri: this.document.uri, diagnostics: [] });
     }
 }

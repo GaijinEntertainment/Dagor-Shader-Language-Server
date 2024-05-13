@@ -25,21 +25,20 @@ import {
     dshlPrimitiveTypes,
     dshlProperties,
 } from '../helper/dshl-info';
-import { isBeforeOrEqual, rangeContains } from '../helper/helper';
+import { createDocumentationLinks, isBeforeOrEqual, rangeContains } from '../helper/helper';
 import {
     hlslAttributes,
     hlslBufferTypes,
     hlslDshlPreprocessorDirectives,
-    hlslEnumTypes,
     hlslFunctions,
     hlslKeywords,
     hlslModifiers,
     hlslNonPrimitiveTypes,
+    hlslOtherTypes,
     hlslPreprocessorDirectives,
     hlslPreprocessorPragmaDirectives,
     hlslPrimitiveTypes,
     hlslSemantics,
-    hlslStructTypes,
     hlslSystemValueSemantics,
     hlslTextureTypes,
     hlslVariables,
@@ -54,8 +53,9 @@ import { LanguageElementInfo } from '../interface/language-element-info';
 import { toStringMacroParameterList } from '../interface/macro/macro';
 import { ShaderStage } from '../interface/shader-stage';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
-import { EnumDeclaration, toStringEnumDeclaration } from '../interface/type/enum-declaration';
-import { TypeDeclaration, TypeKeyword, toStringTypeDeclaration } from '../interface/type/type-declaration';
+import { getEnumInfo } from '../interface/type/enum-declaration';
+import { getEnumMemberInfo } from '../interface/type/enum-member-declaration';
+import { TypeDeclaration, TypeKeyword, getTypeInfo } from '../interface/type/type-declaration';
 import { toStringVariableType } from '../interface/variable/variable-declaration';
 import { getPredefineSnapshot } from '../processor/include-processor';
 import { getIncludeCompletionInfos } from '../processor/include-resolver';
@@ -107,6 +107,7 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
                       label: m.name,
                       kind: getKind(CompletionItemKind.EnumMember),
                       detail: `${m.name} - enum value`,
+                      documentation: getEnumMemberInfo(m, getCapabilities().completionDocumentationFormat),
                   })))
         );
         return;
@@ -132,7 +133,7 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
             label: td.name!,
             kind: getTypeCompletionItemKind(td.type),
             detail: `${td.name} - ${td.type}`,
-            documentation: getTypeDeclarationDocumentation(td),
+            documentation: getTypeInfo(td, getCapabilities().completionDocumentationFormat),
         }))
     );
     const eds = snapshot.getEnumDeclarationsInScope(position);
@@ -143,7 +144,7 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
                 label: ed.name!,
                 kind: getKind(CompletionItemKind.Enum),
                 detail: `${ed.name} - enum ${ed.isClass ? 'class' : ''}`,
-                documentation: getEnumDeclarationDocumentation(ed),
+                documentation: getEnumInfo(ed, getCapabilities().completionDocumentationFormat),
             }))
     );
     const vds = snapshot.getVariableDeclarationsInScope(position, true);
@@ -157,8 +158,7 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     addCompletionItems(result, hlslAttributes, CompletionItemKind.Keyword, 'attribute');
     addCompletionItems(result, hlslSemantics, CompletionItemKind.Keyword, 'semantic');
     addCompletionItems(result, hlslSystemValueSemantics, CompletionItemKind.Keyword, 'semantic');
-    addCompletionItems(result, hlslStructTypes, CompletionItemKind.Class, 'type');
-    addCompletionItems(result, hlslEnumTypes, CompletionItemKind.Enum, 'enum');
+    addCompletionItems(result, hlslOtherTypes, CompletionItemKind.Class, 'type');
     addCompletionItems(result, hlslBufferTypes, CompletionItemKind.Class, 'type');
     addCompletionItems(result, hlslTextureTypes, CompletionItemKind.Class, 'type');
     addCompletionItems(result, hlslNonPrimitiveTypes, CompletionItemKind.Class, 'type');
@@ -184,7 +184,7 @@ function addEmbeddedItems(result: CompletionItem[], td: TypeDeclaration): void {
             label: etd.name!,
             kind: getTypeCompletionItemKind(etd.type),
             detail: `${etd.name} - ${etd.type}`,
-            documentation: getTypeDeclarationDocumentation(etd),
+            documentation: getTypeInfo(etd, getCapabilities().completionDocumentationFormat),
         });
     }
     for (const eed of td.embeddedEnums.filter((eed) => eed.name)) {
@@ -192,7 +192,7 @@ function addEmbeddedItems(result: CompletionItem[], td: TypeDeclaration): void {
             label: eed.name!,
             kind: getKind(CompletionItemKind.Enum),
             detail: `${eed.name} - enum`,
-            documentation: getEnumDeclarationDocumentation(eed),
+            documentation: getEnumInfo(eed, getCapabilities().completionDocumentationFormat),
         });
     }
     for (const eemd of td.embeddedEnums.filter((eed) => !eed.name).flatMap((eed) => eed.members)) {
@@ -200,6 +200,7 @@ function addEmbeddedItems(result: CompletionItem[], td: TypeDeclaration): void {
             label: eemd.name,
             kind: getKind(CompletionItemKind.EnumMember),
             detail: `${eemd.name} - enum value`,
+            documentation: getEnumMemberInfo(eemd, getCapabilities().completionDocumentationFormat),
         });
     }
 }
@@ -431,69 +432,12 @@ function getDocumentation(item: LanguageElementInfo): MarkupContent | undefined 
     }
 }
 
-function getTypeDeclarationDocumentation(td: TypeDeclaration): MarkupContent | undefined {
-    const documentationText = toStringTypeDeclaration(td);
-    if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.Markdown)) {
-        return {
-            kind: MarkupKind.Markdown,
-            value: '```hlsl\n' + documentationText + '\n```',
-        };
-    } else if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.PlainText)) {
-        return {
-            kind: MarkupKind.PlainText,
-            value: documentationText,
-        };
-    } else {
-        return undefined;
-    }
-}
-
-function getEnumDeclarationDocumentation(ed: EnumDeclaration): MarkupContent | undefined {
-    const documentationText = toStringEnumDeclaration(ed);
-    if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.Markdown)) {
-        return {
-            kind: MarkupKind.Markdown,
-            value: '```hlsl\n' + documentationText + '\n```',
-        };
-    } else if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.PlainText)) {
-        return {
-            kind: MarkupKind.PlainText,
-            value: documentationText,
-        };
-    } else {
-        return undefined;
-    }
-}
-
 function getDocumentationText(item: LanguageElementInfo): string {
     let documentation = item.description ?? '';
     if (item.additionalInfo) {
         documentation = `${item.additionalInfo}\n\n${documentation}`;
     }
     return documentation;
-}
-
-function createDocumentationLinks(links: string[] | undefined): string {
-    let result = '';
-    if (links) {
-        for (const link of links) {
-            const linkName = getLinkName(link);
-            result += `\n\n[${linkName}](${link})`;
-        }
-    }
-    return result;
-}
-
-function getLinkName(link: string): string {
-    let linkName = 'Open documentation';
-    if (link.startsWith('https://microsoft.github.io/DirectX-Specs')) {
-        linkName = 'Open DirectX Specs documentation';
-    } else if (link.startsWith('https://learn.microsoft.com')) {
-        linkName = 'Open Microsoft Learn documentation';
-    } else if (link.startsWith('https://github.com/microsoft/DirectXShaderCompiler')) {
-        linkName = 'Open DirectX Shader Compiler documentation';
-    }
-    return linkName;
 }
 
 function addPrimitiveTypes(result: CompletionItem[], items: LanguageElementInfo[]): void {

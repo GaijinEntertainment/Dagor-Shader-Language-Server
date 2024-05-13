@@ -1,4 +1,6 @@
-import { DocumentUri, Range } from 'vscode-languageserver';
+import { DocumentUri, MarkupContent, MarkupKind, Range } from 'vscode-languageserver';
+
+import { getInfo } from '../../helper/helper';
 import { IntervalDeclaration } from '../interval-declaration';
 import { EnumDeclaration } from '../type/enum-declaration';
 import { TypeDeclaration } from '../type/type-declaration';
@@ -18,6 +20,18 @@ export interface VariableDeclaration {
     interval?: IntervalDeclaration;
     isHlsl: boolean;
     arraySizes: number[];
+    containerType?: TypeDeclaration;
+    description?: string;
+}
+
+export function getVariableInfo(vd: VariableDeclaration, formats: MarkupKind[]): MarkupContent | undefined {
+    return getInfo(
+        formats,
+        toStringVariableDeclaration(vd),
+        vd.description,
+        vd?.containerType?.links,
+        vd.isHlsl ? 'hlsl' : 'dshl'
+    );
 }
 
 export function toStringVariableType(vd: VariableDeclaration, array = true): string {

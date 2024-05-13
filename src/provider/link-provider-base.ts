@@ -28,16 +28,16 @@ export async function linkProviderBase(
     const vd = snapshot.getVariableDeclarationAt(position);
     const vu = snapshot.getVariableUsageAt(position);
     if (type === 'typeDefinition') {
-        if (vd?.typeDeclaration) {
+        if (vd?.typeDeclaration && !vd.typeDeclaration.isBuiltIn) {
             return getTypeDeclarationLocation(vd.typeDeclaration, linkSupport);
         }
-        if (vd?.enumDeclaration) {
+        if (vd?.enumDeclaration && !vd.enumDeclaration.isBuiltIn) {
             return getEnumDeclarationLocation(vd.enumDeclaration, linkSupport);
         }
-        if (vu?.declaration?.typeDeclaration) {
+        if (vu?.declaration?.typeDeclaration && !vu.declaration.typeDeclaration.isBuiltIn) {
             return getTypeDeclarationLocation(vu.declaration.typeDeclaration, linkSupport);
         }
-        if (vu?.declaration?.enumDeclaration) {
+        if (vu?.declaration?.enumDeclaration && !vu.declaration.enumDeclaration.isBuiltIn) {
             return getEnumDeclarationLocation(vu.declaration.enumDeclaration, linkSupport);
         }
         return null;
@@ -86,36 +86,36 @@ export async function linkProviderBase(
         return await getIncludeStatementLocation(is, linkSupport);
     }
     const td = snapshot.getTypeDeclarationAt(position);
-    if (td) {
+    if (td && !td.isBuiltIn) {
         return getTypeDeclarationLocation(td, linkSupport);
     }
     const tu = snapshot.getTypeUsageAt(position);
-    if (tu) {
+    if (tu && !tu.declaration.isBuiltIn) {
         return getTypeDeclarationLocation(tu.declaration, linkSupport);
     }
     const ed = snapshot.getEnumDeclarationAt(position);
-    if (ed) {
+    if (ed && !ed.isBuiltIn) {
         return getEnumDeclarationLocation(ed, linkSupport);
     }
     const eu = snapshot.getEnumUsageAt(position);
-    if (eu) {
+    if (eu && !eu.declaration.isBuiltIn) {
         return getEnumDeclarationLocation(eu.declaration, linkSupport);
     }
     if (type === 'implementation') {
         return null;
     }
-    if (vd) {
+    if (vd && !vd.containerType?.isBuiltIn) {
         return getVariableDeclarationLocation(vd, linkSupport);
     }
-    if (vu) {
+    if (vu && !vu.declaration.containerType?.isBuiltIn) {
         return getVariableDeclarationLocation(vu.declaration, linkSupport);
     }
     const emd = snapshot.getEnumMemberDeclarationAt(position);
-    if (emd) {
+    if (emd && !emd.enumDeclaration.isBuiltIn) {
         return getEnumMemberDeclarationLocation(emd, linkSupport);
     }
     const emu = snapshot.getEnumMemberUsageAt(position);
-    if (emu) {
+    if (emu && !emu.declaration.enumDeclaration.isBuiltIn) {
         return getEnumMemberDeclarationLocation(emu.declaration, linkSupport);
     }
     const id = snapshot.getIntervalDeclarationAt(position);

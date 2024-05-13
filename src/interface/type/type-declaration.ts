@@ -1,5 +1,6 @@
-import { DocumentUri, Range } from 'vscode-languageserver';
+import { DocumentUri, MarkupContent, MarkupKind, Range } from 'vscode-languageserver';
 
+import { getInfo } from '../../helper/helper';
 import { VariableDeclaration, toStringVariableDeclaration } from '../variable/variable-declaration';
 import { EnumDeclaration, toStringEnumDeclaration } from './enum-declaration';
 import { TypeUsage } from './type-usage';
@@ -20,6 +21,12 @@ export interface TypeDeclaration {
     subTypes: TypeDeclaration[];
     embeddedTypes: TypeDeclaration[];
     embeddedEnums: EnumDeclaration[];
+    description?: string;
+    links?: string[];
+}
+
+export function getTypeInfo(td: TypeDeclaration, formats: MarkupKind[]): MarkupContent | undefined {
+    return getInfo(formats, toStringTypeDeclaration(td), td.description, td.links);
 }
 
 export function toStringTypeDeclaration(td: TypeDeclaration, depth = 0): string {

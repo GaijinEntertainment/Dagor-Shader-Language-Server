@@ -1,5 +1,5 @@
 import { ANTLRInputStream } from 'antlr4ts';
-import { Position, Range, SymbolKind } from 'vscode-languageserver';
+import { MarkupContent, MarkupKind, Position, Range, SymbolKind } from 'vscode-languageserver';
 import { DshlLexer } from '../_generated/DshlLexer';
 import { getCapabilities } from '../core/capability-manager';
 import { TypeKeyword } from '../interface/type/type-declaration';
@@ -83,5 +83,52 @@ export function getKind(kind: SymbolKind): SymbolKind {
         }
     } else {
         return kinds.includes(kind) ? kind : SymbolKind.File;
+    }
+}
+
+export function createDocumentationLinks(links: string[] | undefined): string {
+    let result = '';
+    if (links) {
+        for (const link of links) {
+            const linkName = getLinkName(link);
+            result += `\n\n[${linkName}](${link})`;
+        }
+    }
+    return result;
+}
+
+function getLinkName(link: string): string {
+    let linkName = 'Open documentation';
+    if (link.startsWith('https://microsoft.github.io/DirectX-Specs')) {
+        linkName = 'Open DirectX Specs documentation';
+    } else if (link.startsWith('https://learn.microsoft.com')) {
+        linkName = 'Open Microsoft Learn documentation';
+    } else if (link.startsWith('https://github.com/microsoft/DirectXShaderCompiler')) {
+        linkName = 'Open DirectX Shader Compiler documentation';
+    }
+    return linkName;
+}
+
+export function getInfo(
+    formats: MarkupKind[],
+    declaration: string,
+    description?: string,
+    links?: string[],
+    language: 'hlsl' | 'dshl' = 'hlsl'
+): MarkupContent | undefined {
+    const descriptionResult = description ? description + '\n' : '';
+    if (formats.includes(MarkupKind.Markdown)) {
+        const linksResult = createDocumentationLinks(links);
+        return {
+            kind: MarkupKind.Markdown,
+            value: descriptionResult + '```' + language + '\n' + declaration + '\n```' + linksResult,
+        };
+    } else if (formats.includes(MarkupKind.PlainText)) {
+        return {
+            kind: MarkupKind.PlainText,
+            value: descriptionResult + declaration,
+        };
+    } else {
+        return undefined;
     }
 }

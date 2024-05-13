@@ -1,4 +1,5 @@
-import { DocumentUri, Range } from 'vscode-languageserver';
+import { DocumentUri, MarkupContent, MarkupKind, Range } from 'vscode-languageserver';
+import { getInfo } from '../../helper/helper';
 import { EnumDeclaration } from './enum-declaration';
 import { EnumMemberUsage } from './enum-member-usage';
 
@@ -10,7 +11,12 @@ export interface EnumMemberDeclaration {
     usages: EnumMemberUsage[];
     isVisible: boolean;
     uri: DocumentUri;
-    value?: number;
+    value?: string;
+    description?: string;
+}
+
+export function getEnumMemberInfo(emd: EnumMemberDeclaration, formats: MarkupKind[]): MarkupContent | undefined {
+    return getInfo(formats, toStringEnumMemberDeclaration(emd), emd.description, emd.enumDeclaration.links);
 }
 
 export function toStringEnumMemberDeclaration(declaration: EnumMemberDeclaration): string {

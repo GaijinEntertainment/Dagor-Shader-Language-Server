@@ -1125,15 +1125,6 @@ export const hlslStructTypes: LanguageElementInfo[] = [
         ],
     },
     {
-        name: 'RaytracingAccelerationStructure',
-        description:
-            'A resource type that can be declared in HLSL and passed into TraceRay to indicate the top-level acceleration resource built using BuildRaytracingAccelerationStructure.',
-        links: [
-            'https://learn.microsoft.com/en-us/windows/win32/direct3d12/raytracingaccelerationstructure',
-            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytracingaccelerationstructure',
-        ],
-    },
-    {
         name: 'BuiltInTriangleIntersectionAttributes',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#intersection-attributes-structure'],
         keyword: 'struct',
@@ -1144,6 +1135,18 @@ export const hlslStructTypes: LanguageElementInfo[] = [
                 description:
                     'Given attributes a0, a1 and a2 for the 3 vertices of a triangle, barycentrics.x is the weight for a1 and barycentrics.y is the weight for a2.',
             },
+        ],
+    },
+];
+
+export const hlslOtherTypes: LanguageElementInfo[] = [
+    {
+        name: 'RaytracingAccelerationStructure',
+        description:
+            'A resource type that can be declared in HLSL and passed into TraceRay to indicate the top-level acceleration resource built using BuildRaytracingAccelerationStructure.',
+        links: [
+            'https://learn.microsoft.com/en-us/windows/win32/direct3d12/raytracingaccelerationstructure',
+            'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytracingaccelerationstructure',
         ],
     },
     {

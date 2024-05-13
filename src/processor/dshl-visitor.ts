@@ -38,7 +38,6 @@ import { Snapshot } from '../core/snapshot';
 import { Scope } from '../helper/scope';
 import { BlockDeclaration } from '../interface/block/block-declaration';
 import { BlockUsage } from '../interface/block/block-usage';
-import { ExpressionRange } from '../interface/expression-range';
 import { ExpressionResult } from '../interface/expression-result';
 import { FunctionArgument } from '../interface/function/function-argument';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
@@ -49,12 +48,12 @@ import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
 import { EnumMemberDeclaration } from '../interface/type/enum-member-declaration';
-import { EnumMemberUsage } from '../interface/type/enum-member-usage';
 import { EnumUsage } from '../interface/type/enum-usage';
 import { TypeDeclaration, TypeKeyword } from '../interface/type/type-declaration';
 import { TypeUsage } from '../interface/type/type-usage';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { VariableUsage } from '../interface/variable/variable-usage';
+import { ExpressionVisitor } from './expression-visitor';
 
 export class DshlVisitor
     extends AbstractParseTreeVisitor<ExpressionResult | null>
@@ -609,6 +608,7 @@ export class DshlVisitor
             isVisible: visible,
             members: [],
             usages: [],
+            isBuiltIn: false,
         };
         for (const memberContext of ctx.enum_member()) {
             const value = memberContext.expression()?.literal()?.INT_LITERAL()?.text;
@@ -626,7 +626,7 @@ export class DshlVisitor
                 usages: [],
                 isVisible: visible,
                 uri: this.snapshot.getIncludeContextDeepAt(memberContext.start.startIndex)?.uri ?? this.snapshot.uri,
-                value: value !== undefined ? parseInt(value) : undefined,
+                value,
             };
             ed.members.push(emd);
             this.scope.enumMemberDeclarations.push(emd);
@@ -678,6 +678,7 @@ export class DshlVisitor
                 usages: [],
                 isHlsl: true,
                 arraySizes: this.getArraySize(vi.array_subscript()),
+                containerType: this.type.length ? this.type[this.type.length - 1] : undefined,
             };
             if (this.type.length) {
                 this.type[this.type.length - 1].members.push(vd);
@@ -713,6 +714,7 @@ export class DshlVisitor
                     };
                     td.usages.push(tu);
                     this.scope.typeUsages.push(tu);
+                    continue;
                 }
                 ed = this.snapshot.getEnumDeclarationFor(id.text, nameOriginalRange.start);
                 if (ed) {
@@ -723,6 +725,31 @@ export class DshlVisitor
                     };
                     ed.usages.push(eu);
                     this.scope.enumUsages.push(eu);
+                    continue;
+                }
+                if (this.rootSnapshot && this.contentStartPosition) {
+                    td = this.rootSnapshot.getTypeDeclarationFor(id.text, this.contentStartPosition, true);
+                    if (td) {
+                        const tu: TypeUsage = {
+                            declaration: td,
+                            originalRange: this.snapshot.getOriginalRange(id.start.startIndex, id.stop!.stopIndex + 1),
+                            isVisible: visible,
+                        };
+                        td.usages.push(tu);
+                        this.scope.typeUsages.push(tu);
+                        continue;
+                    }
+                    ed = this.rootSnapshot.getEnumDeclarationFor(id.text, this.contentStartPosition, true);
+                    if (ed) {
+                        const eu: EnumUsage = {
+                            declaration: ed,
+                            originalRange: this.snapshot.getOriginalRange(id.start.startIndex, id.stop!.stopIndex + 1),
+                            isVisible: visible,
+                        };
+                        ed.usages.push(eu);
+                        this.scope.enumUsages.push(eu);
+                        continue;
+                    }
                 }
             } else if (td) {
                 ed = td.embeddedEnums.find((eed) => eed.name === id.text) ?? null;
@@ -810,275 +837,15 @@ export class DshlVisitor
     }
 
     public visitExpression(ctx: ExpressionContext): ExpressionResult | null {
-        const visible = this.isVisible(ctx.start.startIndex);
-        let result: ExpressionResult | null = null;
-        const dot = ctx.DOT();
-        const doubleColon = ctx.DOUBLE_COLON();
-        const identifier = ctx.hlsl_identifier();
-        if (visible) {
-            if (identifier && !dot && !doubleColon) {
-                const position = identifier.start.startIndex;
-                const originalPosition = this.snapshot.getOriginalPosition(position, true);
-                const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
-                const emd = this.snapshot.getEnumMemberDeclarationFor(identifier.text, originalPosition);
-                const td = this.snapshot.getTypeDeclarationFor(identifier.text, originalPosition);
-                const ed = this.snapshot.getEnumDeclarationFor(identifier.text, originalPosition);
-                if (vd) {
-                    this.createVariableUsage(vd, identifier.start, visible);
-                    if (vd.typeDeclaration) {
-                        result = { type: 'type', typeDeclaration: vd.typeDeclaration, arraySizes: vd.arraySizes };
-                    }
-                } else if (emd) {
-                    const emu: EnumMemberUsage = {
-                        declaration: emd,
-                        originalRange: this.snapshot.getOriginalRange(
-                            identifier.start.startIndex,
-                            identifier.stop!.stopIndex + 1
-                        ),
-                        isVisible: visible,
-                    };
-                    this.scope.enumMemberUsages.push(emu);
-                    emd.usages.push(emu);
-                } else if (td) {
-                    const tu: TypeUsage = {
-                        declaration: td,
-                        originalRange: this.snapshot.getOriginalRange(
-                            identifier.start.startIndex,
-                            identifier.stop!.stopIndex + 1
-                        ),
-                        isVisible: visible,
-                    };
-                    this.scope.typeUsages.push(tu);
-                    td.usages.push(tu);
-                    result = { type: 'type', typeDeclaration: td, arraySizes: [] };
-                } else if (ed) {
-                    const eu: EnumUsage = {
-                        declaration: ed,
-                        originalRange: this.snapshot.getOriginalRange(
-                            identifier.start.startIndex,
-                            identifier.stop!.stopIndex + 1
-                        ),
-                        isVisible: visible,
-                    };
-                    this.scope.enumUsages.push(eu);
-                    ed.usages.push(eu);
-                    result = { type: 'enum', enumDeclaration: ed, arraySizes: [] };
-                } else if (this.enum) {
-                    const emd = this.enum.members.find((m) => m.name === identifier.text);
-                    if (emd) {
-                        const emu: EnumMemberUsage = {
-                            declaration: emd,
-                            originalRange: this.snapshot.getOriginalRange(
-                                identifier.start.startIndex,
-                                identifier.stop!.stopIndex + 1
-                            ),
-                            isVisible: visible,
-                        };
-                        this.scope.enumMemberUsages.push(emu);
-                        emd.usages.push(emu);
-                    }
-                } else if (this.rootSnapshot && this.contentStartPosition) {
-                    const vd = this.rootSnapshot.getVariableDeclarationFor(
-                        identifier.text,
-                        this.contentStartPosition,
-                        true
-                    );
-                    const emd = this.rootSnapshot.getEnumMemberDeclarationFor(
-                        identifier.text,
-                        this.contentStartPosition,
-                        true
-                    );
-                    const td = this.rootSnapshot.getTypeDeclarationFor(
-                        identifier.text,
-                        this.contentStartPosition,
-                        true
-                    );
-                    const ed = this.rootSnapshot.getEnumDeclarationFor(
-                        identifier.text,
-                        this.contentStartPosition,
-                        true
-                    );
-                    if (vd) {
-                        this.createVariableUsage(vd, identifier.start, visible);
-                        if (vd.typeDeclaration) {
-                            result = { type: 'type', typeDeclaration: vd.typeDeclaration, arraySizes: vd.arraySizes };
-                        }
-                    } else if (emd) {
-                        const emu: EnumMemberUsage = {
-                            declaration: emd,
-                            originalRange: this.snapshot.getOriginalRange(
-                                identifier.start.startIndex,
-                                identifier.stop!.stopIndex + 1
-                            ),
-                            isVisible: visible,
-                        };
-                        this.scope.enumMemberUsages.push(emu);
-                        emd.usages.push(emu);
-                    } else if (td) {
-                        const tu: TypeUsage = {
-                            declaration: td,
-                            originalRange: this.snapshot.getOriginalRange(
-                                identifier.start.startIndex,
-                                identifier.stop!.stopIndex + 1
-                            ),
-                            isVisible: visible,
-                        };
-                        this.scope.typeUsages.push(tu);
-                        td.usages.push(tu);
-                        result = { type: 'type', typeDeclaration: td, arraySizes: [] };
-                    } else if (ed) {
-                        const eu: EnumUsage = {
-                            declaration: ed,
-                            originalRange: this.snapshot.getOriginalRange(
-                                identifier.start.startIndex,
-                                identifier.stop!.stopIndex + 1
-                            ),
-                            isVisible: visible,
-                        };
-                        this.scope.enumUsages.push(eu);
-                        ed.usages.push(eu);
-                        result = { type: 'enum', enumDeclaration: ed, arraySizes: [] };
-                    }
-                }
-            } else if (dot) {
-                const exp = ctx.expression(0);
-                const expResult = this.visit(exp);
-                if (expResult?.type === 'type') {
-                    const range = this.snapshot.getOriginalRange(dot.symbol.startIndex, ctx.stop!.stopIndex + 1);
-                    const er: ExpressionRange = {
-                        type: 'type',
-                        originalRange: range,
-                        typeDeclaration: expResult.typeDeclaration,
-                    };
-                    this.snapshot.expressionRanges.push(er);
-                    if (identifier) {
-                        const m = this.findMember(expResult.typeDeclaration, identifier.text);
-                        if (m) {
-                            this.createVariableUsage(m, identifier.start, visible);
-                            if (m.typeDeclaration) {
-                                result = { type: 'type', typeDeclaration: m.typeDeclaration, arraySizes: [] };
-                            }
-                        }
-                    }
-                }
-            } else if (doubleColon) {
-                const exp = ctx.expression(0);
-                const expResult = this.visit(exp);
-                if (expResult) {
-                    const range = this.snapshot.getOriginalRange(
-                        doubleColon.symbol.startIndex,
-                        ctx.stop!.stopIndex + 1
-                    );
-                    if (expResult.type === 'type') {
-                        const er: ExpressionRange = {
-                            type: 'type',
-                            originalRange: range,
-                            typeDeclaration: expResult.typeDeclaration,
-                        };
-                        this.snapshot.expressionRanges.push(er);
-                    } else {
-                        const er: ExpressionRange = {
-                            type: 'enum',
-                            originalRange: range,
-                            enumDeclaration: expResult.enumDeclaration,
-                        };
-                        this.snapshot.expressionRanges.push(er);
-                    }
-                    if (identifier) {
-                        if (expResult.type === 'type') {
-                            const etd = expResult.typeDeclaration.embeddedTypes.find(
-                                (etd) => etd.name === identifier.text
-                            );
-                            const eed = expResult.typeDeclaration.embeddedEnums.find(
-                                (eed) => eed.name === identifier.text
-                            );
-                            const emd = expResult.typeDeclaration.embeddedEnums
-                                .filter((eed) => !eed.name)
-                                .flatMap((eed) => eed.members)
-                                .find((emd) => emd.name === identifier.text);
-                            if (etd) {
-                                const tu: TypeUsage = {
-                                    declaration: etd,
-                                    isVisible: visible,
-                                    originalRange: this.snapshot.getOriginalRange(
-                                        identifier.start.startIndex,
-                                        identifier.stop!.stopIndex + 1
-                                    ),
-                                };
-                                this.scope.typeUsages.push(tu);
-                                etd.usages.push(tu);
-                                const er: ExpressionRange = {
-                                    type: 'type',
-                                    originalRange: range,
-                                    typeDeclaration: expResult.typeDeclaration,
-                                };
-                                this.snapshot.expressionRanges.push(er);
-                                result = { type: 'type', typeDeclaration: etd, arraySizes: [] };
-                            } else if (eed) {
-                                const eu: EnumUsage = {
-                                    declaration: eed,
-                                    isVisible: visible,
-                                    originalRange: this.snapshot.getOriginalRange(
-                                        identifier.start.startIndex,
-                                        identifier.stop!.stopIndex + 1
-                                    ),
-                                };
-                                this.scope.enumUsages.push(eu);
-                                eed.usages.push(eu);
-                                const er: ExpressionRange = {
-                                    type: 'type',
-                                    originalRange: range,
-                                    typeDeclaration: expResult.typeDeclaration,
-                                };
-                                this.snapshot.expressionRanges.push(er);
-                                result = { type: 'enum', enumDeclaration: eed, arraySizes: [] };
-                            } else if (emd) {
-                                const emu: EnumMemberUsage = {
-                                    declaration: emd,
-                                    isVisible: visible,
-                                    originalRange: this.snapshot.getOriginalRange(
-                                        identifier.start.startIndex,
-                                        identifier.stop!.stopIndex + 1
-                                    ),
-                                };
-                                this.scope.enumMemberUsages.push(emu);
-                                emd.usages.push(emu);
-                            }
-                        } else {
-                            const emd = expResult.enumDeclaration.members.find((m) => m.name === identifier.text);
-                            if (emd) {
-                                const emu: EnumMemberUsage = {
-                                    declaration: emd,
-                                    originalRange: this.snapshot.getOriginalRange(
-                                        identifier.start.startIndex,
-                                        identifier.stop!.stopIndex + 1
-                                    ),
-                                    isVisible: visible,
-                                };
-                                this.scope.enumMemberUsages.push(emu);
-                                emd.usages.push(emu);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        const result = new ExpressionVisitor(
+            this.snapshot,
+            this.scope,
+            this.rootSnapshot,
+            this.contentStartPosition,
+            this.enum ?? undefined
+        ).visitExpression(ctx);
         this.visitChildren(ctx);
         return result;
-    }
-
-    private findMember(td: TypeDeclaration, name: string): VariableDeclaration | null {
-        const vd = td.members.find((m) => m.name === name);
-        if (vd) {
-            return vd;
-        }
-        for (const superTd of td.superTypes) {
-            const vd = this.findMember(superTd, name);
-            if (vd) {
-                return vd;
-            }
-        }
-        return null;
     }
 
     public visitFunction_header(ctx: Function_headerContext): ExpressionResult | null {
