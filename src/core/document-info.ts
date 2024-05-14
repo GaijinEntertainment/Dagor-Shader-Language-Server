@@ -222,6 +222,11 @@ export class DocumentInfo {
                         offsetPosition(fr.end, md.contentOriginalRange.start);
                         snapshot.foldingRanges.push(fr);
                     }
+                    for (const er of contentSnapshot.expressionRanges) {
+                        offsetPosition(er.originalRange.start, md.contentOriginalRange.start);
+                        offsetPosition(er.originalRange.end, md.contentOriginalRange.start);
+                        snapshot.expressionRanges.push(er);
+                    }
                     const macroScope: Scope = {
                         originalRange: contentSnapshot.rootScope.originalRange,
                         children: [contentSnapshot.rootScope],
