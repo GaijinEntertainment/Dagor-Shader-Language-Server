@@ -39,9 +39,9 @@
         "vscode-uri": "^3.0.8"
     },
     "devDependencies": {
-        "@types/node": "^20.12.7",
-        "@typescript-eslint/eslint-plugin": "^7.7.0",
-        "@typescript-eslint/parser": "^7.7.0",
+        "@types/node": "^20.12.12",
+        "@typescript-eslint/eslint-plugin": "^7.9.0",
+        "@typescript-eslint/parser": "^7.9.0",
         "antlr4ts-cli": "^0.5.0-alpha.4",
         "eslint": "^8.57.0",
         "husky": "^9.0.11",
