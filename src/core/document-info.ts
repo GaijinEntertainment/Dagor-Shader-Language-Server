@@ -2,6 +2,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { CommonTokenStream } from 'antlr4ts';
 import { ParseTree } from 'antlr4ts/tree/ParseTree';
+import { Position } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { DshlLexer } from '../_generated/DshlLexer';
 import { DshlParser } from '../_generated/DshlParser';
@@ -257,111 +258,104 @@ export class DocumentInfo {
         if (root) {
             scope.macroDeclaration = md;
         }
-        offsetPosition(scope.originalRange.start, md.contentOriginalRange.start);
-        offsetPosition(scope.originalRange.end, md.contentOriginalRange.start);
+        const offset = md.contentOriginalRange.start;
+        offsetPosition(scope.originalRange.start, offset);
+        offsetPosition(scope.originalRange.end, offset);
         for (const sd of scope.shaderDeclarations) {
-            offsetPosition(sd.originalRange.start, md.contentOriginalRange.start);
-            offsetPosition(sd.originalRange.end, md.contentOriginalRange.start);
-            offsetPosition(sd.nameOriginalRange.start, md.contentOriginalRange.start);
-            offsetPosition(sd.nameOriginalRange.end, md.contentOriginalRange.start);
+            offsetPosition(sd.originalRange.start, offset);
+            offsetPosition(sd.originalRange.end, offset);
+            offsetPosition(sd.nameOriginalRange.start, offset);
+            offsetPosition(sd.nameOriginalRange.end, offset);
         }
         for (const su of scope.shaderUsages) {
-            offsetPosition(su.originalRange.start, md.contentOriginalRange.start);
-            offsetPosition(su.originalRange.end, md.contentOriginalRange.start);
+            offsetPosition(su.originalRange.start, offset);
+            offsetPosition(su.originalRange.end, offset);
         }
-        for (const td of scope.typeDeclarations) {
-            offsetPosition(td.originalRange.start, md.contentOriginalRange.start);
-            offsetPosition(td.originalRange.end, md.contentOriginalRange.start);
-            offsetPosition(td.nameOriginalRange.start, md.contentOriginalRange.start);
-            offsetPosition(td.nameOriginalRange.end, md.contentOriginalRange.start);
-            for (const m of td.members) {
-                offsetPosition(m.originalRange.start, md.contentOriginalRange.start);
-                offsetPosition(m.originalRange.end, md.contentOriginalRange.start);
-                offsetPosition(m.nameOriginalRange.start, md.contentOriginalRange.start);
-                offsetPosition(m.nameOriginalRange.end, md.contentOriginalRange.start);
-            }
-            for (const ed of td.embeddedEnums) {
-                offsetPosition(ed.originalRange.start, md.contentOriginalRange.start);
-                offsetPosition(ed.originalRange.end, md.contentOriginalRange.start);
-                if (ed.nameOriginalRange) {
-                    offsetPosition(ed.nameOriginalRange.start, md.contentOriginalRange.start);
-                    offsetPosition(ed.nameOriginalRange.end, md.contentOriginalRange.start);
-                }
-                for (const m of ed.members) {
-                    offsetPosition(m.originalRange.start, md.contentOriginalRange.start);
-                    offsetPosition(m.originalRange.end, md.contentOriginalRange.start);
-                    offsetPosition(m.nameOriginalRange.start, md.contentOriginalRange.start);
-                    offsetPosition(m.nameOriginalRange.end, md.contentOriginalRange.start);
-                    for (const mu of m.usages) {
-                        offsetPosition(mu.originalRange.start, md.contentOriginalRange.start);
-                        offsetPosition(mu.originalRange.end, md.contentOriginalRange.start);
-                    }
-                }
-            }
-        }
-        for (const ed of scope.enumDeclarations) {
-            offsetPosition(ed.originalRange.start, md.contentOriginalRange.start);
-            offsetPosition(ed.originalRange.end, md.contentOriginalRange.start);
-            if (ed.nameOriginalRange) {
-                offsetPosition(ed.nameOriginalRange.start, md.contentOriginalRange.start);
-                offsetPosition(ed.nameOriginalRange.end, md.contentOriginalRange.start);
-            }
-            for (const m of ed.members) {
-                offsetPosition(m.originalRange.start, md.contentOriginalRange.start);
-                offsetPosition(m.originalRange.end, md.contentOriginalRange.start);
-                offsetPosition(m.nameOriginalRange.start, md.contentOriginalRange.start);
-                offsetPosition(m.nameOriginalRange.end, md.contentOriginalRange.start);
-                for (const mu of m.usages) {
-                    offsetPosition(mu.originalRange.start, md.contentOriginalRange.start);
-                    offsetPosition(mu.originalRange.end, md.contentOriginalRange.start);
-                }
-            }
-        }
+        this.offsetTypes(scope.typeDeclarations, offset);
+        this.offsetEnums(scope.enumDeclarations, offset);
         for (const tu of scope.typeUsages) {
-            offsetPosition(tu.originalRange.start, md.contentOriginalRange.start);
-            offsetPosition(tu.originalRange.end, md.contentOriginalRange.start);
+            offsetPosition(tu.originalRange.start, offset);
+            offsetPosition(tu.originalRange.end, offset);
         }
         for (const eu of scope.enumUsages) {
-            offsetPosition(eu.originalRange.start, md.contentOriginalRange.start);
-            offsetPosition(eu.originalRange.end, md.contentOriginalRange.start);
+            offsetPosition(eu.originalRange.start, offset);
+            offsetPosition(eu.originalRange.end, offset);
+        }
+        for (const emu of scope.enumMemberUsages) {
+            offsetPosition(emu.originalRange.start, offset);
+            offsetPosition(emu.originalRange.end, offset);
         }
         for (const vd of scope.variableDeclarations) {
-            offsetPosition(vd.originalRange.start, md.contentOriginalRange.start);
-            offsetPosition(vd.originalRange.end, md.contentOriginalRange.start);
-            offsetPosition(vd.nameOriginalRange.start, md.contentOriginalRange.start);
-            offsetPosition(vd.nameOriginalRange.end, md.contentOriginalRange.start);
+            offsetPosition(vd.originalRange.start, offset);
+            offsetPosition(vd.originalRange.end, offset);
+            offsetPosition(vd.nameOriginalRange.start, offset);
+            offsetPosition(vd.nameOriginalRange.end, offset);
             if (vd.interval) {
-                offsetPosition(vd.interval.nameOriginalRange.start, md.contentOriginalRange.start);
-                offsetPosition(vd.interval.nameOriginalRange.end, md.contentOriginalRange.start);
+                offsetPosition(vd.interval.nameOriginalRange.start, offset);
+                offsetPosition(vd.interval.nameOriginalRange.end, offset);
             }
         }
         for (const vu of scope.variableUsages) {
-            offsetPosition(vu.originalRange.start, md.contentOriginalRange.start);
-            offsetPosition(vu.originalRange.end, md.contentOriginalRange.start);
+            offsetPosition(vu.originalRange.start, offset);
+            offsetPosition(vu.originalRange.end, offset);
         }
         for (const fu of scope.functionUsages) {
-            offsetPosition(fu.originalRange.start, md.contentOriginalRange.start);
-            offsetPosition(fu.originalRange.end, md.contentOriginalRange.start);
-            offsetPosition(fu.nameOriginalRange.start, md.contentOriginalRange.start);
-            offsetPosition(fu.nameOriginalRange.end, md.contentOriginalRange.start);
-            offsetPosition(fu.parameterListOriginalRange.start, md.contentOriginalRange.start);
-            offsetPosition(fu.parameterListOriginalRange.end, md.contentOriginalRange.start);
+            offsetPosition(fu.originalRange.start, offset);
+            offsetPosition(fu.originalRange.end, offset);
+            offsetPosition(fu.nameOriginalRange.start, offset);
+            offsetPosition(fu.nameOriginalRange.end, offset);
+            offsetPosition(fu.parameterListOriginalRange.start, offset);
+            offsetPosition(fu.parameterListOriginalRange.end, offset);
             for (const fa of fu.arguments) {
-                offsetPosition(fa.originalRange.start, md.contentOriginalRange.start);
-                offsetPosition(fa.originalRange.end, md.contentOriginalRange.start);
-                offsetPosition(fa.trimmedOriginalStartPosition, md.contentOriginalRange.start);
+                offsetPosition(fa.originalRange.start, offset);
+                offsetPosition(fa.originalRange.end, offset);
+                offsetPosition(fa.trimmedOriginalStartPosition, offset);
             }
         }
         if (scope.blockDeclaration) {
-            offsetPosition(scope.blockDeclaration.originalRange.start, md.contentOriginalRange.start);
-            offsetPosition(scope.blockDeclaration.originalRange.end, md.contentOriginalRange.start);
+            offsetPosition(scope.blockDeclaration.originalRange.start, offset);
+            offsetPosition(scope.blockDeclaration.originalRange.end, offset);
         }
         for (const bu of scope.blockUsages) {
-            offsetPosition(bu.originalRange.start, md.contentOriginalRange.start);
-            offsetPosition(bu.originalRange.end, md.contentOriginalRange.start);
+            offsetPosition(bu.originalRange.start, offset);
+            offsetPosition(bu.originalRange.end, offset);
         }
         for (const child of scope.children) {
             this.addElementsFromMacro(child, md, false);
+        }
+    }
+
+    private offsetTypes(tds: TypeDeclaration[], offset: Position): void {
+        for (const td of tds) {
+            offsetPosition(td.originalRange.start, offset);
+            offsetPosition(td.originalRange.end, offset);
+            offsetPosition(td.nameOriginalRange.start, offset);
+            offsetPosition(td.nameOriginalRange.end, offset);
+            for (const m of td.members) {
+                offsetPosition(m.originalRange.start, offset);
+                offsetPosition(m.originalRange.end, offset);
+                offsetPosition(m.nameOriginalRange.start, offset);
+                offsetPosition(m.nameOriginalRange.end, offset);
+            }
+            this.offsetTypes(td.embeddedTypes, offset);
+            this.offsetEnums(td.embeddedEnums, offset);
+        }
+    }
+
+    private offsetEnums(eds: EnumDeclaration[], offset: Position): void {
+        for (const ed of eds) {
+            offsetPosition(ed.originalRange.start, offset);
+            offsetPosition(ed.originalRange.end, offset);
+            if (ed.nameOriginalRange) {
+                offsetPosition(ed.nameOriginalRange.start, offset);
+                offsetPosition(ed.nameOriginalRange.end, offset);
+            }
+            for (const m of ed.members) {
+                offsetPosition(m.originalRange.start, offset);
+                offsetPosition(m.originalRange.end, offset);
+                offsetPosition(m.nameOriginalRange.start, offset);
+                offsetPosition(m.nameOriginalRange.end, offset);
+            }
         }
     }
 
