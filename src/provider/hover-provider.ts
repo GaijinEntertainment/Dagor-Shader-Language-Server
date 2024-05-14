@@ -55,7 +55,7 @@ export async function hoverProvider(params: HoverParams): Promise<Hover | undefi
     const emu = snapshot.getEnumMemberUsageAt(params.position);
     if (emu) {
         return {
-            contents: getEnumMemberInfo(emu.declaration, getCapabilities().completionDocumentationFormat) ?? [],
+            contents: getEnumMemberInfo(emu.declaration, getCapabilities().hoverFormat) ?? [],
             range: emu.originalRange,
         };
     }
