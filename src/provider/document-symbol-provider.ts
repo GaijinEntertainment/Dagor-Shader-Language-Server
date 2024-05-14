@@ -9,6 +9,7 @@ import {
 import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import { Snapshot } from '../core/snapshot';
+import { getKind, getTypeSymbolKind } from '../helper/helper';
 import { Scope } from '../helper/scope';
 import { toStringBlockType } from '../interface/block/block-declaration';
 import {
@@ -20,8 +21,9 @@ import {
     toStringMacroDeclarationHeader,
     toStringMacroDeclarationParameterList,
 } from '../interface/macro/macro-declaration';
-import { TypeKeyword } from '../interface/type/type-declaration';
-import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
+import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { TypeDeclaration } from '../interface/type/type-declaration';
+import { toStringVariableType } from '../interface/variable/variable-declaration';
 
 export async function documentSymbolProvider(
     params: DocumentSymbolParams
@@ -49,41 +51,8 @@ function createDocumentSymbols(snapshot: Snapshot, uri: DocumentUri): DocumentSy
 }
 
 function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri): void {
-    for (const td of scope.typeDeclarations) {
-        if (td.isVisible) {
-            dss.push({
-                name: td.name,
-                kind: getTypeSymbolKind(td.type),
-                range: td.originalRange,
-                selectionRange: td.nameOriginalRange,
-                detail: td.type,
-                children: td.members.map((m) => ({
-                    name: m.name,
-                    kind: getKind(SymbolKind.Field),
-                    range: m.originalRange,
-                    selectionRange: m.nameOriginalRange,
-                    detail: m.type,
-                })),
-            });
-        }
-    }
-    for (const ed of scope.enumDeclarations) {
-        if (ed.isVisible) {
-            dss.push({
-                name: ed.name ?? '<anonymous>',
-                kind: getKind(SymbolKind.Enum),
-                range: ed.originalRange,
-                selectionRange: ed.nameOriginalRange ?? ed.originalRange,
-                detail: 'enum' + (ed.isClass ? ' class' : '') + (ed.type ? ` (${ed.type})` : ''),
-                children: ed.members.map((m) => ({
-                    name: m.name,
-                    kind: getKind(SymbolKind.EnumMember),
-                    range: m.originalRange,
-                    selectionRange: m.originalRange,
-                })),
-            });
-        }
-    }
+    addTypes(scope.typeDeclarations, dss);
+    addEnums(scope.enumDeclarations, dss);
     for (const vd of scope.variableDeclarations) {
         if (vd.isVisible) {
             dss.push({
@@ -91,7 +60,7 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
                 kind: getKind(SymbolKind.Variable),
                 range: vd.originalRange,
                 selectionRange: vd.nameOriginalRange,
-                detail: getVariableTypeWithInterval(vd),
+                detail: toStringVariableType(vd),
             });
         }
     }
@@ -147,6 +116,50 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
     }
 }
 
+function addEnums(eds: EnumDeclaration[], dss: DocumentSymbol[]): void {
+    for (const ed of eds) {
+        if (ed.isVisible) {
+            dss.push({
+                name: ed.name ?? '<anonymous>',
+                kind: getKind(SymbolKind.Enum),
+                range: ed.originalRange,
+                selectionRange: ed.nameOriginalRange ?? ed.originalRange,
+                detail: 'enum' + (ed.isClass ? ' class' : '') + (ed.type ? ` (${ed.type})` : ''),
+                children: ed.members.map((m) => ({
+                    name: m.name,
+                    kind: getKind(SymbolKind.EnumMember),
+                    range: m.originalRange,
+                    selectionRange: m.originalRange,
+                })),
+            });
+        }
+    }
+}
+
+function addTypes(tds: TypeDeclaration[], dss: DocumentSymbol[]): void {
+    for (const td of tds) {
+        if (td.isVisible) {
+            const children: DocumentSymbol[] = td.members.map((m) => ({
+                name: m.name,
+                kind: getKind(SymbolKind.Field),
+                range: m.originalRange,
+                selectionRange: m.nameOriginalRange,
+                detail: m.type,
+            }));
+            addTypes(td.embeddedTypes, children);
+            addEnums(td.embeddedEnums, children);
+            dss.push({
+                name: td.name ?? '<anonymous>',
+                kind: getTypeSymbolKind(td.type),
+                range: td.originalRange,
+                selectionRange: td.nameOriginalRange,
+                detail: td.type,
+                children,
+            });
+        }
+    }
+}
+
 function defineToDocumentSymbol(ds: DefineStatement): DocumentSymbol {
     return {
         name: ds.name,
@@ -190,9 +203,9 @@ function createSymbolInformations(snapshot: Snapshot, uri: DocumentUri): SymbolI
     const tds = snapshot.getAllTypeDeclarations();
     for (const td of tds) {
         result.push({
-            name: td.name,
+            name: td.name ?? '<anonymous>',
             kind: getTypeSymbolKind(td.type),
-            containerName: td.name,
+            containerName: td.name ?? '<anonymous>',
             location: {
                 range: td.originalRange,
                 uri: td.uri,
@@ -240,28 +253,5 @@ function addDefines(result: SymbolInformation[], dss: DefineStatement[], uri: Do
                 uri,
             },
         });
-    }
-}
-
-function getKind(kind: SymbolKind): SymbolKind {
-    const kinds = getCapabilities().documentSymbolSymbolKinds;
-    if (!kinds) {
-        if (kind <= SymbolKind.Array) {
-            return kind;
-        } else {
-            return SymbolKind.File;
-        }
-    } else {
-        return kinds.includes(kind) ? kind : SymbolKind.File;
-    }
-}
-
-function getTypeSymbolKind(type: TypeKeyword): SymbolKind {
-    if (type === 'class') {
-        return getKind(SymbolKind.Class);
-    } else if (type === 'interface') {
-        return getKind(SymbolKind.Interface);
-    } else {
-        return getKind(SymbolKind.Struct);
     }
 }

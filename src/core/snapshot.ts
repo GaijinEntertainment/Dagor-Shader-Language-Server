@@ -8,6 +8,7 @@ import { BlockUsage } from '../interface/block/block-usage';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
+import { ExpressionRange } from '../interface/expression-range';
 import { FunctionUsage } from '../interface/function/function-usage';
 import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
@@ -24,6 +25,8 @@ import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { SnapshotVersion } from '../interface/snapshot-version';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { EnumMemberDeclaration } from '../interface/type/enum-member-declaration';
+import { EnumMemberUsage } from '../interface/type/enum-member-usage';
 import { EnumUsage } from '../interface/type/enum-usage';
 import { TypeDeclaration } from '../interface/type/type-declaration';
 import { TypeUsage } from '../interface/type/type-usage';
@@ -60,6 +63,7 @@ export class Snapshot {
     public rootScope: Scope;
     public preprocessingOffsets: PreprocessingOffset[] = [];
     public diagnostics: Diagnostic[] = [];
+    public expressionRanges: ExpressionRange[] = [];
 
     public constructor(version: SnapshotVersion, uri: DocumentUri, text: string, isPredefined = false) {
         this.version = version;
@@ -75,6 +79,8 @@ export class Snapshot {
             typeUsages: [],
             enumDeclarations: [],
             enumUsages: [],
+            enumMemberDeclarations: [],
+            enumMemberUsages: [],
             variableDeclarations: [],
             variableUsages: [],
             functionDeclarations: [],
@@ -543,9 +549,13 @@ export class Snapshot {
     public getTypeDeclarationAt(position: Position): TypeDeclaration | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
-            const td = scope.typeDeclarations.find(
-                (td) => td.isVisible && rangeContains(td.nameOriginalRange, position)
-            );
+            let td =
+                scope.typeDeclarations.find((td) => td.isVisible && rangeContains(td.nameOriginalRange, position)) ??
+                null;
+            if (td) {
+                return td;
+            }
+            td = this.getEmbeddedTypeDeclaration(scope.typeDeclarations, position);
             if (td) {
                 return td;
             }
@@ -554,14 +564,81 @@ export class Snapshot {
         return null;
     }
 
+    private getEmbeddedTypeDeclaration(tds: TypeDeclaration[], position: Position): TypeDeclaration | null {
+        for (const td of tds) {
+            let etd =
+                td.embeddedTypes.find(
+                    (etd) => etd.isVisible && rangeContains(etd.nameOriginalRange ?? etd.originalRange, position)
+                ) ?? null;
+            if (etd) {
+                return etd;
+            }
+            etd = this.getEmbeddedTypeDeclaration(td.embeddedTypes, position);
+            if (etd) {
+                return etd;
+            }
+        }
+        return null;
+    }
+
     public getEnumDeclarationAt(position: Position): EnumDeclaration | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
-            const ed = scope.enumDeclarations.find(
-                (ed) => ed.isVisible && rangeContains(ed.nameOriginalRange ?? ed.originalRange, position)
-            );
+            let ed =
+                scope.enumDeclarations.find(
+                    (ed) => ed.isVisible && rangeContains(ed.nameOriginalRange ?? ed.originalRange, position)
+                ) ?? null;
             if (ed) {
                 return ed;
+            }
+            ed = this.getEmbeddedEnumDeclaration(scope.typeDeclarations, position);
+            if (ed) {
+                return ed;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    private getEmbeddedEnumDeclaration(tds: TypeDeclaration[], position: Position): EnumDeclaration | null {
+        for (const td of tds) {
+            let ed =
+                td.embeddedEnums.find(
+                    (ed) => ed.isVisible && rangeContains(ed.nameOriginalRange ?? ed.originalRange, position)
+                ) ?? null;
+            if (ed) {
+                return ed;
+            }
+            ed = this.getEmbeddedEnumDeclaration(td.embeddedTypes, position);
+            if (ed) {
+                return ed;
+            }
+        }
+        return null;
+    }
+
+    public getEnumMemberDeclarationAt(position: Position): EnumMemberDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const emd = scope.enumMemberDeclarations.find(
+                (emd) => emd.isVisible && rangeContains(emd.nameOriginalRange, position)
+            );
+            if (emd) {
+                return emd;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getEnumMemberUsageAt(position: Position): EnumMemberUsage | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const emu = scope.enumMemberUsages.find(
+                (emu) => emu.isVisible && rangeContains(emu.originalRange, position)
+            );
+            if (emu) {
+                return emu;
             }
             scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
         }
@@ -571,13 +648,43 @@ export class Snapshot {
     public getVariableDeclarationAt(position: Position): VariableDeclaration | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
-            const vd = scope.variableDeclarations.find(
-                (vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, position)
-            );
+            let vd =
+                scope.variableDeclarations.find(
+                    (vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, position)
+                ) ?? null;
+            if (vd) {
+                return vd;
+            }
+            vd =
+                scope.typeDeclarations
+                    .flatMap((td) => td.members)
+                    .find((vd) => vd.isVisible && rangeContains(vd.nameOriginalRange, position)) ?? null;
+            if (vd) {
+                return vd;
+            }
+            vd = this.getEmbeddedVariableDeclaration(scope.typeDeclarations, position);
             if (vd) {
                 return vd;
             }
             scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    private getEmbeddedVariableDeclaration(tds: TypeDeclaration[], position: Position): VariableDeclaration | null {
+        for (const td of tds) {
+            let emd =
+                td.embeddedTypes
+                    .flatMap((etd) => etd.members)
+                    .find((ed) => ed.isVisible && rangeContains(ed.nameOriginalRange ?? ed.originalRange, position)) ??
+                null;
+            if (emd) {
+                return emd;
+            }
+            emd = this.getEmbeddedVariableDeclaration(td.embeddedTypes, position);
+            if (emd) {
+                return emd;
+            }
         }
         return null;
     }
@@ -701,6 +808,14 @@ export class Snapshot {
             if (td) {
                 return td;
             }
+            for (const hb of scope.hlslBlocks) {
+                const td = hb.typeDeclarations.find(
+                    (td) => isBeforeOrEqual(td.originalRange.end, position) && td.name === name
+                );
+                if (td) {
+                    return td;
+                }
+            }
             if (onlyRoot) {
                 return null;
             }
@@ -721,6 +836,45 @@ export class Snapshot {
             );
             if (ed) {
                 return ed;
+            }
+            for (const hb of scope.hlslBlocks) {
+                const ed = hb.enumDeclarations.find(
+                    (ed) => isBeforeOrEqual(ed.originalRange.end, position) && ed.name === name
+                );
+                if (ed) {
+                    return ed;
+                }
+            }
+            if (onlyRoot) {
+                return null;
+            }
+            scope = scope.parent ?? null;
+        }
+        return null;
+    }
+
+    public getEnumMemberDeclarationFor(
+        name: string,
+        position: Position,
+        onlyRoot = false
+    ): EnumMemberDeclaration | null {
+        let scope: Scope | null = onlyRoot ? this.rootScope : this.getScopeAt(position);
+        while (scope) {
+            const emd = scope.enumDeclarations
+                .filter((ed) => !ed.isClass)
+                .flatMap((ed) => ed.members)
+                .find((emd) => emd && emd.name === name && isBeforeOrEqual(emd.nameOriginalRange.end, position));
+            if (emd) {
+                return emd;
+            }
+            for (const hb of scope.hlslBlocks) {
+                const emd = hb.enumDeclarations
+                    .filter((ed) => !ed.isClass)
+                    .flatMap((ed) => ed.members)
+                    .find((emd) => emd && emd.name === name && isBeforeOrEqual(emd.nameOriginalRange.end, position));
+                if (emd) {
+                    return emd;
+                }
             }
             if (onlyRoot) {
                 return null;

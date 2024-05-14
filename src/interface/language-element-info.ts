@@ -1,3 +1,5 @@
+import { TypeKeyword } from './type/type-declaration';
+
 export interface LanguageElementInfo {
     name: string;
     sortName?: string;
@@ -7,5 +9,8 @@ export interface LanguageElementInfo {
     description?: string;
     links?: string[];
     type?: string;
+    value?: string;
+    keyword?: TypeKeyword | 'enum';
+    members?: LanguageElementInfo[];
     additionalInfo?: string;
 }

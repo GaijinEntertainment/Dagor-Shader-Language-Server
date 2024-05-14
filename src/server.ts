@@ -6,9 +6,14 @@ import {
     InitializedParams,
     InlayHintRequest,
     PublishDiagnosticsParams,
+    SemanticTokenTypes,
+    SemanticTokensRequest,
     ServerCapabilities,
     TextDocumentSyncKind,
     TextDocuments,
+    TypeHierarchyPrepareRequest,
+    TypeHierarchySubtypesRequest,
+    TypeHierarchySupertypesRequest,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
@@ -34,8 +39,14 @@ import {
 import { hoverProvider } from './provider/hover-provider';
 import { implementationProvider } from './provider/implementation-provider';
 import { inlayHintProvider } from './provider/inlay-hint-provider';
+import { semanticTokensProvider } from './provider/semantic-token-provider';
 import { signatureHelpProvider } from './provider/signature-help-provider';
 import { typeDefinitionProvider } from './provider/type-definition-provider';
+import {
+    typeHierarchyPrepareProvider,
+    typeHierarchySubtypesProvider,
+    typeHierarchySupertypesProvider,
+} from './provider/type-hierarchy-provider';
 
 export abstract class Server {
     private static server: Server;
@@ -108,7 +119,7 @@ export abstract class Server {
         return {
             textDocumentSync: TextDocumentSyncKind.Incremental,
             completionProvider: {
-                triggerCharacters: ['"', '<', '/', '\\'],
+                triggerCharacters: ['"', '<', '/', '\\', '.'],
                 completionItem: {
                     labelDetailsSupport: true,
                 },
@@ -125,6 +136,15 @@ export abstract class Server {
             signatureHelpProvider: { triggerCharacters: ['(', ','] },
             documentFormattingProvider: true,
             documentRangeFormattingProvider: { rangesSupport: true },
+            typeHierarchyProvider: true,
+            semanticTokensProvider: {
+                full: true,
+                documentSelector: [{ language: 'dshl' }, { language: 'hlsl' }],
+                legend: {
+                    tokenTypes: [SemanticTokenTypes.type, SemanticTokenTypes.variable],
+                    tokenModifiers: [],
+                },
+            },
         };
     }
 
@@ -184,7 +204,11 @@ export abstract class Server {
         this.connection.onDocumentFormatting(documentFormattingProvider);
         this.connection.onDocumentRangeFormatting(documentRangeFormattingProvider);
         this.connection.onRequest(DocumentRangesFormattingRequest.type, documentRangesFormattingProvider);
+        this.connection.onRequest(TypeHierarchyPrepareRequest.type, typeHierarchyPrepareProvider);
+        this.connection.onRequest(TypeHierarchySupertypesRequest.type, typeHierarchySupertypesProvider);
+        this.connection.onRequest(TypeHierarchySubtypesRequest.type, typeHierarchySubtypesProvider);
         this.connection.onRequest(InlayHintRequest.type, inlayHintProvider);
+        this.connection.onRequest(SemanticTokensRequest.type, semanticTokensProvider);
         this.documents.onDidChangeContent((_change) => {
             this.refreshInlayHints();
         });

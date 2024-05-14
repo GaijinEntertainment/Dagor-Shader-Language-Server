@@ -25,21 +25,20 @@ import {
     dshlPrimitiveTypes,
     dshlProperties,
 } from '../helper/dshl-info';
-import { isBeforeOrEqual, rangeContains } from '../helper/helper';
+import { createDocumentationLinks, isBeforeOrEqual, rangeContains } from '../helper/helper';
 import {
     hlslAttributes,
     hlslBufferTypes,
     hlslDshlPreprocessorDirectives,
-    hlslEnumTypes,
     hlslFunctions,
     hlslKeywords,
     hlslModifiers,
     hlslNonPrimitiveTypes,
+    hlslOtherTypes,
     hlslPreprocessorDirectives,
     hlslPreprocessorPragmaDirectives,
     hlslPrimitiveTypes,
     hlslSemantics,
-    hlslStructTypes,
     hlslSystemValueSemantics,
     hlslTextureTypes,
     hlslVariables,
@@ -47,15 +46,17 @@ import {
 } from '../helper/hlsl-info';
 import { toStringBlockType } from '../interface/block/block-declaration';
 import { DefineStatement, toStringDefineStatementParameterList } from '../interface/define-statement';
+import { ExpressionRange } from '../interface/expression-range';
 import { toStringFunctionParameters } from '../interface/function/function-declaration';
 import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
 import { toStringMacroParameterList } from '../interface/macro/macro';
 import { ShaderStage } from '../interface/shader-stage';
 import { dshlSnippets, hlslSnippets } from '../interface/snippets';
-import { EnumDeclaration, toStringEnumDeclaration } from '../interface/type/enum-declaration';
-import { TypeDeclaration, TypeKeyword, toStringTypeDeclaration } from '../interface/type/type-declaration';
-import { getVariableTypeWithInterval } from '../interface/variable/variable-declaration';
+import { getEnumInfo } from '../interface/type/enum-declaration';
+import { getEnumMemberInfo } from '../interface/type/enum-member-declaration';
+import { TypeDeclaration, TypeKeyword, getTypeInfo } from '../interface/type/type-declaration';
+import { toStringVariableType } from '../interface/variable/variable-declaration';
 import { getPredefineSnapshot } from '../processor/include-processor';
 import { getIncludeCompletionInfos } from '../processor/include-resolver';
 
@@ -83,7 +84,6 @@ export async function completionProvider(
     const uri = params.textDocument.uri;
     const hlsl = uri.endsWith(HLSL_EXTENSION) || uri.endsWith(HLSLI_EXTENSION) || snapshot.isInHlslBlock(position);
     const result: CompletionItem[] = [];
-    addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
     if (hlsl) {
         addHlslItems(result, snapshot, position);
     } else {
@@ -97,6 +97,21 @@ function isCursorInCommentOrString(snapshot: Snapshot, position: Position): bool
 }
 
 function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
+    const er = snapshot.expressionRanges.find((er) => rangeContains(er.originalRange, position));
+    if (er) {
+        result.push(
+            ...(er.type === 'type'
+                ? getMembers(er)
+                : er.enumDeclaration.members.map((m) => ({
+                      label: m.name,
+                      kind: getKind(CompletionItemKind.EnumMember),
+                      detail: `${m.name} - enum value`,
+                      documentation: getEnumMemberInfo(m, getCapabilities().completionDocumentationFormat),
+                  })))
+        );
+        return;
+    }
+    addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
     addDefines(result, snapshot, position);
     addCompletionItems(result, hlslKeywords, CompletionItemKind.Keyword, 'keyword');
     addCompletionItems(result, hlslPreprocessorDirectives, CompletionItemKind.Keyword, 'preprocessor directive');
@@ -112,13 +127,13 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
         CompletionItemKind.Keyword,
         'DSHL preprocessor directive'
     );
-    const tds = snapshot.getTypeDeclarationsInScope(position);
+    const tds = snapshot.getTypeDeclarationsInScope(position).filter((td) => td.name);
     result.push(
         ...tds.map<CompletionItem>((td) => ({
-            label: td.name,
+            label: td.name!,
             kind: getTypeCompletionItemKind(td.type),
-            detail: getDetail(td, td.type),
-            documentation: getTypeDeclarationDocumentation(td),
+            detail: `${td.name} - ${td.type}`,
+            documentation: getTypeInfo(td, getCapabilities().completionDocumentationFormat),
         }))
     );
     const eds = snapshot.getEnumDeclarationsInScope(position);
@@ -129,13 +144,24 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
                 label: ed.name!,
                 kind: getKind(CompletionItemKind.Enum),
                 detail: `${ed.name} - enum ${ed.isClass ? 'class' : ''}`,
-                documentation: getEnumDeclarationDocumentation(ed),
+                documentation: getEnumInfo(ed, getCapabilities().completionDocumentationFormat),
+            }))
+    );
+    result.push(
+        ...eds
+            .filter((ed) => ed.name && !ed.isClass)
+            .flatMap((ed) => ed.members)
+            .map<CompletionItem>((emd) => ({
+                label: emd.name,
+                kind: getKind(CompletionItemKind.EnumMember),
+                detail: `${emd.name} - enum value`,
+                documentation: getEnumMemberInfo(emd, getCapabilities().completionDocumentationFormat),
             }))
     );
     const vds = snapshot.getVariableDeclarationsInScope(position, true);
     addCompletionItems(
         result,
-        vds.map((vd) => ({ name: vd.name, type: getVariableTypeWithInterval(vd) })),
+        vds.map((vd) => ({ name: vd.name, type: toStringVariableType(vd) })),
         CompletionItemKind.Variable,
         'variable'
     );
@@ -143,8 +169,7 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     addCompletionItems(result, hlslAttributes, CompletionItemKind.Keyword, 'attribute');
     addCompletionItems(result, hlslSemantics, CompletionItemKind.Keyword, 'semantic');
     addCompletionItems(result, hlslSystemValueSemantics, CompletionItemKind.Keyword, 'semantic');
-    addCompletionItems(result, hlslStructTypes, CompletionItemKind.Class, 'type');
-    addCompletionItems(result, hlslEnumTypes, CompletionItemKind.Enum, 'enum');
+    addCompletionItems(result, hlslOtherTypes, CompletionItemKind.Class, 'type');
     addCompletionItems(result, hlslBufferTypes, CompletionItemKind.Class, 'type');
     addCompletionItems(result, hlslTextureTypes, CompletionItemKind.Class, 'type');
     addCompletionItems(result, hlslNonPrimitiveTypes, CompletionItemKind.Class, 'type');
@@ -154,6 +179,54 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     addCompletionItems(result, hlslFunctions, CompletionItemKind.Function, 'function');
     if (getCapabilities().completionSnippets) {
         addCompletionItems(result, hlslSnippets, CompletionItemKind.Snippet, 'snippet');
+    }
+}
+
+function getMembers(er: ExpressionRange & { type: 'type' }): CompletionItem[] {
+    const result: CompletionItem[] = [];
+    addMembers(result, er.typeDeclaration);
+    addEmbeddedItems(result, er.typeDeclaration);
+    return result;
+}
+
+function addEmbeddedItems(result: CompletionItem[], td: TypeDeclaration): void {
+    for (const etd of td.embeddedTypes.filter((etd) => etd.name)) {
+        result.push({
+            label: etd.name!,
+            kind: getTypeCompletionItemKind(etd.type),
+            detail: `${etd.name} - ${etd.type}`,
+            documentation: getTypeInfo(etd, getCapabilities().completionDocumentationFormat),
+        });
+    }
+    for (const eed of td.embeddedEnums.filter((eed) => eed.name)) {
+        result.push({
+            label: eed.name!,
+            kind: getKind(CompletionItemKind.Enum),
+            detail: `${eed.name} - enum`,
+            documentation: getEnumInfo(eed, getCapabilities().completionDocumentationFormat),
+        });
+    }
+    for (const eemd of td.embeddedEnums.filter((eed) => !eed.name).flatMap((eed) => eed.members)) {
+        result.push({
+            label: eemd.name,
+            kind: getKind(CompletionItemKind.EnumMember),
+            detail: `${eemd.name} - enum value`,
+            documentation: getEnumMemberInfo(eemd, getCapabilities().completionDocumentationFormat),
+        });
+    }
+}
+
+function addMembers(result: CompletionItem[], td: TypeDeclaration): void {
+    result.push(
+        ...td.members.map((m) => ({
+            label: m.name,
+            kind: getKind(CompletionItemKind.Field),
+            detail: `${m.name} - member variable`,
+            labelDetails: getLabelDetails(m),
+        }))
+    );
+    for (const superTd of td.superTypes) {
+        addMembers(result, superTd);
     }
 }
 
@@ -238,6 +311,7 @@ function addDefinesIfAvailable(result: CompletionItem[], dss: DefineStatement[],
 }
 
 function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
+    addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
     addCompletionItems(result, dshlKeywords, CompletionItemKind.Keyword, 'keyword');
     addCompletionItems(result, dshlEnumValues, CompletionItemKind.Value, 'value');
     addCompletionItems(result, dshlModifiers, CompletionItemKind.Keyword, 'modifier');
@@ -270,7 +344,7 @@ function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Po
     const vds = snapshot.getVariableDeclarationsInScope(position, false);
     addCompletionItems(
         result,
-        vds.map((vd) => ({ name: vd.name, type: getVariableTypeWithInterval(vd) })),
+        vds.map((vd) => ({ name: vd.name, type: toStringVariableType(vd) })),
         CompletionItemKind.Variable,
         'variable'
     );
@@ -370,69 +444,12 @@ function getDocumentation(item: LanguageElementInfo): MarkupContent | undefined 
     }
 }
 
-function getTypeDeclarationDocumentation(td: TypeDeclaration): MarkupContent | undefined {
-    const documentationText = toStringTypeDeclaration(td);
-    if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.Markdown)) {
-        return {
-            kind: MarkupKind.Markdown,
-            value: '```hlsl\n' + documentationText + '\n```',
-        };
-    } else if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.PlainText)) {
-        return {
-            kind: MarkupKind.PlainText,
-            value: documentationText,
-        };
-    } else {
-        return undefined;
-    }
-}
-
-function getEnumDeclarationDocumentation(ed: EnumDeclaration): MarkupContent | undefined {
-    const documentationText = toStringEnumDeclaration(ed);
-    if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.Markdown)) {
-        return {
-            kind: MarkupKind.Markdown,
-            value: '```hlsl\n' + documentationText + '\n```',
-        };
-    } else if (getCapabilities().completionDocumentationFormat.includes(MarkupKind.PlainText)) {
-        return {
-            kind: MarkupKind.PlainText,
-            value: documentationText,
-        };
-    } else {
-        return undefined;
-    }
-}
-
 function getDocumentationText(item: LanguageElementInfo): string {
     let documentation = item.description ?? '';
     if (item.additionalInfo) {
         documentation = `${item.additionalInfo}\n\n${documentation}`;
     }
     return documentation;
-}
-
-function createDocumentationLinks(links: string[] | undefined): string {
-    let result = '';
-    if (links) {
-        for (const link of links) {
-            const linkName = getLinkName(link);
-            result += `\n\n[${linkName}](${link})`;
-        }
-    }
-    return result;
-}
-
-function getLinkName(link: string): string {
-    let linkName = 'Open documentation';
-    if (link.startsWith('https://microsoft.github.io/DirectX-Specs')) {
-        linkName = 'Open DirectX Specs documentation';
-    } else if (link.startsWith('https://learn.microsoft.com')) {
-        linkName = 'Open Microsoft Learn documentation';
-    } else if (link.startsWith('https://github.com/microsoft/DirectXShaderCompiler')) {
-        linkName = 'Open DirectX Shader Compiler documentation';
-    }
-    return linkName;
 }
 
 function addPrimitiveTypes(result: CompletionItem[], items: LanguageElementInfo[]): void {

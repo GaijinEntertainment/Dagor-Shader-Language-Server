@@ -16,7 +16,7 @@ dshl_interval_declaration:
 	INTERVAL IDENTIFIER COLON (dshl_expression COMMA)* IDENTIFIER SEMICOLON;
 
 dshl_variable_declaration:
-	dshl_modifier* IDENTIFIER IDENTIFIER dshl_array_subscript? (
+	dshl_modifier* IDENTIFIER IDENTIFIER dshl_array_subscript* (
 		ASSIGN dshl_expression
 	)? (ALWAYS_REFERENCED | NO_WARNINGS | dshl_modifier)* SEMICOLON;
 
@@ -47,7 +47,7 @@ dshl_assume_statement:
 
 dshl_assignment:
 	IDENTIFIER ASSIGN dshl_expression SEMICOLON
-	| IDENTIFIER AT IDENTIFIER dshl_array_subscript? (
+	| IDENTIFIER AT IDENTIFIER dshl_array_subscript* (
 		ASSIGN IDENTIFIER dshl_hlsl_block SEMICOLON?
 		| COLON IDENTIFIER LRB dshl_expression RRB dshl_hlsl_block SEMICOLON?
 		| ASSIGN dshl_expression SEMICOLON?
@@ -173,7 +173,7 @@ template_parameter_list:
 parameter_list: parameter (COMMA parameter)*;
 
 parameter:
-	input_modifier* type hlsl_identifier semantic* hlsl_identifier* (
+	input_modifier* type hlsl_identifier array_subscript* semantic* hlsl_identifier* (
 		COLON interpolation_modifier
 	)* (ASSIGN expression)?
 	| function_call hlsl_identifier;
@@ -185,9 +185,11 @@ precise: hlsl_identifier; // precise
 semantic: COLON expression;
 
 variable_declaration:
-	variable_storage_class* type_modifier* type variable_initialization (
-		COMMA variable_initialization
-	)*;
+	variable_storage_class* type_modifier* (
+		type
+		| type_declaration
+		| enum_declaration
+	) variable_initialization (COMMA variable_initialization)*;
 
 variable_initialization:
 	hlsl_identifier (AT IDENTIFIER)? array_subscript* semantic* packoffset* register* (
@@ -195,7 +197,9 @@ variable_initialization:
 	)?;
 
 type_declaration:
-	template? type_keyowrd hlsl_identifier? LCB struct_member_declaration* RCB;
+	template? type_keyowrd hlsl_identifier? (
+		COLON hlsl_identifier (COMMA hlsl_identifier)*
+	)? LCB struct_member_declaration* RCB;
 
 enum_declaration:
 	ENUM CLASS? (hlsl_identifier (COLON hlsl_identifier)?)? LCB (
@@ -321,8 +325,9 @@ expression:
 	(
 		literal
 		| function_call
-		| hlsl_identifier (DOUBLE_COLON hlsl_identifier)?
+		| hlsl_identifier
 		| LCB expression_list RCB
+		| variable_declaration
 	)
 	| LRB expression_list RRB
 	| expression (
@@ -331,6 +336,8 @@ expression:
 		| array_subscript
 		| DOT hlsl_identifier
 		| DOT function_call
+		| DOT
+		| DOUBLE_COLON hlsl_identifier?
 	)
 	| (
 		INCREMENT
@@ -339,7 +346,7 @@ expression:
 		| SUBTRACT
 		| NOT
 		| BITWISE_NOT
-		| LRB IDENTIFIER RRB
+		| LRB hlsl_identifier RRB
 	) expression
 	| expression (MULTIPLY | DIVIDE | MODULO) expression
 	| expression (ADD | SUBTRACT) expression
@@ -378,7 +385,9 @@ clipplanes: hlsl_identifier LRB expression RRB; // clipplanes
 array_subscript: LSB expression? RSB;
 
 type:
-	hlsl_identifier (LAB expression_list? RAB)* array_subscript*;
+	hlsl_identifier (DOUBLE_COLON hlsl_identifier)* (
+		LAB expression_list? RAB
+	)* array_subscript*;
 
 hlsl_identifier:
 	IDENTIFIER

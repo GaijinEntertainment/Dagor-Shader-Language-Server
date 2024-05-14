@@ -1116,7 +1116,30 @@ export const hlslStructTypes: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3d12/raydesc',
             'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#ray-description-structure',
         ],
+        keyword: 'struct',
+        members: [
+            { type: 'float3', name: 'Origin', description: 'The origin of the ray.' },
+            { type: 'float', name: 'TMin', description: 'The minimum extent of the ray.' },
+            { type: 'float3', name: 'Direction', description: 'The direction of the ray.' },
+            { type: 'float', name: 'TMax', description: 'The maximum extent of the ray.' },
+        ],
     },
+    {
+        name: 'BuiltInTriangleIntersectionAttributes',
+        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#intersection-attributes-structure'],
+        keyword: 'struct',
+        members: [
+            {
+                type: 'float2',
+                name: 'barycentrics',
+                description:
+                    'Given attributes a0, a1 and a2 for the 3 vertices of a triangle, barycentrics.x is the weight for a1 and barycentrics.y is the weight for a2.',
+            },
+        ],
+    },
+];
+
+export const hlslOtherTypes: LanguageElementInfo[] = [
     {
         name: 'RaytracingAccelerationStructure',
         description:
@@ -1125,10 +1148,6 @@ export const hlslStructTypes: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3d12/raytracingaccelerationstructure',
             'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytracingaccelerationstructure',
         ],
-    },
-    {
-        name: 'BuiltInTriangleIntersectionAttributes',
-        links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#intersection-attributes-structure'],
     },
     {
         name: 'StateObjectConfig',
@@ -1208,21 +1227,112 @@ export const hlslEnumTypes: LanguageElementInfo[] = [
         description:
             'Ray flags are passed to TraceRay() or RayQuery::TraceRayInline() to override transparency, culling, and early-out behavior.',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#ray-flags'],
+        type: 'uint',
+        keyword: 'enum',
+        members: [
+            { name: 'RAY_FLAG_NONE', value: '0x00', description: 'No options selected.' },
+            {
+                name: 'RAY_FLAG_FORCE_OPAQUE',
+                value: '0x01',
+                description: 'All ray-primitive intersections encountered in a raytrace are treated as opaque.',
+            },
+            {
+                name: 'RAY_FLAG_FORCE_NON_OPAQUE',
+                value: '0x02',
+                description: 'All ray-primitive intersections encountered in a raytrace are treated as non-opaque.',
+            },
+            {
+                name: 'RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH',
+                value: '0x04',
+                description:
+                    'The first ray-primitive intersection encountered in a raytrace automatically causes AcceptHitAndEndSearch() to be called immediately after the any hit shader (including if there is no any hit shader).',
+            },
+            {
+                name: 'RAY_FLAG_SKIP_CLOSEST_HIT_SHADER',
+                value: '0x08',
+                description:
+                    'Even if at least one hit has been committed, and the hit group for the closest hit contains a closest hit shader, skip execution of that shader.',
+            },
+            {
+                name: 'RAY_FLAG_CULL_BACK_FACING_TRIANGLES',
+                value: '0x10',
+                description: 'Enables culling of back facing triangles.',
+            },
+            {
+                name: 'RAY_FLAG_CULL_FRONT_FACING_TRIANGLES',
+                value: '0x20',
+                description: 'Enables culling of front facing triangles.',
+            },
+            {
+                name: 'RAY_FLAG_CULL_OPAQUE',
+                value: '0x40',
+                description:
+                    'Culls all primitives that are considered opaque based on their geometry and instance flags.',
+            },
+            {
+                name: 'RAY_FLAG_CULL_NON_OPAQUE',
+                value: '0x80',
+                description:
+                    'Culls all primitives that are considered non-opaque based on their geometry and instance flags.',
+            },
+            { name: 'RAY_FLAG_SKIP_TRIANGLES', value: '0x100', description: 'Culls all triangles.' },
+            {
+                name: 'RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES',
+                value: '0x200',
+                description: 'Culls all procedural primitives.',
+            },
+        ],
     },
     {
         name: 'RAYTRACING_PIPELINE_FLAG',
         description: 'Flags used in Raytracing pipeline config1 subobject.',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytracing-pipeline-flags'],
+        type: 'uint',
+        keyword: 'enum',
+        members: [
+            { name: 'RAYTRACING_PIPELINE_FLAG_NONE', value: '0x0' },
+            { name: 'RAYTRACING_PIPELINE_FLAG_SKIP_TRIANGLES', value: '0x100' },
+            { name: 'RAYTRACING_PIPELINE_FLAG_SKIP_PROCEDURAL_PRIMITIVES', value: '0x200' },
+        ],
     },
     {
         name: 'COMMITTED_STATUS',
         description: 'Return value for RayQuery::CommittedStatus().',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#committed_status'],
+        type: 'uint',
+        keyword: 'enum',
+        members: [
+            { name: 'COMMITTED_NOTHING', description: 'No hits have been committed yet.' },
+            {
+                name: 'COMMITTED_TRIANGLE_HIT',
+                description:
+                    'Closest hit so far is a triangle, a result of either the shader previously calling RayQuery::CommitNonOpaqueTriangleHit() or a fixed function opaque triangle intersection.',
+            },
+            {
+                name: 'COMMITTED_PROCEDURAL_PRIMITIVE_HIT',
+                description:
+                    'Closest hit so far is a procedural primitive, a result of the shader previously calling RayQuery::CommittProceduralPrimitiveHit().',
+            },
+        ],
     },
     {
         name: 'CANDIDATE_TYPE',
         description: 'Return value for RayQuery::CandidateType().',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#candidate_type'],
+        type: 'uint',
+        keyword: 'enum',
+        members: [
+            {
+                name: 'CANDIDATE_NON_OPAQUE_TRIANGLE',
+                description:
+                    'Acceleration structure traversal has encountered a non opaque triangle (that would be the closest hit so far if committed) for the shader to evaluate.',
+            },
+            {
+                name: 'CANDIDATE_PROCEDURAL_PRIMITIVE',
+                description:
+                    'Acceleration structure traversal has encountered a procedural primitive for the shader to evaluate.',
+            },
+        ],
     },
 ];
 

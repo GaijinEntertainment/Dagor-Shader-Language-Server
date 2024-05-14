@@ -1,4 +1,5 @@
-import { DocumentUri, Range } from 'vscode-languageserver';
+import { DocumentUri, MarkupContent, MarkupKind, Range } from 'vscode-languageserver';
+import { getInfo } from '../../helper/helper';
 import { ShaderUsage } from './shader-usage';
 
 export interface ShaderDeclaration {
@@ -8,6 +9,10 @@ export interface ShaderDeclaration {
     isVisible: boolean;
     uri: DocumentUri;
     usages: ShaderUsage[];
+}
+
+export function getShaderInfo(sd: ShaderDeclaration, formats: MarkupKind[]): MarkupContent | undefined {
+    return getInfo(formats, toStringShaderDeclaration(sd), '', [], 'dshl');
 }
 
 export function toStringShaderDeclaration(sd: ShaderDeclaration): string {

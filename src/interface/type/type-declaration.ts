@@ -1,12 +1,15 @@
-import { DocumentUri, Range } from 'vscode-languageserver';
+import { DocumentUri, MarkupContent, MarkupKind, Range } from 'vscode-languageserver';
+
+import { getInfo } from '../../helper/helper';
 import { VariableDeclaration, toStringVariableDeclaration } from '../variable/variable-declaration';
+import { EnumDeclaration, toStringEnumDeclaration } from './enum-declaration';
 import { TypeUsage } from './type-usage';
 
 export type TypeKeyword = 'struct' | 'class' | 'interface';
 
 export interface TypeDeclaration {
     type: TypeKeyword;
-    name: string;
+    name?: string;
     nameOriginalRange: Range;
     originalRange: Range;
     usages: TypeUsage[];
@@ -14,13 +17,42 @@ export interface TypeDeclaration {
     isVisible: boolean;
     uri: DocumentUri;
     isBuiltIn: boolean;
+    superTypes: TypeDeclaration[];
+    subTypes: TypeDeclaration[];
+    embeddedTypes: TypeDeclaration[];
+    embeddedEnums: EnumDeclaration[];
+    description?: string;
+    links?: string[];
 }
 
-export function toStringTypeDeclaration(td: TypeDeclaration): string {
-    const header = `${td.type} ${td.name}`;
+export function getTypeInfo(td: TypeDeclaration, formats: MarkupKind[]): MarkupContent | undefined {
+    return getInfo(formats, toStringTypeDeclaration(td), td.description, td.links);
+}
+
+export function toStringTypeDeclaration(td: TypeDeclaration, depth = 0): string {
+    const header = '\t'.repeat(depth) + toStringTypeDeclarationHeader(td);
     let members = '';
     for (const member of td.members) {
-        members += `\t${toStringVariableDeclaration(member)}\n`;
+        members += '\t'.repeat(depth + 1) + `${toStringVariableDeclaration(member)}\n`;
     }
-    return `${header} {\n${members}};`;
+    let embeddedTypes = '';
+    for (const etd of td.embeddedTypes) {
+        embeddedTypes += toStringTypeDeclaration(etd, depth + 1) + '\n';
+    }
+    let embeddedEnums = '';
+    for (const eed of td.embeddedEnums) {
+        embeddedEnums += toStringEnumDeclaration(eed, depth + 1) + '\n';
+    }
+    return `${header} {\n${members}${embeddedTypes}${embeddedEnums}` + '\t'.repeat(depth) + '};';
+}
+
+function toStringTypeDeclarationHeader(td: TypeDeclaration): string {
+    let result = td.type;
+    if (td.name) {
+        result += ' ' + td.name;
+    }
+    if (td.superTypes.length) {
+        result += ' : ' + td.superTypes.map((td) => td.name).join(', ');
+    }
+    return result;
 }

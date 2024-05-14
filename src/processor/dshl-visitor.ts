@@ -2,7 +2,10 @@ import { ParserRuleContext, Token } from 'antlr4ts';
 import { AbstractParseTreeVisitor } from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import { Position, Range } from 'vscode-languageserver';
 import {
+    Array_subscriptContext,
+    Do_statementContext,
     DshlParser,
+    Dshl_array_subscriptContext,
     Dshl_assignmentContext,
     Dshl_assume_statementContext,
     Dshl_block_blockContext,
@@ -17,17 +20,25 @@ import {
     Dshl_variable_declarationContext,
     Enum_declarationContext,
     ExpressionContext,
+    For_statementContext,
+    Function_definitionContext,
+    Function_headerContext,
+    If_statementContext,
     ParameterContext,
     State_objectContext,
     Statement_blockContext,
+    Switch_statementContext,
+    TypeContext,
     Type_declarationContext,
     Variable_declarationContext,
+    While_statementContext,
 } from '../_generated/DshlParser';
 import { DshlParserVisitor } from '../_generated/DshlParserVisitor';
 import { Snapshot } from '../core/snapshot';
 import { Scope } from '../helper/scope';
 import { BlockDeclaration } from '../interface/block/block-declaration';
 import { BlockUsage } from '../interface/block/block-usage';
+import { ExpressionResult } from '../interface/expression-result';
 import { FunctionArgument } from '../interface/function/function-argument';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
@@ -36,13 +47,18 @@ import { shaderStageKeywordToEnum } from '../interface/shader-stage';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { EnumMemberDeclaration } from '../interface/type/enum-member-declaration';
 import { EnumUsage } from '../interface/type/enum-usage';
 import { TypeDeclaration, TypeKeyword } from '../interface/type/type-declaration';
 import { TypeUsage } from '../interface/type/type-usage';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 import { VariableUsage } from '../interface/variable/variable-usage';
+import { ExpressionVisitor } from './expression-visitor';
 
-export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlParserVisitor<void> {
+export class DshlVisitor
+    extends AbstractParseTreeVisitor<ExpressionResult | null>
+    implements DshlParserVisitor<ExpressionResult | null>
+{
     private snapshot: Snapshot;
     private scope: Scope;
     private rootSnapshot?: Snapshot;
@@ -51,7 +67,8 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
     private globalHlslBlocks: Scope[] = [];
     private localHlslBlocks: Scope[] = [];
     private preshaders: Scope[] = [];
-    private type: TypeDeclaration | null = null;
+    private type: TypeDeclaration[] = [];
+    private enum: EnumDeclaration | null = null;
 
     public constructor(snapshot: Snapshot, rootSnapshot?: Snapshot, contentStartPosition?: Position) {
         super();
@@ -71,12 +88,14 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
 
     // region DSHL
 
-    public visitDshl_statement_block(ctx: Dshl_statement_blockContext): void {
-        if (this.isVisible(ctx.LCB().symbol.startIndex)) {
+    public visitDshl_statement_block(ctx: Dshl_statement_blockContext): ExpressionResult | null {
+        const visible = this.isVisible(ctx.LCB().symbol.startIndex);
+        if (visible) {
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
             this.snapshot.foldingRanges.push(range);
         }
-        const scope = this.createScope(ctx);
+        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
         if (ctx.parent?.ruleIndex === DshlParser.RULE_dshl_preshader_block) {
             this.preshaders.push(scope);
             const preshaderCtx = ctx.parent as Dshl_preshader_blockContext;
@@ -86,30 +105,17 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         this.scope = scope;
         this.visitChildren(ctx);
         this.scope = scope.parent!;
+        return null;
     }
 
-    private getRange(startPosition: number, endPosition: number): Range {
-        const ic = this.snapshot.getIncludeContextAt(startPosition);
-        if (ic) {
-            return ic.originalRange;
-        }
-        const mc = this.snapshot.getMacroContextAt(startPosition);
-        if (mc) {
-            return mc.originalRange;
-        }
-        const dc = this.snapshot.getDefineContextAt(startPosition);
-        if (dc) {
-            return dc.originalRange;
-        }
-        return this.snapshot.getOriginalRange(startPosition, endPosition);
-    }
-
-    public visitDshl_hlsl_block(ctx: Dshl_hlsl_blockContext): void {
-        if (this.isVisible(ctx.LCB().symbol.startIndex)) {
+    public visitDshl_hlsl_block(ctx: Dshl_hlsl_blockContext): ExpressionResult | null {
+        const visible = this.isVisible(ctx.LCB().symbol.startIndex);
+        if (visible) {
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
             this.snapshot.foldingRanges.push(range);
         }
-        const scope = this.createScope(ctx);
+        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
         const identifier = ctx.IDENTIFIER();
         if (identifier) {
             scope.hlslStage = shaderStageKeywordToEnum(identifier.text);
@@ -132,9 +138,10 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             this.globalHlslBlocks.push(scope);
         }
         this.scope = scope.parent!;
+        return null;
     }
 
-    public visitDshl_variable_declaration(ctx: Dshl_variable_declarationContext): void {
+    public visitDshl_variable_declaration(ctx: Dshl_variable_declarationContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         const type = ctx.IDENTIFIER(0);
         const identifier = ctx.IDENTIFIER(1);
@@ -152,6 +159,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             isVisible: visible,
             usages: [],
             isHlsl: false,
+            arraySizes: this.getDshlArraySize(ctx.dshl_array_subscript()),
         };
         // if (visible && identifier.text.toLowerCase() !== identifier.text) {
         //     this.snapshot.diagnostics.push({
@@ -162,13 +170,14 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         // }
         this.scope.variableDeclarations.push(vd);
         this.visitChildren(ctx);
+        return null;
     }
 
     private toSnakeCase(name: string): string {
         return name.replace(/(?<=[a-z0-9])([A-Z]+)/g, '_$1').toLowerCase();
     }
 
-    public visitDshl_expression?(ctx: Dshl_expressionContext): void {
+    public visitDshl_expression?(ctx: Dshl_expressionContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         if (visible) {
             const identifier = ctx.IDENTIFIER();
@@ -179,7 +188,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 if (vd) {
                     this.createVariableUsage(vd, identifier.symbol, visible);
                     this.visitChildren(ctx);
-                    return;
+                    return null;
                 } else if (this.rootSnapshot && this.contentStartPosition) {
                     const vd = this.rootSnapshot.getVariableDeclarationFor(
                         identifier.text,
@@ -189,7 +198,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     if (vd) {
                         this.createVariableUsage(vd, identifier.symbol, visible);
                         this.visitChildren(ctx);
-                        return;
+                        return null;
                     }
                 }
                 const sd = this.snapshot.getShaderDeclarationFor(identifier.text, originalPosition);
@@ -205,7 +214,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     this.scope.shaderUsages.push(su);
                     sd.usages.push(su);
                     this.visitChildren(ctx);
-                    return;
+                    return null;
                 } else if (this.rootSnapshot && this.contentStartPosition) {
                     const sd = this.snapshot.getShaderDeclarationFor(identifier.text, this.contentStartPosition, true);
                     if (sd) {
@@ -220,15 +229,16 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                         this.scope.shaderUsages.push(su);
                         sd.usages.push(su);
                         this.visitChildren(ctx);
-                        return;
+                        return null;
                     }
                 }
             }
         }
         this.visitChildren(ctx);
+        return null;
     }
 
-    public visitDshl_function_call(ctx: Dshl_function_callContext): void {
+    public visitDshl_function_call(ctx: Dshl_function_callContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         if (visible) {
             const name = ctx.IDENTIFIER();
@@ -255,6 +265,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+        return null;
     }
 
     private getFunctionArguments(ctx: Dshl_function_callContext, fd: FunctionDeclaration): FunctionArgument[] {
@@ -277,8 +288,10 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         return fas;
     }
 
-    public visitDshl_shader_declaration(ctx: Dshl_shader_declarationContext): void {
-        const scope = this.createScope(ctx);
+    public visitDshl_shader_declaration(ctx: Dshl_shader_declarationContext): ExpressionResult | null {
+        const visible = this.isVisible(ctx.start.startIndex);
+        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
         this.scope.children.push(scope);
         this.scope = scope;
         for (const shader of ctx.IDENTIFIER()) {
@@ -290,7 +303,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                     shader.symbol.startIndex,
                     shader.symbol.stopIndex + 1
                 ),
-                isVisible: this.isVisible(ctx.start.startIndex),
+                isVisible: visible,
                 uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
                 usages: [],
             };
@@ -302,9 +315,10 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         this.preshaders = [];
         this.shader = null;
         this.scope = scope.parent!;
+        return null;
     }
 
-    public visitDshl_interval_declaration(ctx: Dshl_interval_declarationContext): void {
+    public visitDshl_interval_declaration(ctx: Dshl_interval_declarationContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         if (visible) {
             const identifier = ctx.IDENTIFIER(0);
@@ -326,10 +340,13 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+        return null;
     }
 
-    public visitDshl_block_block(ctx: Dshl_block_blockContext): void {
-        const scope = this.createScope(ctx);
+    public visitDshl_block_block(ctx: Dshl_block_blockContext): ExpressionResult | null {
+        const visible = this.isVisible(ctx.start.startIndex);
+        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
         this.scope.children.push(scope);
         this.scope = scope;
         const type = ctx.IDENTIFIER(0);
@@ -343,15 +360,16 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 identifier.symbol.stopIndex + 1
             ),
             uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
-            isVisible: this.isVisible(ctx.start.startIndex),
+            isVisible: visible,
             usages: [],
         };
         this.scope.blockDeclaration = bd;
         this.visitChildren(ctx);
         this.scope = scope.parent!;
+        return null;
     }
 
-    public visitDshl_supports_statement(ctx: Dshl_supports_statementContext): void {
+    public visitDshl_supports_statement(ctx: Dshl_supports_statementContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         if (visible) {
             const identifier = ctx.IDENTIFIER();
@@ -386,9 +404,10 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+        return null;
     }
 
-    public visitDshl_assignment(ctx: Dshl_assignmentContext): void {
+    public visitDshl_assignment(ctx: Dshl_assignmentContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         if (ctx.AT() && !ctx.dshl_hlsl_block()) {
             const identifier = ctx.IDENTIFIER(0);
@@ -407,6 +426,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 isVisible: visible,
                 usages: [],
                 isHlsl: true,
+                arraySizes: this.getDshlArraySize(ctx.dshl_array_subscript()),
             };
             this.scope.variableDeclarations.push(vd);
         }
@@ -429,6 +449,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+        return null;
     }
 
     private dshlToHlslType(dshtlType: string): string {
@@ -462,7 +483,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         }
     }
 
-    public visitDshl_assume_statement(ctx: Dshl_assume_statementContext): void {
+    public visitDshl_assume_statement(ctx: Dshl_assume_statementContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         if (visible) {
             const identifier = ctx.IDENTIFIER();
@@ -483,36 +504,40 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             }
         }
         this.visitChildren(ctx);
+        return null;
     }
 
     // region HLSL
 
-    public visitStatement_block(ctx: Statement_blockContext): void {
-        if (this.isVisible(ctx.start.startIndex)) {
+    public visitStatement_block(ctx: Statement_blockContext): ExpressionResult | null {
+        const visible = this.isVisible(ctx.start.startIndex);
+        if (visible) {
             const range = this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex);
             this.snapshot.foldingRanges.push(range);
         }
-        const scope = this.createScope(ctx);
+        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
         this.scope.children.push(scope);
         this.scope = scope;
         this.visitChildren(ctx);
         this.scope = scope.parent!;
+        return null;
     }
 
-    public visitType_declaration(ctx: Type_declarationContext): void {
+    public visitType_declaration(ctx: Type_declarationContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.LCB().symbol.startIndex);
         if (visible) {
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
             this.snapshot.foldingRanges.push(range);
         }
-        const identifier = ctx.hlsl_identifier();
+        const identifier = ctx.hlsl_identifier().length ? ctx.hlsl_identifier(0) : null;
         const originalRange = this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
         const nameOriginalRange = identifier
             ? this.snapshot.getOriginalRange(identifier.start.startIndex, identifier.stop!.stopIndex + 1)
             : originalRange;
         const td: TypeDeclaration = {
-            type: this.getType(ctx.type_keyowrd().text),
-            name: identifier ? identifier.text : '',
+            type: this.getTypeKeyword(ctx.type_keyowrd().text),
+            name: identifier?.text,
             uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
             originalRange,
             nameOriginalRange,
@@ -520,14 +545,40 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             isBuiltIn: false,
             usages: [],
             members: [],
+            superTypes: [],
+            subTypes: [],
+            embeddedTypes: [],
+            embeddedEnums: [],
         };
-        this.scope.typeDeclarations.push(td);
-        this.type = td;
+        if (this.type.length) {
+            this.type[this.type.length - 1].embeddedTypes.push(td);
+        } else {
+            this.scope.typeDeclarations.push(td);
+        }
+        for (let i = 1; i < ctx.hlsl_identifier().length; i++) {
+            const superTd = this.snapshot.getTypeDeclarationFor(ctx.hlsl_identifier(i).text, nameOriginalRange.start);
+            if (superTd) {
+                const superTu: TypeUsage = {
+                    declaration: superTd,
+                    originalRange: this.snapshot.getOriginalRange(
+                        ctx.hlsl_identifier(i).start.startIndex,
+                        ctx.hlsl_identifier(i).stop!.stopIndex + 1
+                    ),
+                    isVisible: visible,
+                };
+                this.scope.typeUsages.push(superTu);
+                superTd.usages.push(superTu);
+                td.superTypes.push(superTd);
+                superTd.subTypes.push(td);
+            }
+        }
+        this.type.push(td);
         this.visitChildren(ctx);
-        this.type = null;
+        this.type.pop();
+        return { type: 'type', typeDeclaration: td, arraySizes: [] };
     }
 
-    private getType(type: string): TypeKeyword {
+    private getTypeKeyword(type: string): TypeKeyword {
         if (type === 'struct' || type === 'class' || type === 'interface') {
             return type;
         } else {
@@ -535,7 +586,7 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         }
     }
 
-    public visitEnum_declaration(ctx: Enum_declarationContext): void {
+    public visitEnum_declaration(ctx: Enum_declarationContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.LCB().symbol.startIndex);
         if (visible) {
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
@@ -555,61 +606,69 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             originalRange,
             nameOriginalRange,
             isVisible: visible,
-            members: ctx.enum_member().map((em) => ({
-                name: em.hlsl_identifier().text,
-                nameOriginalRange: this.snapshot.getOriginalRange(
-                    em.hlsl_identifier().start.startIndex,
-                    em.hlsl_identifier().stop!.stopIndex + 1
-                ),
-                originalRange: this.snapshot.getOriginalRange(em.start.startIndex, em.stop!.stopIndex + 1),
-            })),
+            members: [],
             usages: [],
+            isBuiltIn: false,
         };
-        this.scope.enumDeclarations.push(ed);
+        for (const memberContext of ctx.enum_member()) {
+            const value = memberContext.expression()?.literal()?.INT_LITERAL()?.text;
+            const emd: EnumMemberDeclaration = {
+                enumDeclaration: ed,
+                name: memberContext.hlsl_identifier().text,
+                nameOriginalRange: this.snapshot.getOriginalRange(
+                    memberContext.hlsl_identifier().start.startIndex,
+                    memberContext.hlsl_identifier().stop!.stopIndex + 1
+                ),
+                originalRange: this.snapshot.getOriginalRange(
+                    memberContext.start.startIndex,
+                    memberContext.stop!.stopIndex + 1
+                ),
+                usages: [],
+                isVisible: visible,
+                uri: this.snapshot.getIncludeContextDeepAt(memberContext.start.startIndex)?.uri ?? this.snapshot.uri,
+                value,
+            };
+            ed.members.push(emd);
+            this.scope.enumMemberDeclarations.push(emd);
+        }
+        if (this.type.length) {
+            this.type[this.type.length - 1].embeddedEnums.push(ed);
+        } else {
+            this.scope.enumDeclarations.push(ed);
+        }
+        this.enum = ed;
         this.visitChildren(ctx);
+        this.enum = null;
+        return { type: 'enum', enumDeclaration: ed, arraySizes: [] };
     }
 
-    public visitState_object(ctx: State_objectContext): void {
+    public visitState_object(ctx: State_objectContext): ExpressionResult | null {
         if (this.isVisible(ctx.LCB().symbol.startIndex)) {
             const range = this.snapshot.getOriginalRange(ctx.LCB().symbol.startIndex, ctx.RCB().symbol.stopIndex);
             this.snapshot.foldingRanges.push(range);
         }
         this.visitChildren(ctx);
+        return null;
     }
 
-    public visitVariable_declaration(ctx: Variable_declarationContext): void {
+    public visitVariable_declaration(ctx: Variable_declarationContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
+        const type = ctx.type();
+        const tdCtx = ctx.type_declaration();
+        const expResult = type ? this.getType(type, visible) : this.visit(tdCtx!);
         for (const vi of ctx.variable_initialization()) {
-            const type = ctx.type();
             const identifier = vi.hlsl_identifier();
             const nameOriginalRange = this.snapshot.getOriginalRange(
                 identifier.start.startIndex,
                 identifier.stop!.stopIndex + 1
             );
-            const td = this.snapshot.getTypeDeclarationFor(type.text, nameOriginalRange.start);
-            if (td) {
-                const tu: TypeUsage = {
-                    declaration: td,
-                    originalRange: this.snapshot.getOriginalRange(type.start.startIndex, type.stop!.stopIndex + 1),
-                    isVisible: visible,
-                };
-                td.usages.push(tu);
-                this.scope.typeUsages.push(tu);
-            }
-            const ed = this.snapshot.getEnumDeclarationFor(type.text, nameOriginalRange.start);
-            if (ed) {
-                const eu: EnumUsage = {
-                    declaration: ed,
-                    originalRange: this.snapshot.getOriginalRange(type.start.startIndex, type.stop!.stopIndex + 1),
-                    isVisible: visible,
-                };
-                ed.usages.push(eu);
-                this.scope.enumUsages.push(eu);
-            }
             const vd: VariableDeclaration = {
-                type: type.text,
-                typeDeclaration: td ?? undefined,
-                enumDeclaration: ed ?? undefined,
+                type:
+                    type?.text ??
+                    (expResult?.type === 'type' ? expResult.typeDeclaration.name : expResult?.enumDeclaration.name) ??
+                    '',
+                typeDeclaration: expResult?.type === 'type' ? expResult.typeDeclaration : undefined,
+                enumDeclaration: expResult?.type === 'enum' ? expResult.enumDeclaration : undefined,
                 name: identifier.text,
                 nameEndPosition: ctx.stop!.stopIndex + 1,
                 originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
@@ -618,17 +677,116 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 isVisible: visible,
                 usages: [],
                 isHlsl: true,
+                arraySizes: this.getArraySize(vi.array_subscript()),
+                containerType: this.type.length ? this.type[this.type.length - 1] : undefined,
             };
-            if (this.type) {
-                this.type.members.push(vd);
+            if (this.type.length) {
+                this.type[this.type.length - 1].members.push(vd);
             } else {
                 this.scope.variableDeclarations.push(vd);
             }
         }
+
         this.visitChildren(ctx);
+        return null;
     }
 
-    public visitParameter(ctx: ParameterContext): void {
+    private getArraySize(ctx: Array_subscriptContext[]): number[] {
+        return ctx.map((actx) => Number.parseInt(actx.expression()?.text ?? ''));
+    }
+
+    private getDshlArraySize(ctx: Dshl_array_subscriptContext[]): number[] {
+        return ctx.map((actx) => Number.parseInt(actx.dshl_expression()?.text ?? ''));
+    }
+
+    private getType(ctx: TypeContext, visible: boolean): ExpressionResult | null {
+        let td: TypeDeclaration | null = null;
+        let ed: EnumDeclaration | null = null;
+        for (const id of ctx.hlsl_identifier()) {
+            const nameOriginalRange = this.snapshot.getOriginalRange(id.start.startIndex, id.stop!.stopIndex + 1);
+            if (!td && !ed) {
+                td = this.snapshot.getTypeDeclarationFor(id.text, nameOriginalRange.start);
+                if (td) {
+                    const tu: TypeUsage = {
+                        declaration: td,
+                        originalRange: this.snapshot.getOriginalRange(id.start.startIndex, id.stop!.stopIndex + 1),
+                        isVisible: visible,
+                    };
+                    td.usages.push(tu);
+                    this.scope.typeUsages.push(tu);
+                    continue;
+                }
+                ed = this.snapshot.getEnumDeclarationFor(id.text, nameOriginalRange.start);
+                if (ed) {
+                    const eu: EnumUsage = {
+                        declaration: ed,
+                        originalRange: this.snapshot.getOriginalRange(id.start.startIndex, id.stop!.stopIndex + 1),
+                        isVisible: visible,
+                    };
+                    ed.usages.push(eu);
+                    this.scope.enumUsages.push(eu);
+                    continue;
+                }
+                if (this.rootSnapshot && this.contentStartPosition) {
+                    td = this.rootSnapshot.getTypeDeclarationFor(id.text, this.contentStartPosition, true);
+                    if (td) {
+                        const tu: TypeUsage = {
+                            declaration: td,
+                            originalRange: this.snapshot.getOriginalRange(id.start.startIndex, id.stop!.stopIndex + 1),
+                            isVisible: visible,
+                        };
+                        td.usages.push(tu);
+                        this.scope.typeUsages.push(tu);
+                        continue;
+                    }
+                    ed = this.rootSnapshot.getEnumDeclarationFor(id.text, this.contentStartPosition, true);
+                    if (ed) {
+                        const eu: EnumUsage = {
+                            declaration: ed,
+                            originalRange: this.snapshot.getOriginalRange(id.start.startIndex, id.stop!.stopIndex + 1),
+                            isVisible: visible,
+                        };
+                        ed.usages.push(eu);
+                        this.scope.enumUsages.push(eu);
+                        continue;
+                    }
+                }
+            } else if (td) {
+                ed = td.embeddedEnums.find((eed) => eed.name === id.text) ?? null;
+                if (ed) {
+                    const eu: EnumUsage = {
+                        declaration: ed,
+                        originalRange: this.snapshot.getOriginalRange(id.start.startIndex, id.stop!.stopIndex + 1),
+                        isVisible: visible,
+                    };
+                    ed.usages.push(eu);
+                    this.scope.enumUsages.push(eu);
+                }
+                td = td.embeddedTypes.find((etd) => etd.name === id.text) ?? null;
+                if (td) {
+                    const tu: TypeUsage = {
+                        declaration: td,
+                        originalRange: this.snapshot.getOriginalRange(id.start.startIndex, id.stop!.stopIndex + 1),
+                        isVisible: visible,
+                    };
+                    td.usages.push(tu);
+                    this.scope.typeUsages.push(tu);
+                }
+            } else if (ed) {
+                return null;
+            }
+        }
+        const arraySizes = this.getArraySize(ctx.array_subscript());
+        if (td) {
+            return { type: 'type', typeDeclaration: td, arraySizes };
+        } else if (ed) {
+            return { type: 'enum', enumDeclaration: ed, arraySizes };
+        } else {
+            return null;
+        }
+    }
+
+    public visitParameter(ctx: ParameterContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         const type = ctx.type();
         if (visible && type) {
@@ -670,34 +828,76 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
                 isVisible: visible,
                 usages: [],
                 isHlsl: true,
+                arraySizes: this.getArraySize(ctx.array_subscript()),
             };
             this.scope.variableDeclarations.push(vd);
         }
         this.visitChildren(ctx);
+        return null;
     }
 
-    public visitExpression(ctx: ExpressionContext): void {
+    public visitExpression(ctx: ExpressionContext): ExpressionResult | null {
+        const result = new ExpressionVisitor(
+            this.snapshot,
+            this.scope,
+            this.rootSnapshot,
+            this.contentStartPosition,
+            this.enum ?? undefined
+        ).visitExpression(ctx);
+        this.visitChildren(ctx);
+        return result;
+    }
+
+    public visitFunction_header(ctx: Function_headerContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         if (visible) {
-            for (const identifier of ctx.hlsl_identifier()) {
-                const position = identifier.start.startIndex;
-                const originalPosition = this.snapshot.getOriginalPosition(position, true);
-                const vd = this.snapshot.getVariableDeclarationFor(identifier.text, originalPosition);
-                if (vd) {
-                    this.createVariableUsage(vd, identifier.start, visible);
-                } else if (this.rootSnapshot && this.contentStartPosition) {
-                    const vd = this.rootSnapshot.getVariableDeclarationFor(
-                        identifier.text,
-                        this.contentStartPosition,
-                        true
-                    );
-                    if (vd) {
-                        this.createVariableUsage(vd, identifier.start, visible);
-                    }
-                }
-            }
+            this.getType(ctx.type(), visible);
         }
         this.visitChildren(ctx);
+        return null;
+    }
+
+    public visitFunction_definition(ctx: Function_definitionContext): ExpressionResult | null {
+        return this.createScopeAndVisit(ctx);
+    }
+
+    public visitFor_statement(ctx: For_statementContext): ExpressionResult | null {
+        return this.createScopeAndVisit(ctx);
+    }
+
+    public visitWhile_statement(ctx: While_statementContext): ExpressionResult | null {
+        return this.createScopeAndVisit(ctx);
+    }
+
+    public visitDo_statement(ctx: Do_statementContext): ExpressionResult | null {
+        return this.createScopeAndVisit(ctx);
+    }
+
+    public visitIf_statement(ctx: If_statementContext): ExpressionResult | null {
+        let visible = this.isVisible(ctx.start.startIndex);
+        let range = this.getRange(ctx.start.startIndex, ctx.statement(0).stop!.stopIndex + 1);
+        let scope = this.createScope(visible, range);
+        this.scope.children.push(scope);
+        this.scope = scope;
+        this.visit(ctx.expression());
+        this.visit(ctx.statement(0));
+        this.scope = scope.parent!;
+        const elseCtx = ctx.ELSE();
+        if (elseCtx) {
+            const elseStatement = ctx.statement(1);
+            visible = this.isVisible(elseCtx.symbol.startIndex);
+            range = this.getRange(elseStatement.start.startIndex, elseStatement.stop!.stopIndex + 1);
+            scope = this.createScope(visible, range);
+            this.scope.children.push(scope);
+            this.scope = scope;
+            this.visit(ctx.statement(1));
+            this.scope = scope.parent!;
+        }
+        return null;
+    }
+
+    public visitSwitch_statement(ctx: Switch_statementContext): ExpressionResult | null {
+        return this.createScopeAndVisit(ctx);
     }
 
     // region shared
@@ -713,7 +913,18 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
         return vu;
     }
 
-    private createScope(ctx: ParserRuleContext): Scope {
+    private createScopeAndVisit(ctx: ParserRuleContext): null {
+        const visible = this.isVisible(ctx.start.startIndex);
+        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
+        this.scope.children.push(scope);
+        this.scope = scope;
+        this.visitChildren(ctx);
+        this.scope = scope.parent!;
+        return null;
+    }
+
+    private createScope(visible: boolean, range: Range): Scope {
         return {
             shaderDeclarations: [],
             shaderUsages: [],
@@ -721,19 +932,39 @@ export class DshlVisitor extends AbstractParseTreeVisitor<void> implements DshlP
             typeUsages: [],
             enumDeclarations: [],
             enumUsages: [],
+            enumMemberDeclarations: [],
+            enumMemberUsages: [],
             variableDeclarations: [],
             variableUsages: [],
             functionDeclarations: [],
             functionUsages: [],
             blockUsages: [],
-            originalRange: this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+            originalRange: range,
             children: [],
             parent: this.scope,
-            isVisible: this.isVisible(ctx.start.startIndex),
+            isVisible: visible,
             hlslBlocks: [],
             preshaders: [],
         };
     }
 
-    protected defaultResult(): void {}
+    private getRange(startPosition: number, endPosition: number): Range {
+        const ic = this.snapshot.getIncludeContextAt(startPosition);
+        if (ic) {
+            return ic.originalRange;
+        }
+        const mc = this.snapshot.getMacroContextAt(startPosition);
+        if (mc) {
+            return mc.originalRange;
+        }
+        const dc = this.snapshot.getDefineContextAt(startPosition);
+        if (dc) {
+            return dc.originalRange;
+        }
+        return this.snapshot.getOriginalRange(startPosition, endPosition);
+    }
+
+    protected defaultResult(): ExpressionResult | null {
+        return null;
+    }
 }

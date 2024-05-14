@@ -1,6 +1,8 @@
 import { ANTLRInputStream } from 'antlr4ts';
-import { Position, Range } from 'vscode-languageserver';
+import { MarkupContent, MarkupKind, Position, Range, SymbolKind } from 'vscode-languageserver';
 import { DshlLexer } from '../_generated/DshlLexer';
+import { getCapabilities } from '../core/capability-manager';
+import { TypeKeyword } from '../interface/type/type-declaration';
 
 export const defaultPosition: Position = { line: 0, character: 0 };
 export const defaultRange: Range = { start: defaultPosition, end: defaultPosition };
@@ -59,4 +61,74 @@ export function createLexer(text: string): DshlLexer {
     const charStream = new ANTLRInputStream(text);
     const lexer = new DshlLexer(charStream);
     return lexer;
+}
+
+export function getTypeSymbolKind(type: TypeKeyword): SymbolKind {
+    if (type === 'class') {
+        return getKind(SymbolKind.Class);
+    } else if (type === 'interface') {
+        return getKind(SymbolKind.Interface);
+    } else {
+        return getKind(SymbolKind.Struct);
+    }
+}
+
+export function getKind(kind: SymbolKind): SymbolKind {
+    const kinds = getCapabilities().documentSymbolSymbolKinds;
+    if (!kinds) {
+        if (kind <= SymbolKind.Array) {
+            return kind;
+        } else {
+            return SymbolKind.File;
+        }
+    } else {
+        return kinds.includes(kind) ? kind : SymbolKind.File;
+    }
+}
+
+export function createDocumentationLinks(links: string[] | undefined): string {
+    let result = '';
+    if (links) {
+        for (const link of links) {
+            const linkName = getLinkName(link);
+            result += `\n\n[${linkName}](${link})`;
+        }
+    }
+    return result;
+}
+
+function getLinkName(link: string): string {
+    let linkName = 'Open documentation';
+    if (link.startsWith('https://microsoft.github.io/DirectX-Specs')) {
+        linkName = 'Open DirectX Specs documentation';
+    } else if (link.startsWith('https://learn.microsoft.com')) {
+        linkName = 'Open Microsoft Learn documentation';
+    } else if (link.startsWith('https://github.com/microsoft/DirectXShaderCompiler')) {
+        linkName = 'Open DirectX Shader Compiler documentation';
+    }
+    return linkName;
+}
+
+export function getInfo(
+    formats: MarkupKind[],
+    declaration: string,
+    description?: string,
+    links?: string[],
+    language: 'hlsl' | 'dshl' = 'hlsl'
+): MarkupContent | undefined {
+    const descriptionResult = description ? description + '\n' : '';
+    if (formats.includes(MarkupKind.Markdown)) {
+        const linksResult = createDocumentationLinks(links);
+        return {
+            kind: MarkupKind.Markdown,
+            value: descriptionResult + '```' + language + '\n' + declaration + '\n```' + linksResult,
+        };
+    } else if (formats.includes(MarkupKind.PlainText)) {
+        return {
+            kind: MarkupKind.PlainText,
+            value: descriptionResult + declaration,
+        };
+    } else {
+        return undefined;
+    }
 }

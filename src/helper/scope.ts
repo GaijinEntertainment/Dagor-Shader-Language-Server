@@ -8,6 +8,8 @@ import { ShaderStage } from '../interface/shader-stage';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { ShaderUsage } from '../interface/shader/shader-usage';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { EnumMemberDeclaration } from '../interface/type/enum-member-declaration';
+import { EnumMemberUsage } from '../interface/type/enum-member-usage';
 import { EnumUsage } from '../interface/type/enum-usage';
 import { TypeDeclaration } from '../interface/type/type-declaration';
 import { TypeUsage } from '../interface/type/type-usage';
@@ -19,6 +21,8 @@ export interface Scope {
     shaderUsages: ShaderUsage[];
     enumDeclarations: EnumDeclaration[];
     enumUsages: EnumUsage[];
+    enumMemberDeclarations: EnumMemberDeclaration[];
+    enumMemberUsages: EnumMemberUsage[];
     typeDeclarations: TypeDeclaration[];
     typeUsages: TypeUsage[];
     variableDeclarations: VariableDeclaration[];

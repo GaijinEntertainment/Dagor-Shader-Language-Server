@@ -10,6 +10,7 @@ import { Macro } from '../interface/macro/macro';
 import { MacroParameter } from '../interface/macro/macro-parameter';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
+import { EnumMemberDeclaration } from '../interface/type/enum-member-declaration';
 import { TypeDeclaration } from '../interface/type/type-declaration';
 import { VariableDeclaration } from '../interface/variable/variable-declaration';
 
@@ -98,6 +99,25 @@ export async function documentHighlightProvider(
             });
         }
         for (const eu of ed.usages) {
+            if (eu.isVisible) {
+                result.push({
+                    range: eu.originalRange,
+                    kind: DocumentHighlightKind.Text,
+                });
+            }
+        }
+        return result;
+    }
+    const emd = getEnumMemberDeclaration(snapshot, params);
+    if (emd && emd.nameOriginalRange) {
+        const result: DocumentHighlight[] = [];
+        if (emd.isVisible && emd.uri === params.textDocument.uri) {
+            result.push({
+                range: emd.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
+        for (const eu of emd.usages) {
             if (eu.isVisible) {
                 result.push({
                     range: eu.originalRange,
@@ -261,6 +281,18 @@ function getEnumDeclaration(snapshot: Snapshot, params: DocumentHighlightParams)
     const eu = snapshot.getEnumUsageAt(params.position);
     if (eu) {
         return eu.declaration;
+    }
+    return null;
+}
+
+function getEnumMemberDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): EnumMemberDeclaration | null {
+    const emd = snapshot.getEnumMemberDeclarationAt(params.position);
+    if (emd) {
+        return emd;
+    }
+    const emu = snapshot.getEnumMemberUsageAt(params.position);
+    if (emu) {
+        return emu.declaration;
     }
     return null;
 }

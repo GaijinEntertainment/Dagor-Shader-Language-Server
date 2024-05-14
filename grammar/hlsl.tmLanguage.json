@@ -13,6 +13,7 @@
         { "include": "#preprocessor-directive" },
         { "include": "#template" },
         { "include": "#keyword-operator" },
+        { "include": "#struct-class-interface-declaration" },
         { "include": "#type-declaration" },
         { "include": "#function" },
         { "include": "#built-in-type" },
@@ -292,9 +293,24 @@
                 }
             ]
         },
+        "struct-class-interface-declaration": {
+            "comment": "STRUCT, CLASS, INTERFACE DECLARATION",
+            "match": "\\b(struct|class|interface)(?:((?:\\s|/\\*.*?\\*/)+)([a-zA-Z_]\\w*)(?:((?:\\s|/\\*.*?\\*/)*):((?:\\s|/\\*.*?\\*/)*)([a-zA-Z_]\\w*)(?:((?:\\s|/\\*.*?\\*/)*),((?:\\s|/\\*.*?\\*/)*)([a-zA-Z_]\\w*))*)?)?\\b",
+            "captures": {
+                "1": { "name": "storage.type.hlsl" },
+                "2": { "name": "comment.block.hlsl" },
+                "3": { "name": "entity.name.type.hlsl" },
+                "4": { "name": "comment.block.hlsl" },
+                "5": { "name": "comment.block.hlsl" },
+                "6": { "name": "entity.name.type.hlsl" },
+                "7": { "name": "comment.block.hlsl" },
+                "8": { "name": "comment.block.hlsl" },
+                "9": { "name": "entity.name.type.hlsl" }
+            }
+        },
         "type-declaration": {
-            "comment": "TYPE DECLARATION",
-            "match": "\\b((enum)((\\s|/\\*.*?\\*/)+)(class)|(struct|enum|class|interface|namespace|typename))\\b(((\\s|/\\*.*?\\*/)+)([a-zA-Z_]\\w*))?",
+            "comment": "OTHER TYPE DECLARATION",
+            "match": "\\b((enum)((\\s|/\\*.*?\\*/)+)(class)|(enum|namespace|typename))\\b(((\\s|/\\*.*?\\*/)+)([a-zA-Z_]\\w*))?",
             "captures": {
                 "2": { "name": "storage.type.hlsl" },
                 "3": { "name": "comment.block.hlsl" },
@@ -321,13 +337,18 @@
         "built-in-type": {
             "patterns": [
                 {
-                    "comment": "STRUCT TYPE",
+                    "comment": "OTHER TYPE",
                     "name": "storage.type.hlsl",
-                    "match": "\\b(RaytracingAccelerationStructure|RayDesc|BuiltInTriangleIntersectionAttributes|StateObjectConfig|GlobalRootSignature|LocalRootSignature|SubobjectToEntrypointAssociation|RaytracingShaderConfig|RaytracingPipelineConfig|RaytracingPipelineConfig1|TriangleHitGroup|ProceduralPrimitiveHitGroup)\\b"
+                    "match": "\\b(RaytracingAccelerationStructure|StateObjectConfig|GlobalRootSignature|LocalRootSignature|SubobjectToEntrypointAssociation|RaytracingShaderConfig|RaytracingPipelineConfig|RaytracingPipelineConfig1|TriangleHitGroup|ProceduralPrimitiveHitGroup)\\b"
+                },
+                {
+                    "comment": "STRUCT TYPE",
+                    "name": "entity.name.type.hlsl",
+                    "match": "\\b(RayDesc|BuiltInTriangleIntersectionAttributes)\\b"
                 },
                 {
                     "comment": "ENUM TYPE",
-                    "name": "storage.type.hlsl",
+                    "name": "entity.name.type.hlsl",
                     "match": "\\b(RAY_FLAG|RAYTRACING_PIPELINE_FLAG|COMMITTED_STATUS|CANDIDATE_TYPE)\\b"
                 },
                 {
@@ -370,7 +391,7 @@
         "user-type": {
             "comment": "USER TYPE",
             "name": "entity.name.type.hlsl",
-            "match": "[a-zA-Z_]\\w*(?=((\\s|/\\*.*?\\*/)+[a-zA-Z_]\\w*))"
+            "match": "[a-zA-Z_]\\w*(?=((\\s|/\\*.*?\\*/|::)+[a-zA-Z_]\\w*))"
         },
         "variable": {
             "comment": "VARIABLE",
