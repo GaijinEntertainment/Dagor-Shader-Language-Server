@@ -48,6 +48,15 @@ function addTokens(scope: Scope, stb: SemanticItem[]): void {
                 type: VARIABLE,
             });
         }
+        for (const vu of vd.usages) {
+            if (vu.isVisible) {
+                stb.push({
+                    position: vu.originalRange.start,
+                    length: vu.declaration.name.length,
+                    type: VARIABLE,
+                });
+            }
+        }
     }
     for (const childScope of scope.children) {
         addTokens(childScope, stb);
