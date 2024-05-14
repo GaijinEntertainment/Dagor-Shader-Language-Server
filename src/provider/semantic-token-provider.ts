@@ -18,7 +18,9 @@ export async function semanticTokensProvider(params: SemanticTokensParams): Prom
     const result: SemanticItem[] = [];
     addTokens(snapshot.rootScope, result);
     result.sort((a, b) =>
-        a.position.line !== b.position.line ? a.position.line - b.position.line : a.position.character - b.position.line
+        a.position.line !== b.position.line
+            ? a.position.line - b.position.line
+            : a.position.character - b.position.character
     );
     for (const item of result) {
         stb.push(item.position.line, item.position.character, item.length, item.type, 0);
