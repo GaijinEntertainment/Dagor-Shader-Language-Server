@@ -337,13 +337,18 @@
         "built-in-type": {
             "patterns": [
                 {
-                    "comment": "STRUCT TYPE",
+                    "comment": "OTHER TYPE",
                     "name": "storage.type.hlsl",
-                    "match": "\\b(RaytracingAccelerationStructure|RayDesc|BuiltInTriangleIntersectionAttributes|StateObjectConfig|GlobalRootSignature|LocalRootSignature|SubobjectToEntrypointAssociation|RaytracingShaderConfig|RaytracingPipelineConfig|RaytracingPipelineConfig1|TriangleHitGroup|ProceduralPrimitiveHitGroup)\\b"
+                    "match": "\\b(RaytracingAccelerationStructure|StateObjectConfig|GlobalRootSignature|LocalRootSignature|SubobjectToEntrypointAssociation|RaytracingShaderConfig|RaytracingPipelineConfig|RaytracingPipelineConfig1|TriangleHitGroup|ProceduralPrimitiveHitGroup)\\b"
+                },
+                {
+                    "comment": "STRUCT TYPE",
+                    "name": "entity.name.type.hlsl",
+                    "match": "\\b(RayDesc|BuiltInTriangleIntersectionAttributes)\\b"
                 },
                 {
                     "comment": "ENUM TYPE",
-                    "name": "storage.type.hlsl",
+                    "name": "entity.name.type.hlsl",
                     "match": "\\b(RAY_FLAG|RAYTRACING_PIPELINE_FLAG|COMMITTED_STATUS|CANDIDATE_TYPE)\\b"
                 },
                 {
