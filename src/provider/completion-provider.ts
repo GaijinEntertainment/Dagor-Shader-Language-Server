@@ -84,7 +84,6 @@ export async function completionProvider(
     const uri = params.textDocument.uri;
     const hlsl = uri.endsWith(HLSL_EXTENSION) || uri.endsWith(HLSLI_EXTENSION) || snapshot.isInHlslBlock(position);
     const result: CompletionItem[] = [];
-    addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
     if (hlsl) {
         addHlslItems(result, snapshot, position);
     } else {
@@ -112,6 +111,7 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
         );
         return;
     }
+    addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
     addDefines(result, snapshot, position);
     addCompletionItems(result, hlslKeywords, CompletionItemKind.Keyword, 'keyword');
     addCompletionItems(result, hlslPreprocessorDirectives, CompletionItemKind.Keyword, 'preprocessor directive');
@@ -300,6 +300,7 @@ function addDefinesIfAvailable(result: CompletionItem[], dss: DefineStatement[],
 }
 
 function addDshlItems(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
+    addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
     addCompletionItems(result, dshlKeywords, CompletionItemKind.Keyword, 'keyword');
     addCompletionItems(result, dshlEnumValues, CompletionItemKind.Value, 'value');
     addCompletionItems(result, dshlModifiers, CompletionItemKind.Keyword, 'modifier');
