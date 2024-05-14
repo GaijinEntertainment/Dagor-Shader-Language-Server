@@ -147,6 +147,17 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
                 documentation: getEnumInfo(ed, getCapabilities().completionDocumentationFormat),
             }))
     );
+    result.push(
+        ...eds
+            .filter((ed) => ed.name && !ed.isClass)
+            .flatMap((ed) => ed.members)
+            .map<CompletionItem>((emd) => ({
+                label: emd.name,
+                kind: getKind(CompletionItemKind.EnumMember),
+                detail: `${emd.name} - enum value`,
+                documentation: getEnumMemberInfo(emd, getCapabilities().completionDocumentationFormat),
+            }))
+    );
     const vds = snapshot.getVariableDeclarationsInScope(position, true);
     addCompletionItems(
         result,
