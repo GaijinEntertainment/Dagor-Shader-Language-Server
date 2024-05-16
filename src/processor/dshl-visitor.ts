@@ -858,24 +858,25 @@ export class DshlVisitor
     }
 
     public visitFunction_definition(ctx: Function_definitionContext): ExpressionResult | null {
-        return this.createScopeAndVisit(ctx);
+        return this.createScopeAndVisit(ctx, ctx.function_header().LRB().symbol);
     }
 
     public visitFor_statement(ctx: For_statementContext): ExpressionResult | null {
-        return this.createScopeAndVisit(ctx);
+        return this.createScopeAndVisit(ctx, ctx.LRB().symbol);
     }
 
     public visitWhile_statement(ctx: While_statementContext): ExpressionResult | null {
-        return this.createScopeAndVisit(ctx);
+        return this.createScopeAndVisit(ctx, ctx.LRB().symbol);
     }
 
     public visitDo_statement(ctx: Do_statementContext): ExpressionResult | null {
-        return this.createScopeAndVisit(ctx);
+        return this.createScopeAndVisit(ctx, ctx.LRB().symbol);
     }
 
     public visitIf_statement(ctx: If_statementContext): ExpressionResult | null {
-        let visible = this.isVisible(ctx.start.startIndex);
-        let range = this.getRange(ctx.start.startIndex, ctx.statement(0).stop!.stopIndex + 1);
+        const LRB = ctx.LRB();
+        let visible = this.isVisible(LRB.symbol.startIndex);
+        let range = this.getRange(LRB.symbol.startIndex, ctx.statement(0).stop!.stopIndex + 1);
         let scope = this.createScope(visible, range);
         this.scope.children.push(scope);
         this.scope = scope;
@@ -897,7 +898,7 @@ export class DshlVisitor
     }
 
     public visitSwitch_statement(ctx: Switch_statementContext): ExpressionResult | null {
-        return this.createScopeAndVisit(ctx);
+        return this.createScopeAndVisit(ctx, ctx.LRB().symbol);
     }
 
     // region shared
@@ -913,9 +914,9 @@ export class DshlVisitor
         return vu;
     }
 
-    private createScopeAndVisit(ctx: ParserRuleContext): null {
-        const visible = this.isVisible(ctx.start.startIndex);
-        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+    private createScopeAndVisit(ctx: ParserRuleContext, start = ctx.start, stop = ctx.stop!): null {
+        const visible = this.isVisible(start.startIndex);
+        const range = this.getRange(start.startIndex, stop.stopIndex + 1);
         const scope = this.createScope(visible, range);
         this.scope.children.push(scope);
         this.scope = scope;
