@@ -22,7 +22,6 @@ import {
     ExpressionContext,
     For_statementContext,
     Function_definitionContext,
-    Function_headerContext,
     If_statementContext,
     ParameterContext,
     State_objectContext,
@@ -848,17 +847,40 @@ export class DshlVisitor
         return result;
     }
 
-    public visitFunction_header(ctx: Function_headerContext): ExpressionResult | null {
-        const visible = this.isVisible(ctx.start.startIndex);
+    public visitFunction_definition(ctx: Function_definitionContext): ExpressionResult | null {
+        const header = ctx.function_header();
+        const LRB = header.LRB();
+        const visible = this.isVisible(LRB.symbol.startIndex);
+        const range = this.getRange(LRB.symbol.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
+        this.getType(header.type(), visible);
+        this.scope.children.push(scope);
+        this.scope = scope;
         if (visible) {
-            this.getType(ctx.type(), visible);
+            const fd: FunctionDeclaration = {
+                name: header.hlsl_identifier().text,
+                type: header.type().text,
+                nameOriginalRange: this.getRange(
+                    header.hlsl_identifier().start.startIndex,
+                    header.hlsl_identifier().stop!.stopIndex
+                ),
+                originalRange: this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+                parameters:
+                    header
+                        .parameter_list()
+                        ?.parameter()
+                        .map((p) => ({
+                            type: p.type()?.text ?? '',
+                            name: p.hlsl_identifier(0).text,
+                        })) ?? [],
+                isVisible: visible,
+                usages: [],
+            };
+            this.scope.functionDeclaration = fd;
         }
         this.visitChildren(ctx);
+        this.scope = scope.parent!;
         return null;
-    }
-
-    public visitFunction_definition(ctx: Function_definitionContext): ExpressionResult | null {
-        return this.createScopeAndVisit(ctx, ctx.function_header().LRB().symbol);
     }
 
     public visitFor_statement(ctx: For_statementContext): ExpressionResult | null {

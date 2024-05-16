@@ -321,6 +321,12 @@ export class DocumentInfo {
             offsetPosition(scope.blockDeclaration.originalRange.start, offset);
             offsetPosition(scope.blockDeclaration.originalRange.end, offset);
         }
+        if (scope.functionDeclaration) {
+            offsetPosition(scope.functionDeclaration.originalRange.start, offset);
+            offsetPosition(scope.functionDeclaration.originalRange.end, offset);
+            offsetPosition(scope.functionDeclaration.nameOriginalRange.start, offset);
+            offsetPosition(scope.functionDeclaration.nameOriginalRange.end, offset);
+        }
         for (const bu of scope.blockUsages) {
             offsetPosition(bu.originalRange.start, offset);
             offsetPosition(bu.originalRange.end, offset);

@@ -75,12 +75,10 @@ export function getTypeSymbolKind(type: TypeKeyword): SymbolKind {
 
 export function getKind(kind: SymbolKind): SymbolKind {
     const kinds = getCapabilities().documentSymbolSymbolKinds;
-    if (!kinds) {
-        if (kind <= SymbolKind.Array) {
-            return kind;
-        } else {
-            return SymbolKind.File;
-        }
+    if (!kinds.length) {
+        // if the array is empty, we should choose icon between file and array
+        // however, in Visual Studio the array is empty, but it can still handle the predefined icons
+        return kind;
     } else {
         return kinds.includes(kind) ? kind : SymbolKind.File;
     }

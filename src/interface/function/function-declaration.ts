@@ -1,11 +1,15 @@
+import { Range } from 'vscode-languageserver';
 import { FunctionParameter, toStringFunctionParameter } from './function-parameter';
 import { FunctionUsage } from './function-usage';
 
 export interface FunctionDeclaration {
     name: string;
+    originalRange: Range;
+    nameOriginalRange: Range;
     parameters: FunctionParameter[];
     type: string;
     usages: FunctionUsage[];
+    isVisible: boolean;
 }
 
 export function toStringFunctionDeclaration(fd: FunctionDeclaration): string {

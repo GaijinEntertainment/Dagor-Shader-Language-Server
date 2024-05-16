@@ -1,7 +1,7 @@
 import { Diagnostic, DocumentUri, Position, Range } from 'vscode-languageserver';
 
 import { dshlFunctions } from '../helper/dshl-info';
-import { defaultPosition, isBeforeOrEqual, isIntervalContains, rangeContains } from '../helper/helper';
+import { defaultPosition, defaultRange, isBeforeOrEqual, isIntervalContains, rangeContains } from '../helper/helper';
 import { Scope } from '../helper/scope';
 import { BlockDeclaration } from '../interface/block/block-declaration';
 import { BlockUsage } from '../interface/block/block-usage';
@@ -101,11 +101,14 @@ export class Snapshot {
         this.rootScope.functionDeclarations = dshlFunctions.map((fi) => ({
             name: fi.name,
             type: fi.type,
+            originalRange: defaultRange,
+            nameOriginalRange: defaultRange,
             parameters: fi.parameters.map((p) => ({
                 name: p.name,
                 type: p.type,
             })),
             usages: [],
+            isVisible: false,
         }));
     }
 

@@ -41,4 +41,5 @@ export interface Scope {
     hlslStage?: ShaderStage | null;
     preshaders: Scope[];
     preshaderStage?: ShaderStage | null;
+    functionDeclaration?: FunctionDeclaration;
 }
