@@ -4,6 +4,7 @@ import { getSnapshot } from '../core/document-manager';
 import { defaultRange, rangeContains } from '../helper/helper';
 import { BlockDeclaration } from '../interface/block/block-declaration';
 import { DefineStatement } from '../interface/define-statement';
+import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { IncludeStatement } from '../interface/include/include-statement';
 import { Macro } from '../interface/macro/macro';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
@@ -100,6 +101,14 @@ export async function linkProviderBase(
     const eu = snapshot.getEnumUsageAt(position);
     if (eu && !eu.declaration.isBuiltIn) {
         return getEnumDeclarationLocation(eu.declaration, linkSupport);
+    }
+    const fd = snapshot.getFunctionDeclarationAt(position);
+    if (fd) {
+        return getFunctionDeclarationLocation(fd, linkSupport);
+    }
+    const fu = snapshot.getFunctionUsageAt(position);
+    if (fu) {
+        return getFunctionDeclarationLocation(fu.declaration, linkSupport);
     }
     if (type === 'implementation') {
         return null;
@@ -246,6 +255,23 @@ function getEnumMemberDeclarationLocation(
         return {
             range: emd.nameOriginalRange,
             uri: emd.uri,
+        };
+    }
+}
+
+function getFunctionDeclarationLocation(fd: FunctionDeclaration, linkSupport: boolean): LocationLink[] | Location {
+    if (linkSupport) {
+        return [
+            {
+                targetRange: fd.originalRange,
+                targetSelectionRange: fd.nameOriginalRange,
+                targetUri: fd.uri,
+            },
+        ];
+    } else {
+        return {
+            range: fd.nameOriginalRange,
+            uri: fd.uri,
         };
     }
 }

@@ -30,7 +30,7 @@ export async function signatureHelpProvider(params: SignatureHelpParams): Promis
         };
     }
 
-    const fu = snapshot.getFunctioneUsageParameterListAt(params.position);
+    const fu = snapshot.getFunctionUsageParameterListAt(params.position);
     if (fu) {
         const fd = fu.declaration;
         return {

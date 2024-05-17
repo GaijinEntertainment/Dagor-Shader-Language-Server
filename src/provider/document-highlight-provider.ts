@@ -155,6 +155,12 @@ export async function documentHighlightProvider(
     const fd = getFunctionDeclaration(snapshot, params);
     if (fd) {
         const result: DocumentHighlight[] = [];
+        if (fd.isVisible && fd.uri === params.textDocument.uri) {
+            result.push({
+                range: fd.nameOriginalRange,
+                kind: DocumentHighlightKind.Text,
+            });
+        }
         for (const fu of fd.usages) {
             if (fu.isVisible) {
                 result.push({
@@ -314,6 +320,10 @@ function getVariableDeclaration(snapshot: Snapshot, params: DocumentHighlightPar
 }
 
 function getFunctionDeclaration(snapshot: Snapshot, params: DocumentHighlightParams): FunctionDeclaration | null {
+    const fd = snapshot.getFunctionDeclarationAt(params.position);
+    if (fd) {
+        return fd;
+    }
     const fu = snapshot.getFunctionUsageAt(params.position);
     if (fu) {
         return fu.declaration;

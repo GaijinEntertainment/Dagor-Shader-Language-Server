@@ -21,6 +21,7 @@ import {
     Enum_declarationContext,
     ExpressionContext,
     For_statementContext,
+    Function_callContext,
     Function_definitionContext,
     If_statementContext,
     ParameterContext,
@@ -862,7 +863,7 @@ export class DshlVisitor
                 type: header.type().text,
                 nameOriginalRange: this.getRange(
                     header.hlsl_identifier().start.startIndex,
-                    header.hlsl_identifier().stop!.stopIndex
+                    header.hlsl_identifier().stop!.stopIndex + 1
                 ),
                 originalRange: this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
                 parameters:
@@ -874,12 +875,39 @@ export class DshlVisitor
                             name: p.hlsl_identifier(0).text,
                         })) ?? [],
                 isVisible: visible,
+                uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
                 usages: [],
             };
             this.scope.functionDeclaration = fd;
         }
         this.visitChildren(ctx);
         this.scope = scope.parent!;
+        return null;
+    }
+
+    public visitFunction_call(ctx: Function_callContext): ExpressionResult | null {
+        const visible = this.isVisible(ctx.start.startIndex);
+        const name = ctx.hlsl_identifier();
+        if (visible && name) {
+            const position = this.snapshot.getOriginalPosition(name.start.startIndex, true);
+            const fd = this.snapshot.getFunctionDeclarationFor(name.text, position);
+            if (fd) {
+                const fu: FunctionUsage = {
+                    declaration: fd,
+                    arguments: [],
+                    originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+                    nameOriginalRange: this.snapshot.getOriginalRange(name.start.startIndex, name.stop!.stopIndex + 1),
+                    parameterListOriginalRange: this.snapshot.getOriginalRange(
+                        ctx.LRB().symbol.startIndex + 1,
+                        ctx.RRB().symbol.stopIndex
+                    ),
+                    isVisible: visible,
+                };
+                fd.usages.push(fu);
+                this.scope.functionUsages.push(fu);
+            }
+        }
+        this.visitChildren(ctx);
         return null;
     }
 

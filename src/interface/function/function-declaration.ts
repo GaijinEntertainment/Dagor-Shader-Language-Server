@@ -1,4 +1,4 @@
-import { Range } from 'vscode-languageserver';
+import { DocumentUri, Range } from 'vscode-languageserver';
 import { FunctionParameter, toStringFunctionParameter } from './function-parameter';
 import { FunctionUsage } from './function-usage';
 
@@ -10,6 +10,7 @@ export interface FunctionDeclaration {
     type: string;
     usages: FunctionUsage[];
     isVisible: boolean;
+    uri: DocumentUri;
 }
 
 export function toStringFunctionDeclaration(fd: FunctionDeclaration): string {

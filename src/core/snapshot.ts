@@ -9,6 +9,7 @@ import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
 import { ExpressionRange } from '../interface/expression-range';
+import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
 import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
@@ -109,6 +110,7 @@ export class Snapshot {
             })),
             usages: [],
             isVisible: false,
+            uri: '',
         }));
     }
 
@@ -493,7 +495,7 @@ export class Snapshot {
     public getFunctionUsageAt(position: Position): FunctionUsage | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
-            const fu = scope.functionUsages.find((fu) => fu.isVisible && rangeContains(fu.originalRange, position));
+            const fu = scope.functionUsages.find((fu) => fu.isVisible && rangeContains(fu.nameOriginalRange, position));
             if (fu) {
                 return fu;
             }
@@ -514,7 +516,7 @@ export class Snapshot {
         return null;
     }
 
-    public getFunctioneUsagesIn(range: Range): FunctionUsage[] {
+    public getFunctionUsagesIn(range: Range): FunctionUsage[] {
         const result: FunctionUsage[] = [];
         this.addFunctionUsage(result, this.rootScope, range);
         return result;
@@ -535,7 +537,7 @@ export class Snapshot {
         }
     }
 
-    public getFunctioneUsageParameterListAt(position: Position): FunctionUsage | null {
+    public getFunctionUsageParameterListAt(position: Position): FunctionUsage | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
             const fu = scope.functionUsages.find(
@@ -642,6 +644,23 @@ export class Snapshot {
             );
             if (emu) {
                 return emu;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getFunctionDeclarationAt(position: Position): FunctionDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const fd =
+                scope.children
+                    .map((sc) => sc.functionDeclaration)
+                    .find(
+                        (fd) => fd && fd.isVisible && rangeContains(fd.nameOriginalRange ?? fd.originalRange, position)
+                    ) ?? null;
+            if (fd) {
+                return fd;
             }
             scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
         }
@@ -877,6 +896,32 @@ export class Snapshot {
                     .find((emd) => emd && emd.name === name && isBeforeOrEqual(emd.nameOriginalRange.end, position));
                 if (emd) {
                     return emd;
+                }
+            }
+            if (onlyRoot) {
+                return null;
+            }
+            scope = scope.parent ?? null;
+        }
+        return null;
+    }
+
+    public getFunctionDeclarationFor(name: string, position: Position, onlyRoot = false): FunctionDeclaration | null {
+        let scope: Scope | null = onlyRoot ? this.rootScope : this.getScopeAt(position);
+        while (scope) {
+            const fd = scope.children
+                .map((sc) => sc.functionDeclaration)
+                .find((fd) => fd && fd.name === name && isBeforeOrEqual(fd.nameOriginalRange.end, position));
+            if (fd) {
+                return fd;
+            }
+            for (const hb of scope.hlslBlocks) {
+                if (
+                    hb.functionDeclaration &&
+                    hb.functionDeclaration.name === name &&
+                    isBeforeOrEqual(hb.functionDeclaration.nameOriginalRange.end, position)
+                ) {
+                    return hb.functionDeclaration;
                 }
             }
             if (onlyRoot) {
