@@ -26,11 +26,11 @@ import {
     dshlProperties,
 } from '../helper/dshl-info';
 import { createDocumentationLinks, isBeforeOrEqual, rangeContains } from '../helper/helper';
+import { hlslFunctions } from '../helper/hlsl-function';
 import {
     hlslAttributes,
     hlslBufferTypes,
     hlslDshlPreprocessorDirectives,
-    hlslFunctions,
     hlslKeywords,
     hlslModifiers,
     hlslNonPrimitiveTypes,
