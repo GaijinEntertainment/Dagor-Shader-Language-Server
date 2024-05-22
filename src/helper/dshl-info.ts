@@ -12,17 +12,17 @@ export const dshlKeywords: LanguageElementInfo[] = [
     {
         name: 'include',
         description:
-            'Includes in `*.dshl` files are always included one time, and should not be confused with `#include` directive in hlsl files and blocks, where they follow the regular preprocessor rules (and can be included multiple times).',
+            'Includes in *.dshl files are always included one time, and should not be confused with #include directive in hlsl files and blocks, where they follow the regular preprocessor rules (and can be included multiple times).',
     },
     {
         name: 'include_optional',
         description:
-            'Includes in `*.dshl` files are always included one time, and should not be confused with `#include` directive in hlsl files and blocks, where they follow the regular preprocessor rules (and can be included multiple times).',
+            'Includes in *.dshl files are always included one time, and should not be confused with #include directive in hlsl files and blocks, where they follow the regular preprocessor rules (and can be included multiple times).',
     },
     {
         name: 'assume',
         description:
-            'Shader variables can be assigned a fixed value when the shader is compiled via `assume`. Such shader vars may not be changed at runtime, their values will be constant in the binary. This allows to reduce number of shader variants or disable specific features for specific platforms.',
+            'Shader variables can be assigned a fixed value when the shader is compiled via assume. Such shader vars may not be changed at runtime, their values will be constant in the binary. This allows to reduce number of shader variants or disable specific features for specific platforms.',
     },
     { name: 'dont_render' },
     { name: 'no_dynstcode' },
@@ -32,7 +32,7 @@ export const dshlKeywords: LanguageElementInfo[] = [
     {
         name: 'interval',
         description:
-            'Intervals are a way to generate multiple variants of a single `shader`, based on whether the value of a special variable falls into specific range.',
+            'Intervals are a way to generate multiple variants of a single shader, based on whether the value of a special variable falls into specific range.',
     },
     { name: 'macro' },
     { name: 'define_macro_if_not_defined' },
@@ -41,7 +41,7 @@ export const dshlKeywords: LanguageElementInfo[] = [
     {
         name: 'block',
         description:
-            'Shader Blocks are an extension of the Preshader idea and define variables/constants which are common for multiple shaders that `support` them. The intent is to optimize constant/texture switching.',
+            'Shader Blocks are an extension of the Preshader idea and define variables/constants which are common for multiple shaders that support them. The intent is to optimize constant/texture switching.',
     },
     { name: 'supports' },
     { name: 'vs', description: 'Vertex Shader' },
@@ -89,7 +89,7 @@ export const dshlModifiers: LanguageElementInfo[] = [
     {
         name: 'always_referenced',
         description:
-            '`always_referenced` flag disallows shader compiler to remove any unused in global shader variables. This is helpful for providing some information for C++ code, i.e. the value of such variable can be obtained in C++ code.',
+            'always_referenced flag disallows shader compiler to remove any unused in global shader variables. This is helpful for providing some information for C++ code, i.e. the value of such variable can be obtained in C++ code.',
     },
     { name: 'static' },
     { name: 'dynamic' },
