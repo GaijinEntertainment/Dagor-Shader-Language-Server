@@ -3261,24 +3261,189 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1d',
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1d-s-t-ddx-ddy',
         ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler1D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['scalar'],
+                        componentType: ['float'],
+                        size: 1,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler1D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 1,
+                        description: 'The texture coordinate.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddx',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 1,
+                        description: 'Rate of change of the surface geometry in the x direction.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddy',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 1,
+                        description: 'Rate of change of the surface geometry in the y direction.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex1Dbias',
         description: 'Samples a 1D texture after biasing the mip level by t.w.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1dbias'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler1D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 4,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex1Dgrad',
         description: 'Samples a 1D texture using a gradient to select the mip level.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1dgrad'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler1D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 1,
+                        description: 'The texture coordinate.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddx',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 1,
+                        description: 'Rate of change of the surface geometry in the x direction.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddy',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 1,
+                        description: 'Rate of change of the surface geometry in the y direction.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex1Dlod',
         description: 'Samples a 1D texture with mipmaps. The mipmap LOD is specified in t.w.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1dlod'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler1D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 4,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex1Dproj',
@@ -3286,30 +3451,222 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'Samples a 1D texture using a projective divide; the texture coordinate is divided by t.w before the lookup takes place.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex1dproj'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler1D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 4,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex2D',
         description: 'Samples a 2D texture.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2d'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler2D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 2,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler2D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 2,
+                        description: 'The texture coordinate.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddx',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 2,
+                        description: 'Rate of change of the surface geometry in the x direction.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddy',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 2,
+                        description: 'Rate of change of the surface geometry in the y direction.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex2Dbias',
         description: 'Samples a 2D texture after biasing the mip level by t.w.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2dbias'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler2D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 4,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex2Dgrad',
         description: 'Samples a 2D texture using a gradient to select the mip level.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2dgrad'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler2D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 2,
+                        description: 'The texture coordinate.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddx',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 2,
+                        description: 'Rate of change of the surface geometry in the x direction.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddy',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 2,
+                        description: 'Rate of change of the surface geometry in the y direction.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex2Dlod',
         description: 'Samples a 2D texture with mipmaps. The mipmap LOD is specified in t.w.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2dlod'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler2D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 4,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex2Dproj',
@@ -3317,6 +3674,33 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'Samples a 2D texture using a projective divide; the texture coordinate is divided by t.w before the lookup takes place.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex2dproj'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler2D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 4,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex3D',
@@ -3326,24 +3710,189 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3d',
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3d-s-t-ddx-ddy',
         ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler3D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler3D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'The texture coordinate.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddx',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'Rate of change of the surface geometry in the x direction.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddy',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'Rate of change of the surface geometry in the y direction.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex3Dbias',
         description: 'Samples a 3D texture after biasing the mip level by t.w.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3dbias'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler3D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 4,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex3Dgrad',
         description: 'Samples a 3D texture using a gradient to select the mip level.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3dgrad'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler3D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'The texture coordinate.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddx',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'Rate of change of the surface geometry in the x direction.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddy',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'Rate of change of the surface geometry in the y direction.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex3Dlod',
         description: 'Samples a 3D texture with mipmaps. The mipmap LOD is specified in t.w.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3dlod'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler3D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 4,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'tex3Dproj',
@@ -3351,6 +3900,33 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'Samples a 3D texture using a projective divide; the texture coordinate is divided by t.w before the lookup takes place.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-tex3dproj'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['sampler3D'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 4,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'texCUBE',
@@ -3360,24 +3936,189 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcube',
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcube-s-t-ddx-ddy',
         ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['samplerCUBE'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['samplerCUBE'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'The texture coordinate.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddx',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'Rate of change of the surface geometry in the x direction.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddy',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'Rate of change of the surface geometry in the y direction.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'texCUBEbias',
         description: 'Samples a cube texture after biasing the mip level by t.w.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcubebias'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['samplerCUBE'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 4,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'texCUBEgrad',
         description: 'Samples a cube texture using a gradient to select the mip level.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcubegrad'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['samplerCUBE'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'The texture coordinate.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddx',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'Rate of change of the surface geometry in the x direction.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 'ddy',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 3,
+                        description: 'Rate of change of the surface geometry in the y direction.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'texCUBElod',
         description: 'Samples a cube texture with mipmaps. The mipmap LOD is specified in t.w.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcubelod'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['samplerCUBE'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 4,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'texCUBEproj',
@@ -3385,22 +4126,88 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'Samples a cube texture using a projective divide; the texture coordinate is divided by t.w before the lookup takes place.',
         type: 'float4',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-texcubeproj'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 's',
+                        templateType: ['object'],
+                        componentType: ['samplerCUBE'],
+                        size: 1,
+                        description: 'The sampler state.',
+                    },
+                    {
+                        modifiers: 'in',
+                        name: 't',
+                        templateType: ['vector'],
+                        componentType: ['float'],
+                        size: 4,
+                        description: 'The texture coordinate.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['vector'],
+                    componentType: ['float'],
+                    size: 4,
+                },
+            },
+        ],
     },
     {
         name: 'transpose',
         description: 'Transposes the specified input matrix.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-transpose'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 'x',
+                        templateType: ['matrix'],
+                        componentType: ['float', 'int', 'bool'],
+                        size: 'any',
+                        description: 'The specified matrix.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['matrix'],
+                    componentType: ['float', 'int', 'bool'],
+                    size: 'any', // TODO: same vs any
+                },
+            },
+        ],
     },
     {
         name: 'trunc',
         description: 'Truncates a floating-point value to the integer component.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-trunc'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        name: 'x',
+                        templateType: ['scalar', 'vector', 'matrix'],
+                        componentType: ['float'],
+                        size: 'any',
+                        description: 'The specified input.',
+                    },
+                ],
+                returnType: {
+                    templateType: ['same'],
+                    componentType: ['float'],
+                    size: 'same',
+                },
+            },
+        ],
     },
     // shader model 6
     {
         name: 'QuadReadAcrossDiagonal',
         description: 'Returns the specified local value which is read from the diagonally opposite lane in this quad.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/quadreadacrossdiagonal'],
+        // TODO: template
     },
     {
         name: 'QuadReadLaneAt',
@@ -3410,6 +4217,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/quadreadlaneat',
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Derivatives.html#quad-read-functions',
         ],
+        // TODO: template
     },
     {
         name: 'QuadReadAcrossX',
@@ -3418,6 +4226,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/quadswapx',
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Derivatives.html#quad-read-functions',
         ],
+        // TODO: template
     },
     {
         name: 'QuadReadAcrossY',
@@ -3426,6 +4235,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/quadswapy',
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Derivatives.html#quad-read-functions',
         ],
+        // TODO: template
     },
     {
         name: 'WaveActiveAllEqual',
@@ -3435,6 +4245,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveactiveallequal',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#booln-waveactiveallequaltype-expr-',
         ],
+        // TODO: template
     },
     {
         name: 'WaveActiveBitAnd',
@@ -3444,6 +4255,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveallbitand',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#int_type-waveactivebitand-int_type-expr',
         ],
+        // TODO: template
     },
     {
         name: 'WaveActiveBitOr',
@@ -3453,6 +4265,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveallbitor',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#int_type-waveactivebitor-int_type-expr-',
         ],
+        // TODO: template
     },
     {
         name: 'WaveActiveBitXor',
@@ -3462,6 +4275,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveallbitxor',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#int_type-waveactivebitxor-int_type-expr',
         ],
+        // TODO: template
     },
     {
         name: 'WaveActiveCountBits',
@@ -3472,6 +4286,20 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#uint-waveactivecountbits-bool-bbit-',
         ],
         type: 'uint',
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'bool',
+                        name: 'bBit',
+                        description:
+                            'The boolean variables to evaluate. Providing an explicit true Boolean value returns the number of active lanes.',
+                    },
+                ],
+                returnType: 'uint',
+            },
+        ],
     },
     {
         name: 'WaveActiveMax',
@@ -3481,6 +4309,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveallmax',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#type-waveactivemax-type-expr',
         ],
+        // TODO: template
     },
     {
         name: 'WaveActiveMin',
@@ -3490,6 +4319,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveallmin',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#type-waveactivemin-type-expr',
         ],
+        // TODO: template
     },
     {
         name: 'WaveActiveProduct',
@@ -3499,6 +4329,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveallproduct',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#type-waveactiveproduct-type-expr',
         ],
+        // TODO: template
     },
     {
         name: 'WaveActiveSum',
@@ -3508,6 +4339,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveallsum',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#type-waveactivesum-type-expr-',
         ],
+        // TODO: template
     },
     {
         name: 'WaveActiveAllTrue',
@@ -3517,6 +4349,19 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/wavealltrue',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#bool-waveactivealltrue-bool-expr-',
         ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'bool',
+                        name: 'expr',
+                        description: 'The boolean expression to evaluate.',
+                    },
+                ],
+                returnType: 'bool',
+            },
+        ],
     },
     {
         name: 'WaveActiveAnyTrue',
@@ -3525,6 +4370,19 @@ export const hlslFunctions: LanguageElementInfo[] = [
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveanytrue',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#bool-waveactiveanytrue-bool-expr-',
+        ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'bool',
+                        name: 'expr',
+                        description: 'The boolean expression to evaluate.',
+                    },
+                ],
+                returnType: 'bool',
+            },
         ],
     },
     {
@@ -3536,6 +4394,19 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveballot',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#uint4-waveactiveballot-bool-expr-',
         ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'bool',
+                        name: 'expr',
+                        description: 'The boolean expression to evaluate.',
+                    },
+                ],
+                returnType: 'uint4',
+            },
+        ],
     },
     {
         name: 'WaveGetLaneCount',
@@ -3544,6 +4415,12 @@ export const hlslFunctions: LanguageElementInfo[] = [
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/wavegetlanecount',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#uint-wavegetlanecount',
+        ],
+        overloads: [
+            {
+                parameters: [],
+                returnType: 'uint',
+            },
         ],
     },
     {
@@ -3554,6 +4431,12 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/wavegetlaneindex',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#uint-wavegetlaneindex',
         ],
+        overloads: [
+            {
+                parameters: [],
+                returnType: 'uint',
+            },
+        ],
     },
     {
         name: 'WaveIsFirstLane',
@@ -3562,6 +4445,12 @@ export const hlslFunctions: LanguageElementInfo[] = [
         links: [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveisfirstlane',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#bool-waveisfirstlane',
+        ],
+        overloads: [
+            {
+                parameters: [],
+                returnType: 'bool',
+            },
         ],
     },
     {
@@ -3573,6 +4462,19 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveprefixcountbytes',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#uint-waveprefixcountbits-bool-bbit-',
         ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'bool',
+                        name: 'bBit',
+                        description: 'The specified boolean variables.',
+                    },
+                ],
+                returnType: 'uint',
+            },
+        ],
     },
     {
         name: 'WavePrefixProduct',
@@ -3582,6 +4484,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveprefixproduct',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#type-waveprefixproduct-type-value-',
         ],
+        // TODO: template
     },
     {
         name: 'WavePrefixSum',
@@ -3590,6 +4493,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/waveprefixsum',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#type-waveprefixsum-type-value-',
         ],
+        // TODO: template
     },
     {
         name: 'WaveReadLaneFirst',
@@ -3599,6 +4503,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/wavereadfirstlane',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#type-wavereadlanefirst-type-expr-',
         ],
+        // TODO: template
     },
     {
         name: 'WaveReadLaneAt',
@@ -3607,6 +4512,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/wavereadlaneat',
             'https://github.com/Microsoft/DirectXShaderCompiler/wiki/Wave-Intrinsics#type-wavereadlaneat-type-expr-uint-laneindex',
         ],
+        // TODO: template
     },
     // shader model 6.4
     {
@@ -3617,6 +4523,28 @@ export const hlslFunctions: LanguageElementInfo[] = [
         links: [
             'https://github.com/microsoft/DirectXShaderCompiler/wiki/Shader-Model-6.4#unsigned-integer-dot-product-of-4-elements-and-accumulate',
         ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint32',
+                        name: 'a',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint32',
+                        name: 'b',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint32',
+                        name: 'acc',
+                    },
+                ],
+                returnType: 'uint32',
+            },
+        ],
     },
     {
         name: 'dot4add_i8packed',
@@ -3625,6 +4553,28 @@ export const hlslFunctions: LanguageElementInfo[] = [
         type: 'int32',
         links: [
             'https://github.com/microsoft/DirectXShaderCompiler/wiki/Shader-Model-6.4#signed-integer-dot-product-of-4-elements-and-accumulate',
+        ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint32',
+                        name: 'a',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint32',
+                        name: 'b',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'int32',
+                        name: 'acc',
+                    },
+                ],
+                returnType: 'int32',
+            },
         ],
     },
     {
@@ -3635,6 +4585,28 @@ export const hlslFunctions: LanguageElementInfo[] = [
         links: [
             'https://github.com/microsoft/DirectXShaderCompiler/wiki/Shader-Model-6.4#single-precision-floating-point-2-element-dot-product-and-accumulate',
         ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'half2',
+                        name: 'a',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'half2',
+                        name: 'b',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'float',
+                        name: 'acc',
+                    },
+                ],
+                returnType: 'float',
+            },
+        ],
     },
     // shader model 6.5
     {
@@ -3643,12 +4615,14 @@ export const hlslFunctions: LanguageElementInfo[] = [
             "The WaveMatch() intrinsic compares the value of the expression in the current lane to its value in all other active lanes in the current wave and returns a bitmask representing the set of lanes matching current lane's value.",
         type: 'uint4',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavematch-function'],
+        // TODO: template
     },
     {
         name: 'WaveMultiPrefixSum',
         description:
             'WaveMultiPrefix*() is a set of functions which implement multi-prefix operations among the set of active lanes in the current wave.',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions'],
+        // TODO: template
     },
 
     {
@@ -3656,6 +4630,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
         description:
             'WaveMultiPrefix*() is a set of functions which implement multi-prefix operations among the set of active lanes in the current wave.',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions'],
+        // TODO: template
     },
     {
         name: 'WaveMultiPrefixCountBits',
@@ -3663,24 +4638,44 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'WaveMultiPrefix*() is a set of functions which implement multi-prefix operations among the set of active lanes in the current wave.',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions'],
         type: 'uint',
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'bool',
+                        name: 'val',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint4',
+                        name: 'mask',
+                    },
+                ],
+                returnType: 'uint',
+            },
+        ],
     },
     {
         name: 'WaveMultiPrefixAnd',
         description:
             'WaveMultiPrefix*() is a set of functions which implement multi-prefix operations among the set of active lanes in the current wave.',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions'],
+        // TODO: template
     },
     {
         name: 'WaveMultiPrefixOr',
         description:
             'WaveMultiPrefix*() is a set of functions which implement multi-prefix operations among the set of active lanes in the current wave.',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions'],
+        // TODO: template
     },
     {
         name: 'WaveMultiPrefixXor',
         description:
             'WaveMultiPrefix*() is a set of functions which implement multi-prefix operations among the set of active lanes in the current wave.',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_5.html#wavemultiprefix-functions'],
+        // TODO: template
     },
     // shader model 6.6
     {
@@ -3691,6 +4686,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
         links: [
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Int64_and_Float_Atomics.html#interlockedcomparestorefloatbitwise',
         ],
+        // TODO: template
     },
     {
         name: 'InterlockedCompareExchangeFloatBitwise',
@@ -3700,12 +4696,90 @@ export const hlslFunctions: LanguageElementInfo[] = [
         links: [
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Int64_and_Float_Atomics.html#interlockedcompareexchangefloatbitwise',
         ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'inout',
+                        type: 'SbufType',
+                        name: 'dest',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'float',
+                        name: 'compare_value',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'float',
+                        name: 'value',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'original_value',
+                    },
+                ],
+                returnType: 'void',
+            },
+            {
+                parameters: [
+                    {
+                        modifiers: 'inout',
+                        type: 'TresType',
+                        name: 'dest',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'float',
+                        name: 'compare_value',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'float',
+                        name: 'value',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'original_value',
+                    },
+                ],
+                returnType: 'void',
+            },
+            {
+                parameters: [
+                    {
+                        modifiers: 'inout',
+                        type: 'ShmemType',
+                        name: 'dest',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'float',
+                        name: 'compare_value',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'float',
+                        name: 'value',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'original_value',
+                    },
+                ],
+                returnType: 'void',
+            },
+        ],
     },
     {
         name: 'IsHelperLane',
         description: 'Returns true if a given lane in a pixel shader is a helper lane.',
         type: 'bool',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_ShaderModel6_6.html#ishelperlane'],
+        overloads: [{ parameters: [], returnType: 'bool' }],
     },
     {
         name: 'unpack_s8s16',
@@ -3714,6 +4788,18 @@ export const hlslFunctions: LanguageElementInfo[] = [
         type: 'int16_t4',
         links: [
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Pack_Unpack_Intrinsics.html#unpack-intrinsics',
+        ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int8_t4_packed',
+                        name: 'packedVal',
+                    },
+                ],
+                returnType: 'int16_t4',
+            },
         ],
     },
     {
@@ -3724,6 +4810,18 @@ export const hlslFunctions: LanguageElementInfo[] = [
         links: [
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Pack_Unpack_Intrinsics.html#unpack-intrinsics',
         ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint8_t4_packed',
+                        name: 'packedVal',
+                    },
+                ],
+                returnType: 'uint16_t4',
+            },
+        ],
     },
     {
         name: 'unpack_s8s32',
@@ -3732,6 +4830,18 @@ export const hlslFunctions: LanguageElementInfo[] = [
         type: 'int32_t4',
         links: [
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Pack_Unpack_Intrinsics.html#unpack-intrinsics',
+        ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int8_t4_packed',
+                        name: 'packedVal',
+                    },
+                ],
+                returnType: 'int32_t4',
+            },
         ],
     },
     {
@@ -3742,6 +4852,18 @@ export const hlslFunctions: LanguageElementInfo[] = [
         links: [
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Pack_Unpack_Intrinsics.html#unpack-intrinsics',
         ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint8_t4_packed',
+                        name: 'packedVal',
+                    },
+                ],
+                returnType: 'uint32_t4',
+            },
+        ],
     },
     {
         name: 'pack_u8',
@@ -3750,6 +4872,28 @@ export const hlslFunctions: LanguageElementInfo[] = [
         type: 'uint8_t4_packed',
         links: [
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Pack_Unpack_Intrinsics.html#pack-intrinsics',
+        ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint32_t4',
+                        name: 'unpackedVal',
+                    },
+                ],
+                returnType: 'uint8_t4_packed',
+            },
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint16_t4',
+                        name: 'unpackedVal',
+                    },
+                ],
+                returnType: 'uint8_t4_packed',
+            },
         ],
     },
     {
@@ -3760,6 +4904,28 @@ export const hlslFunctions: LanguageElementInfo[] = [
         links: [
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Pack_Unpack_Intrinsics.html#pack-intrinsics',
         ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int32_t4',
+                        name: 'unpackedVal',
+                    },
+                ],
+                returnType: 'int8_t4_packed',
+            },
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int16_t4',
+                        name: 'unpackedVal',
+                    },
+                ],
+                returnType: 'int8_t4_packed',
+            },
+        ],
     },
     {
         name: 'pack_clamp_u8',
@@ -3768,6 +4934,28 @@ export const hlslFunctions: LanguageElementInfo[] = [
         type: 'uint8_t4_packed',
         links: [
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Pack_Unpack_Intrinsics.html#pack-intrinsics',
+        ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int32_t4',
+                        name: 'unpackedVal',
+                    },
+                ],
+                returnType: 'uint8_t4_packed',
+            },
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int16_t4',
+                        name: 'unpackedVal',
+                    },
+                ],
+                returnType: 'uint8_t4_packed',
+            },
         ],
     },
     {
@@ -3778,6 +4966,28 @@ export const hlslFunctions: LanguageElementInfo[] = [
         links: [
             'https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_Pack_Unpack_Intrinsics.html#pack-intrinsics',
         ],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int32_t4',
+                        name: 'unpackedVal',
+                    },
+                ],
+                returnType: 'int8_t4_packed',
+            },
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int16_t4',
+                        name: 'unpackedVal',
+                    },
+                ],
+                returnType: 'int8_t4_packed',
+            },
+        ],
     },
     // mesh shader
     {
@@ -3786,53 +4996,96 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'At the beginning of the shader the implementation internally sets a count of vertices and primitives to be exported from a threadgroup to 0. It means that if a mesh shader returns without calling this function, it will not output any mesh. This function sets the actual number of outputs from the threadgroup.',
         type: 'void',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/MeshShader.html#setmeshoutputcounts'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'numVertices',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'numPrimitives',
+                    },
+                ],
+                returnType: 'void',
+            },
+        ],
     },
     {
         name: 'DispatchMesh',
         description:
             'This function, called from the amplification shader, launches the threadgroups for the mesh shader.',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/MeshShader.html#dispatchmesh-intrinsic'],
+        // TODO: template
     },
-    {
-        name: 'WriteSamplerFeedback',
-        type: 'void',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html#hlsl-constructs-for-writing-to-feedback-maps-1',
-        ],
-    },
-    {
-        name: 'WriteSamplerFeedbackBias',
-        type: 'void',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html#hlsl-constructs-for-writing-to-feedback-maps-1',
-        ],
-    },
-    {
-        name: 'WriteSamplerFeedbackGrad',
-        type: 'void',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html#hlsl-constructs-for-writing-to-feedback-maps-1',
-        ],
-    },
-    {
-        name: 'WriteSamplerFeedbackLevel',
-        type: 'void',
-        links: [
-            'https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html#hlsl-constructs-for-writing-to-feedback-maps-1',
-        ],
-    },
+    // TODO: these are member functions
+    // {
+    //     name: 'WriteSamplerFeedback',
+    //     type: 'void',
+    //     links: [
+    //         'https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html#hlsl-constructs-for-writing-to-feedback-maps-1',
+    //     ],
+    // },
+    // {
+    //     name: 'WriteSamplerFeedbackBias',
+    //     type: 'void',
+    //     links: [
+    //         'https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html#hlsl-constructs-for-writing-to-feedback-maps-1',
+    //     ],
+    // },
+    // {
+    //     name: 'WriteSamplerFeedbackGrad',
+    //     type: 'void',
+    //     links: [
+    //         'https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html#hlsl-constructs-for-writing-to-feedback-maps-1',
+    //     ],
+    // },
+    // {
+    //     name: 'WriteSamplerFeedbackLevel',
+    //     type: 'void',
+    //     links: [
+    //         'https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html#hlsl-constructs-for-writing-to-feedback-maps-1',
+    //     ],
+    // },
     //QuadAny and QuadAll Intrinsics
     {
         name: 'QuadAny',
         description: 'Returns true if <expr> is true in any lane of the current quad.',
         type: 'bool',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_7_QuadAny_QuadAll.html#quadall'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'bool',
+                        name: 'expr',
+                    },
+                ],
+                returnType: 'bool',
+            },
+        ],
     },
     {
         name: 'QuadAll',
         description: 'Returns true if <expr> is true in all lanes of the current quad.',
         type: 'bool',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_7_QuadAny_QuadAll.html#quadall'],
+        overloads: [
+            {
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'bool',
+                        name: 'expr',
+                    },
+                ],
+                returnType: 'bool',
+            },
+        ],
     },
     // raytracing
     {
@@ -3844,6 +5097,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3d12/accepthitandendsearch-function',
             'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#accepthitandendsearch',
         ],
+        overloads: [{ parameters: [], returnType: 'void' }],
     },
     {
         name: 'CallShader',
@@ -3853,6 +5107,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3d12/callshader-function',
             'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#callshader',
         ],
+        // TODO: template
     },
     {
         name: 'IgnoreHit',
@@ -3863,6 +5118,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3d12/ignorehit-function',
             'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#ignorehit',
         ],
+        overloads: [{ parameters: [], returnType: 'void' }],
     },
     {
         name: 'PrimitiveIndex',
@@ -3870,6 +5126,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'Retrieves the autogenerated index of the primitive within the geometry inside the bottom-level acceleration structure instance.',
         type: 'uint',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3d12/primitiveindex'],
+        overloads: [{ parameters: [], returnType: 'uint' }],
     },
     {
         name: 'ReportHit',
@@ -3879,6 +5136,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3d12/reporthit-function',
             'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#reporthit',
         ],
+        // TODO: template
     },
     {
         name: 'TraceRay',
@@ -3888,6 +5146,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'https://learn.microsoft.com/en-us/windows/win32/direct3d12/traceray-function',
             'https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#traceray',
         ],
+        // TODO: template
     },
     {
         name: 'DispatchRaysIndex',
@@ -3895,6 +5154,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'The current x and y location within the Width and Height made available through the DispatchRaysDimensions() system value intrinsic.',
         type: 'uint3',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#dispatchraysindex'],
+        overloads: [{ parameters: [], returnType: 'uint3' }],
     },
     {
         name: 'DispatchRaysDimensions',
@@ -3902,12 +5162,14 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'The Width, Height and Depth values from the D3D12_DISPATCH_RAYS_DESC structure provided to the originating DispatchRays() call.',
         type: 'uint3',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#dispatchraysdimensions'],
+        overloads: [{ parameters: [], returnType: 'uint3' }],
     },
     {
         name: 'WorldRayOrigin',
         description: 'The world-space origin for the current ray.',
         type: 'float3',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#worldrayorigin'],
+        overloads: [{ parameters: [], returnType: 'float3' }],
     },
     {
         name: 'WorldRayDirection',
@@ -3920,24 +5182,28 @@ export const hlslFunctions: LanguageElementInfo[] = [
         description: 'This is a float representing the parametric starting point for the ray.',
         type: 'float',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytmin'],
+        overloads: [{ parameters: [], returnType: 'float3' }],
     },
     {
         name: 'RayTCurrent',
         description: 'This is a float representing the current parametric ending point for the ray.',
         type: 'float',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#raytcurrent'],
+        overloads: [{ parameters: [], returnType: 'float' }],
     },
     {
         name: 'RayFlags',
         description: 'This is a uint containing the current ray flags (only).',
         type: 'uint',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#rayflags'],
+        overloads: [{ parameters: [], returnType: 'uint' }],
     },
     {
         name: 'InstanceIndex',
         description: 'The autogenerated index of the current instance in the top-level structure.',
         type: 'uint',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#instanceindex'],
+        overloads: [{ parameters: [], returnType: 'uint' }],
     },
     {
         name: 'InstanceID',
@@ -3945,12 +5211,14 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'The user-provided InstanceID on the bottom-level acceleration structure instance within the top-level structure.',
         type: 'uint',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#instanceid'],
+        overloads: [{ parameters: [], returnType: 'uint' }],
     },
     {
         name: 'GeometryIndex',
         description: 'The autogenerated index of the current geometry in the bottom-level acceleration structure.',
         type: 'uint',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#geometryindex'],
+        overloads: [{ parameters: [], returnType: 'uint' }],
     },
     {
         name: 'PrimitiveIndex',
@@ -3958,6 +5226,7 @@ export const hlslFunctions: LanguageElementInfo[] = [
             'The autogenerated index of the primitive within the geometry inside the bottom-level acceleration structure instance.',
         type: 'uint',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#primitiveindex'],
+        overloads: [{ parameters: [], returnType: 'uint' }],
     },
     {
         name: 'ObjectRayOrigin',
@@ -3970,35 +5239,41 @@ export const hlslFunctions: LanguageElementInfo[] = [
         description: 'Object-space direction for the current ray.',
         type: 'float3',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#objectraydirection'],
+        overloads: [{ parameters: [], returnType: 'float3' }],
     },
     {
         name: 'ObjectToWorld3x4',
         description: 'Matrix for transforming from object-space to world-space.',
         type: 'float3x4',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#objecttoworld3x4'],
+        overloads: [{ parameters: [], returnType: 'float3x4' }],
     },
     {
         name: 'ObjectToWorld4x3',
         description: 'Matrix for transforming from object-space to world-space.',
         type: 'float4x3',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#objecttoworld4x3'],
+        overloads: [{ parameters: [], returnType: 'float4x3' }],
     },
     {
         name: 'WorldToObject3x4',
         description: 'Matrix for transforming from world-space to object-space.',
         type: 'float3x4',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#worldtoobject3x4'],
+        overloads: [{ parameters: [], returnType: 'float3x4' }],
     },
     {
         name: 'WorldToObject4x3',
         description: 'Matrix for transforming from world-space to object-space.',
         type: 'float4x3',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#worldtoobject4x3'],
+        overloads: [{ parameters: [], returnType: 'float4x3' }],
     },
     {
         name: 'HitKind',
         description: 'Returns the value passed as HitKind in ReportHit().',
         type: 'uint',
         links: ['https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#hitkind'],
+        overloads: [{ parameters: [], returnType: 'uint' }],
     },
 ];

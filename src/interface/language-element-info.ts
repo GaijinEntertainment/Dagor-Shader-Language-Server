@@ -31,17 +31,25 @@ export interface TypeDescription {
 export interface Parameter extends TypeDescription {
     modifiers: string;
     name: string;
-    description: string;
+    description?: string;
 }
 
 export interface ConcreteParameter {
     modifiers: string;
     name: string;
     type: string;
-    description: string;
+    description?: string;
 }
 
-export type TemplateType = 'scalar' | 'vector' | 'matrix' | 'same';
-export type ComponentType = 'float' | 'double' | 'int' | 'uint' | 'bool' | 'same';
+export type TemplateType = 'scalar' | 'vector' | 'matrix' | 'object' | 'same';
+export type ComponentType =
+    | 'float'
+    | 'double'
+    | 'int'
+    | 'uint'
+    | 'bool'
+    | `sampler${1 | 2 | 3}D`
+    | 'samplerCUBE'
+    | 'same';
 export type Size = 'any' | 'same' | number;
 export type ShaderType = 'vertex' | 'hull' | 'domain' | 'geometry' | 'pixel' | 'compute';
