@@ -91,15 +91,31 @@ export const dshlModifiers: LanguageElementInfo[] = [
         description:
             'always_referenced flag disallows shader compiler to remove any unused in global shader variables. This is helpful for providing some information for C++ code, i.e. the value of such variable can be obtained in C++ code.',
     },
-    { name: 'static' },
-    { name: 'dynamic' },
-    { name: 'local' },
+    {
+        name: 'static',
+        description:
+            'Means that the variable is a material parameter, which is set only once on material instantiation. All permutations on static variables are resolved during instantiating.',
+    },
+    {
+        name: 'dynamic',
+        description:
+            'Similarly to static is a material parameter, but can be different in each material instance. Using dynamic variables causes all permutations on them to be resolved each frame, which adds some overhead, compared to using static variables.',
+    },
+    {
+        name: 'local',
+        description:
+            'Basically on-stack variables that are not visible outside the shader and are not visible on the CPU side, they are only needed for some temporary calculations in shader blocks.',
+    },
     {
         name: 'channel',
         description:
             'Data types that follow the channel keyword differ from those native DSHL types described in Data types and variables. These types are considered convertable, meaning that they are always casted to native HLSL data types when piped to variables in hlsl{...} blocks.',
     },
-    { name: 'no_warnings' },
+    {
+        name: 'no_warnings',
+        description:
+            'It is a modifier for static variables only. It is used when we need to access shader variables on the CPU, without using them in shaders (which normally triggers warnings).',
+    },
     { name: 'const' },
     { name: 'undefined_value' },
     { name: 'signed_pack', description: 'Converts data from [0..1] range to [-1..1] range' },
