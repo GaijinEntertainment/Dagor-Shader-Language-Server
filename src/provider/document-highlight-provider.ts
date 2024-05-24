@@ -326,7 +326,7 @@ function getFunctionDeclaration(snapshot: Snapshot, params: DocumentHighlightPar
     }
     const fu = snapshot.getFunctionUsageAt(params.position);
     if (fu) {
-        return fu.declaration;
+        return fu.declaration ?? null;
     }
     return null;
 }

@@ -1,8 +1,17 @@
 export interface FunctionParameter {
+    modifiers?: string;
     name: string;
     type: string;
 }
 
+export function toStringFunctionParameters(fps: FunctionParameter[]): string {
+    return fps.map((fp) => toStringFunctionParameter(fp)).join(', ');
+}
+
 export function toStringFunctionParameter(fp: FunctionParameter): string {
-    return `${fp.type} ${fp.name}`;
+    let result = `${fp.type} ${fp.name}`;
+    if (fp.modifiers) {
+        result = fp.modifiers + ' ' + result;
+    }
+    return result;
 }

@@ -47,7 +47,7 @@ import {
 import { toStringBlockType } from '../interface/block/block-declaration';
 import { DefineStatement, toStringDefineStatementParameterList } from '../interface/define-statement';
 import { ExpressionRange } from '../interface/expression-range';
-import { toStringFunctionParameters } from '../interface/function/function-declaration';
+import { toStringFunctionParameters } from '../interface/function/function-parameter';
 import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
 import { toStringMacroParameterList } from '../interface/macro/macro';

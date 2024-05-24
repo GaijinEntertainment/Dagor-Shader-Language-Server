@@ -18,20 +18,23 @@ export interface LanguageElementInfo {
 }
 
 export interface Overload {
-    returnType: TypeDescription | string;
-    parameters: (Parameter | ConcreteParameter)[];
+    returnType: GenericReturnType | string;
+    parameters: Parameter[];
 }
 
-export interface TypeDescription {
-    templateType: TemplateType[];
-    componentType: ComponentType[];
+export interface GenericReturnType {
+    templateType: TemplateType;
+    componentType: ComponentType;
     size: Size;
 }
 
-export interface Parameter extends TypeDescription {
+export interface GenericParameter {
     modifiers: string;
     name: string;
     description?: string;
+    templateType: TemplateType[];
+    componentType: ComponentType[];
+    size: Size;
 }
 
 export interface ConcreteParameter {
@@ -41,6 +44,7 @@ export interface ConcreteParameter {
     description?: string;
 }
 
+export type Parameter = GenericParameter | ConcreteParameter;
 export type TemplateType = 'scalar' | 'vector' | 'matrix' | 'object' | 'same';
 export type ComponentType =
     | 'float'

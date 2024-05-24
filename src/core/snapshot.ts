@@ -11,6 +11,7 @@ import { ElementRange } from '../interface/element-range';
 import { ExpressionRange } from '../interface/expression-range';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
+import { IntrinsicFunction } from '../interface/function/intrinsic-function';
 import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
@@ -65,6 +66,7 @@ export class Snapshot {
     public preprocessingOffsets: PreprocessingOffset[] = [];
     public diagnostics: Diagnostic[] = [];
     public expressionRanges: ExpressionRange[] = [];
+    public intrinsicFunctions: IntrinsicFunction[] = [];
 
     public constructor(version: SnapshotVersion, uri: DocumentUri, text: string, isPredefined = false) {
         this.version = version;

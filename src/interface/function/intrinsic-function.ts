@@ -1,19 +1,14 @@
-import { DocumentUri, Range } from 'vscode-languageserver';
 import { FunctionParameter, toStringFunctionParameters } from './function-parameter';
 import { FunctionUsage } from './function-usage';
 
-export interface FunctionDeclaration {
+export interface IntrinsicFunction {
     name: string;
-    originalRange: Range;
-    nameOriginalRange: Range;
     parameters: FunctionParameter[];
     type: string;
     usages: FunctionUsage[];
-    isVisible: boolean;
-    uri: DocumentUri;
 }
 
-export function toStringFunctionDeclaration(fd: FunctionDeclaration): string {
+export function toStringIntrinsicFunction(fd: IntrinsicFunction): string {
     const parameters = toStringFunctionParameters(fd.parameters);
     return `${fd.type} ${fd.name}(${parameters});`;
 }
