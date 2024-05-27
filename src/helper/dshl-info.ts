@@ -456,13 +456,14 @@ export const dshlFunctions: FunctionInfo[] = [
     {
         name: 'get_dimensions',
         type: 'float4',
+        description: 'Returns the width, height, array count or depth, and mip count.',
         parameters: [
             {
                 name: 'tex',
                 type: 'texture',
             },
             {
-                name: 'value',
+                name: 'mip',
                 type: 'float',
             },
         ],
