@@ -42,6 +42,19 @@ export class ExpressionVisitor {
         const dot = this.ctx.DOT();
         const doubleColon = this.ctx.DOUBLE_COLON();
         const identifier = this.ctx.hlsl_identifier();
+
+        const expResults: (ExpressionResult | null)[] = [];
+        for (const exp of this.ctx.expression()) {
+            const expResult = new ExpressionVisitor(
+                this.snapshot,
+                this.scope,
+                this.rootSnapshot,
+                this.contentStartPosition,
+                this.enum
+            ).visitExpression(exp);
+            expResults.push(expResult);
+        }
+
         if (visible) {
             if (identifier && !dot && !doubleColon) {
                 const position = identifier.start.startIndex;
@@ -169,14 +182,7 @@ export class ExpressionVisitor {
                     }
                 }
             } else if (dot) {
-                const exp = this.ctx.expression(0);
-                const expResult = new ExpressionVisitor(
-                    this.snapshot,
-                    this.scope,
-                    this.rootSnapshot,
-                    this.contentStartPosition,
-                    this.enum
-                ).visitExpression(exp);
+                const expResult = expResults.length ? expResults[0] : null;
                 if (expResult?.type === 'type') {
                     const range = this.snapshot.getOriginalRange(dot.symbol.startIndex, ctx.stop!.stopIndex + 1);
                     const er: ExpressionRange = {
@@ -196,14 +202,7 @@ export class ExpressionVisitor {
                     }
                 }
             } else if (doubleColon) {
-                const exp = this.ctx.expression(0);
-                const expResult = new ExpressionVisitor(
-                    this.snapshot,
-                    this.scope,
-                    this.rootSnapshot,
-                    this.contentStartPosition,
-                    this.enum
-                ).visitExpression(exp); //this.visit(exp);
+                const expResult = expResults.length ? expResults[0] : null;
                 if (expResult) {
                     const range = this.snapshot.getOriginalRange(
                         doubleColon.symbol.startIndex,
@@ -216,7 +215,7 @@ export class ExpressionVisitor {
                             typeDeclaration: expResult.typeDeclaration,
                         };
                         this.snapshot.expressionRanges.push(er);
-                    } else {
+                    } else if (expResult.type === 'enum') {
                         const er: ExpressionRange = {
                             type: 'enum',
                             originalRange: range,
@@ -284,7 +283,7 @@ export class ExpressionVisitor {
                                 this.scope.enumMemberUsages.push(emu);
                                 emd.usages.push(emu);
                             }
-                        } else {
+                        } else if (expResult.type === 'enum') {
                             const emd = expResult.enumDeclaration.members.find((m) => m.name === identifier.text);
                             if (emd) {
                                 const emu: EnumMemberUsage = {
@@ -300,6 +299,80 @@ export class ExpressionVisitor {
                             }
                         }
                     }
+                }
+            } else {
+                if (
+                    ctx.AND() ||
+                    ctx.OR() ||
+                    ctx.EQUALITY() ||
+                    ctx.LAB() ||
+                    ctx.LESS_EQUAL() ||
+                    ctx.GREATER_EQUAL() ||
+                    ctx.RAB() ||
+                    ctx.NOT()
+                ) {
+                    result = {
+                        type: 'name',
+                        name: 'bool',
+                        arraySizes: [],
+                    };
+                } else if (ctx.QUESTION()) {
+                    result = expResults[1];
+                } else if (
+                    ctx.ASSIGN() ||
+                    ctx.MODIFY() ||
+                    ctx.BITWISE_AND() ||
+                    ctx.BITWISE_OR() ||
+                    ctx.BITWISE_XOR() ||
+                    ctx.SHIFT() ||
+                    ctx.ADD() ||
+                    ctx.SUBTRACT() ||
+                    ctx.MULTIPLY() ||
+                    ctx.DIVIDE() ||
+                    ctx.MODULO() ||
+                    ctx.INCREMENT() ||
+                    ctx.DECREMENT() ||
+                    ctx.BITWISE_NOT()
+                ) {
+                    result = expResults[0];
+                } else if (ctx.array_subscript()) {
+                    result = expResults[0];
+                    result?.arraySizes.pop();
+                } else if (ctx.literal()) {
+                    if (ctx.literal()!.BOOL_LITERAL()) {
+                        result = {
+                            type: 'name',
+                            name: 'bool',
+                            arraySizes: [],
+                        };
+                    } else if (ctx.literal()!.FLOAT_LITERAL()) {
+                        result = {
+                            type: 'name',
+                            name: 'float',
+                            arraySizes: [],
+                        };
+                    } else if (ctx.literal()!.INT_LITERAL()) {
+                        result = {
+                            type: 'name',
+                            name: 'int',
+                            arraySizes: [],
+                        };
+                    } else if (ctx.literal()!.STRING_LITERAL()) {
+                        result = {
+                            type: 'name',
+                            name: 'string',
+                            arraySizes: [],
+                        };
+                    }
+                } else if (ctx.LRB() && ctx.hlsl_identifier()) {
+                    result = {
+                        type: 'name',
+                        name: ctx.hlsl_identifier()?.text ?? '',
+                        arraySizes: [],
+                    };
+                } else if (ctx.LRB()) {
+                    const exp = ctx.expression_list()?.expression(0);
+                    result = this.visitExpression(exp!);
                 }
             }
         }

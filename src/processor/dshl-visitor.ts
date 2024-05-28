@@ -663,10 +663,7 @@ export class DshlVisitor
                 identifier.stop!.stopIndex + 1
             );
             const vd: VariableDeclaration = {
-                type:
-                    type?.text ??
-                    (expResult?.type === 'type' ? expResult.typeDeclaration.name : expResult?.enumDeclaration.name) ??
-                    '',
+                type: type?.text ?? this.getTypeName(expResult) ?? '',
                 typeDeclaration: expResult?.type === 'type' ? expResult.typeDeclaration : undefined,
                 enumDeclaration: expResult?.type === 'enum' ? expResult.enumDeclaration : undefined,
                 name: identifier.text,
@@ -689,6 +686,19 @@ export class DshlVisitor
 
         this.visitChildren(ctx);
         return null;
+    }
+
+    private getTypeName(er: ExpressionResult | null): string | null {
+        if (!er) {
+            return null;
+        }
+        if (er.type === 'type') {
+            return er.typeDeclaration.name ?? null;
+        } else if (er.type === 'enum') {
+            return er.enumDeclaration.name ?? null;
+        } else {
+            return er.name;
+        }
     }
 
     private getArraySize(ctx: Array_subscriptContext[]): number[] {
