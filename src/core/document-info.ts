@@ -140,6 +140,7 @@ export class DocumentInfo {
     private analyzeSnapshot(snapshot: Snapshot): void {
         this.addBuiltInStructs(snapshot);
         this.addBuiltInEnums(snapshot);
+        this.addIntrinsicFunctions(snapshot);
         const lexer = createLexer(snapshot.text);
         const parser = this.createParser(lexer);
         let tree: ParseTree;
@@ -155,14 +156,13 @@ export class DocumentInfo {
             // catching any error during the parsing to prevent the server from crashing
         }
         this.addMacroDefinitions(snapshot);
-        this.addIntrinsicFunctions(snapshot);
     }
 
     private addIntrinsicFunctions(snapshot: Snapshot): void {
         for (const hlslFunction of hlslFunctions) {
             if (hlslFunction?.overloads?.length) {
                 for (const overload of hlslFunction.overloads) {
-                    this.generateOverload(snapshot, hlslFunction.name, [], overload, 0);
+                    this.generateOverload(snapshot, hlslFunction.name, [], overload, 0, hlslFunction.description);
                 }
             }
         }
@@ -174,11 +174,12 @@ export class DocumentInfo {
         concreteParams: IntrinsicType[],
         overload: Overload,
         index: number,
+        description?: string,
         previous?: IntrinsicType
     ): void {
         const parameters = overload.parameters;
         if (!parameters.length) {
-            this.addOverload(snapshot, overload, name, concreteParams);
+            this.addOverload(snapshot, overload, name, concreteParams, description);
             return;
         }
         const types = this.getTypes(parameters[index], previous);
@@ -188,15 +189,21 @@ export class DocumentInfo {
             }
             concreteParams.push(type);
             if (index + 1 < parameters.length) {
-                this.generateOverload(snapshot, name, concreteParams, overload, index + 1, previous);
+                this.generateOverload(snapshot, name, concreteParams, overload, index + 1, description, previous);
             } else {
-                this.addOverload(snapshot, overload, name, concreteParams);
+                this.addOverload(snapshot, overload, name, concreteParams, description);
             }
             concreteParams.pop();
         }
     }
 
-    private addOverload(snapshot: Snapshot, overload: Overload, name: string, concreteParams: IntrinsicType[]): void {
+    private addOverload(
+        snapshot: Snapshot,
+        overload: Overload,
+        name: string,
+        concreteParams: IntrinsicType[],
+        description?: string
+    ): void {
         const ifd: IntrinsicFunction = {
             name,
             type: this.getReturnType(overload, concreteParams.length ? concreteParams[0] : undefined),
@@ -205,6 +212,7 @@ export class DocumentInfo {
                 modifiers: cp.modifiers,
                 type: cp.base + (cp.size ?? ''),
             })),
+            description,
             usages: [],
         };
         snapshot.intrinsicFunctions.push(ifd);

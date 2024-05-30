@@ -107,7 +107,7 @@ export async function linkProviderBase(
         return getFunctionDeclarationLocation(fd, linkSupport);
     }
     const fu = snapshot.getFunctionUsageAt(position);
-    if (fu) {
+    if (fu && fu.declaration) {
         return getFunctionDeclarationLocation(fu.declaration, linkSupport);
     }
     if (type === 'implementation') {

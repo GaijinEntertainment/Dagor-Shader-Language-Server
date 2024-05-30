@@ -42,6 +42,7 @@ import { ExpressionResult } from '../interface/expression-result';
 import { FunctionArgument } from '../interface/function/function-argument';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
+import { IntrinsicFunction } from '../interface/function/intrinsic-function';
 import { IntervalDeclaration } from '../interface/interval-declaration';
 import { shaderStageKeywordToEnum } from '../interface/shader-stage';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
@@ -898,7 +899,16 @@ export class DshlVisitor
     public visitFunction_call(ctx: Function_callContext): ExpressionResult | null {
         const visible = this.isVisible(ctx.start.startIndex);
         const name = ctx.hlsl_identifier();
+        let result: ExpressionResult | null = null;
+        const functionArguments: (ExpressionResult | null)[] = [];
         if (visible && name) {
+            const els = ctx.expression_list();
+            if (els.length) {
+                const el = els[els.length - 1];
+                for (const exp of el.expression()) {
+                    functionArguments.push(this.visit(exp));
+                }
+            }
             const position = this.snapshot.getOriginalPosition(name.start.startIndex, true);
             const fd = this.snapshot.getFunctionDeclarationFor(name.text, position);
             if (fd) {
@@ -915,10 +925,60 @@ export class DshlVisitor
                 };
                 fd.usages.push(fu);
                 this.scope.functionUsages.push(fu);
+                result = { type: 'name', name: fd.type, arraySizes: [] };
+            } else {
+                const ifd = this.getIntrinsicFunction(name.text, functionArguments);
+                if (ifd) {
+                    const fu: FunctionUsage = {
+                        intrinsicFunction: ifd,
+                        arguments: [],
+                        originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+                        nameOriginalRange: this.snapshot.getOriginalRange(
+                            name.start.startIndex,
+                            name.stop!.stopIndex + 1
+                        ),
+                        parameterListOriginalRange: this.snapshot.getOriginalRange(
+                            ctx.LRB().symbol.startIndex + 1,
+                            ctx.RRB().symbol.stopIndex
+                        ),
+                        isVisible: visible,
+                    };
+                    ifd.usages.push(fu);
+                    this.scope.functionUsages.push(fu);
+                    result = { type: 'name', name: ifd.type, arraySizes: [] };
+                }
             }
         }
-        this.visitChildren(ctx);
-        return null;
+        return result;
+    }
+
+    private getIntrinsicFunction(
+        name: string,
+        functionArguments: (ExpressionResult | null)[]
+    ): IntrinsicFunction | null {
+        const snapshot = this.rootSnapshot ?? this.snapshot;
+        const candidates = snapshot.intrinsicFunctions.filter((ifd) => ifd.name === name);
+        for (const candidate of candidates) {
+            if (candidate.parameters.length === functionArguments.length) {
+                let valid = true;
+                for (let i = 0; i < functionArguments.length; i++) {
+                    const arg = functionArguments[i];
+                    const parm = candidate.parameters[i];
+                    if (
+                        !arg ||
+                        (arg.type === 'type' && arg.typeDeclaration.name !== parm.type) ||
+                        (arg.type === 'name' && arg.name !== parm.type)
+                    ) {
+                        valid = false;
+                        break;
+                    }
+                }
+                if (valid) {
+                    return candidate;
+                }
+            }
+        }
+        return candidates.length ? candidates[0] : null;
     }
 
     public visitFor_statement(ctx: For_statementContext): ExpressionResult | null {

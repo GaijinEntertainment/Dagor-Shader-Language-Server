@@ -171,6 +171,20 @@ export async function documentHighlightProvider(
         }
         return result;
     }
+    const fu = snapshot.getFunctionUsageAt(params.position);
+    if (fu && fu.intrinsicFunction) {
+        const result: DocumentHighlight[] = [];
+        const ifd = fu.intrinsicFunction;
+        for (const fu of ifd.usages) {
+            if (fu.isVisible) {
+                result.push({
+                    range: fu.nameOriginalRange,
+                    kind: DocumentHighlightKind.Text,
+                });
+            }
+        }
+        return result;
+    }
     const sd = getShaderDeclaration(snapshot, params);
     if (sd) {
         const result: DocumentHighlight[] = [];

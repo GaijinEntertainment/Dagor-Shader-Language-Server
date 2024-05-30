@@ -2,6 +2,7 @@ import { Token } from 'antlr4ts';
 import { Position } from 'vscode-languageserver';
 import { ExpressionContext } from '../_generated/DshlParser';
 import { Snapshot } from '../core/snapshot';
+import { hlslPrimitiveTypes } from '../helper/hlsl-info';
 import { Scope } from '../helper/scope';
 import { ExpressionRange } from '../interface/expression-range';
 import { ExpressionResult } from '../interface/expression-result';
@@ -67,6 +68,8 @@ export class ExpressionVisitor {
                     this.createVariableUsage(vd, identifier.start, visible);
                     if (vd.typeDeclaration) {
                         result = { type: 'type', typeDeclaration: vd.typeDeclaration, arraySizes: vd.arraySizes };
+                    } else if (vd.type) {
+                        result = { type: 'name', name: vd.type, arraySizes: vd.arraySizes };
                     }
                 } else if (emd) {
                     const emu: EnumMemberUsage = {
@@ -142,6 +145,8 @@ export class ExpressionVisitor {
                         this.createVariableUsage(vd, identifier.start, visible);
                         if (vd.typeDeclaration) {
                             result = { type: 'type', typeDeclaration: vd.typeDeclaration, arraySizes: vd.arraySizes };
+                        } else if (vd.type) {
+                            result = { type: 'name', name: vd.type, arraySizes: vd.arraySizes };
                         }
                     } else if (emd) {
                         const emu: EnumMemberUsage = {
@@ -197,7 +202,26 @@ export class ExpressionVisitor {
                             this.createVariableUsage(m, identifier.start, visible);
                             if (m.typeDeclaration) {
                                 result = { type: 'type', typeDeclaration: m.typeDeclaration, arraySizes: [] };
+                            } else {
+                                result = { type: 'name', name: m.type, arraySizes: [] };
                             }
+                        }
+                    }
+                } else if (expResult?.type === 'name' && identifier) {
+                    const xyzw = ['x', 'y', 'z', 'w'];
+                    const rgba = ['r', 'g', 'b', 'a'];
+                    if (identifier.text.split('').every((c) => xyzw.includes(c) || rgba.includes(c))) {
+                        const pt = hlslPrimitiveTypes.find(
+                            (pt) =>
+                                pt.name === expResult.name ||
+                                pt.name + '1' === expResult.name ||
+                                pt.name + '2' === expResult.name ||
+                                pt.name + '3' === expResult.name ||
+                                pt.name + '4' === expResult.name
+                        );
+                        if (pt) {
+                            const size = identifier.text.length === 1 ? '' : identifier.text.length;
+                            result = { type: 'name', name: pt.name + size, arraySizes: [] };
                         }
                     }
                 }

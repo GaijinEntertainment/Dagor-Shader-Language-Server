@@ -9,6 +9,7 @@ import { DefineContext } from '../interface/define-context';
 import { toStringDefineStatementWithContent } from '../interface/define-statement';
 import { toStringFunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
+import { toStringIntrinsicFunction } from '../interface/function/intrinsic-function';
 import { toStringMacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroUsage, getBestMacroDeclaration } from '../interface/macro/macro-usage';
 import { getShaderInfo } from '../interface/shader/shader-declaration';
@@ -158,11 +159,19 @@ function createFunctionHoverContent(fu: FunctionUsage): MarkupContent {
 
 function getFunctionValue(fu: FunctionUsage): string {
     const fd = fu.declaration;
-    const declaration = toStringFunctionDeclaration(fd);
+    const declaration = fd ? toStringFunctionDeclaration(fd) : toStringIntrinsicFunction(fu.intrinsicFunction!);
     if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
-        return `\`\`\`hlsl\n${declaration}\n\`\`\``;
+        let result = `\`\`\`hlsl\n${declaration}\n\`\`\``;
+        if (fu.intrinsicFunction?.description) {
+            result += '\n' + fu.intrinsicFunction.description;
+        }
+        return result;
     } else if (getCapabilities().hoverFormat.includes(MarkupKind.PlainText)) {
-        return declaration;
+        let result = declaration;
+        if (fu.intrinsicFunction?.description) {
+            result += '\n' + fu.intrinsicFunction.description;
+        }
+        return result;
     } else {
         return '';
     }

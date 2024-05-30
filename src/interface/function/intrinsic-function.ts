@@ -6,6 +6,7 @@ export interface IntrinsicFunction {
     parameters: FunctionParameter[];
     type: string;
     usages: FunctionUsage[];
+    description?: string;
 }
 
 export function toStringIntrinsicFunction(fd: IntrinsicFunction): string {
