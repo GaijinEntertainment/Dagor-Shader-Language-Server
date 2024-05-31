@@ -61,10 +61,11 @@ function addDefineArguments(result: InlayHint[], dcs: DefineContext[]): void {
 
 function addFunctionArguments(result: InlayHint[], fus: FunctionUsage[]): void {
     for (const fu of fus) {
-        if (fu.arguments.length && fu.declaration) {
-            for (let i = 0; i < fu.arguments.length && i < fu.declaration.parameters.length; i++) {
+        const parameters = fu.declaration ? fu.declaration.parameters : fu.intrinsicFunction!.parameters;
+        if (fu.arguments.length) {
+            for (let i = 0; i < fu.arguments.length && i < parameters.length; i++) {
                 const fa = fu.arguments[i];
-                const fp = fu.declaration.parameters[i];
+                const fp = parameters[i];
                 const ih = createInlayHint(fp.name, fa.trimmedOriginalStartPosition);
                 result.push(ih);
             }

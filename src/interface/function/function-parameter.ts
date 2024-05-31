@@ -2,6 +2,7 @@ export interface FunctionParameter {
     modifiers?: string;
     name: string;
     type: string;
+    description?: string;
 }
 
 export function toStringFunctionParameters(fps: FunctionParameter[]): string {

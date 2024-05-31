@@ -6,6 +6,7 @@ import { rangeContains } from '../helper/helper';
 import { toStringFunctionDeclaration } from '../interface/function/function-declaration';
 import { toStringFunctionParameter } from '../interface/function/function-parameter';
 import { FunctionUsage } from '../interface/function/function-usage';
+import { toStringIntrinsicFunction } from '../interface/function/intrinsic-function';
 import { toStringMacroDeclaration } from '../interface/macro/macro-declaration';
 import { MacroUsage, getBestMacroDeclarationIndex } from '../interface/macro/macro-usage';
 
@@ -31,7 +32,7 @@ export async function signatureHelpProvider(params: SignatureHelpParams): Promis
     }
 
     const fu = snapshot.getFunctionUsageParameterListAt(params.position);
-    if (fu && fu.declaration) {
+    if (fu?.declaration) {
         const fd = fu.declaration;
         return {
             signatures: [
@@ -45,8 +46,21 @@ export async function signatureHelpProvider(params: SignatureHelpParams): Promis
             activeSignature: 0,
             activeParameter: getActiveParameter(fu, params.position),
         };
+    } else if (fu?.intrinsicFunction) {
+        const ifds = snapshot.intrinsicFunctions.filter((ifd) => ifd.name === fu.intrinsicFunction?.name);
+        return {
+            signatures: ifds.map((ifd) => ({
+                label: toStringIntrinsicFunction(ifd),
+                parameters: ifd.parameters.map((fp) => ({
+                    label: toStringFunctionParameter(fp),
+                    documentation: fp.description,
+                })),
+                documentation: ifd.description,
+            })),
+            activeSignature: 0,
+            activeParameter: getActiveParameter(fu, params.position),
+        };
     }
-
     return null;
 }
 

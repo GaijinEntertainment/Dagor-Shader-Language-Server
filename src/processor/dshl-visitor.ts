@@ -902,9 +902,8 @@ export class DshlVisitor
         let result: ExpressionResult | null = null;
         const functionArguments: (ExpressionResult | null)[] = [];
         if (visible && name) {
-            const els = ctx.expression_list();
-            if (els.length) {
-                const el = els[els.length - 1];
+            const el = ctx.function_arguments().expression_list();
+            if (el) {
                 for (const exp of el.expression()) {
                     functionArguments.push(this.visit(exp));
                 }
@@ -931,7 +930,7 @@ export class DshlVisitor
                 if (ifd) {
                     const fu: FunctionUsage = {
                         intrinsicFunction: ifd,
-                        arguments: [],
+                        arguments: this.getHlslFunctionArguments(ctx, ifd),
                         originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
                         nameOriginalRange: this.snapshot.getOriginalRange(
                             name.start.startIndex,
@@ -950,6 +949,29 @@ export class DshlVisitor
             }
         }
         return result;
+    }
+
+    private getHlslFunctionArguments(ctx: Function_callContext, ifd: IntrinsicFunction): FunctionArgument[] {
+        const el = ctx.function_arguments().expression_list();
+        if (!el) {
+            return [];
+        }
+        const expressions = el.expression() ?? [];
+        const fas: FunctionArgument[] = [];
+        for (let i = 0; i < expressions.length && i < ifd.parameters.length; i++) {
+            const expression = expressions[i];
+            const start = i === 0 ? ctx.LRB().symbol.startIndex : el.COMMA()[i - 1].symbol.stopIndex;
+            const end =
+                i === ifd.parameters.length - 1 || el.COMMA().length === i
+                    ? ctx.RRB().symbol.stopIndex
+                    : el.COMMA()[i].symbol.startIndex - 1;
+            const fa: FunctionArgument = {
+                originalRange: this.snapshot.getOriginalRange(start, end + 1),
+                trimmedOriginalStartPosition: this.snapshot.getOriginalPosition(expression.start.startIndex, true),
+            };
+            fas.push(fa);
+        }
+        return fas;
     }
 
     private getIntrinsicFunction(

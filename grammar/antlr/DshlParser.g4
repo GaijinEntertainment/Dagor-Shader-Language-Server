@@ -317,7 +317,9 @@ while_statement:
 	loop_attribute* WHILE LRB expression RRB statement;
 
 function_call:
-	(hlsl_identifier | ASSERT) (LAB expression_list? RAB)* LRB expression_list? RRB;
+	(hlsl_identifier | ASSERT) (LAB expression_list? RAB)* LRB function_arguments RRB;
+
+function_arguments: expression_list?;
 
 expression_list: expression (COMMA expression)* COMMA?;
 

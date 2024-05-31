@@ -211,6 +211,7 @@ export class DocumentInfo {
                 name: cp.name,
                 modifiers: cp.modifiers,
                 type: cp.base + (cp.size ?? ''),
+                description: cp.description,
             })),
             description,
             usages: [],

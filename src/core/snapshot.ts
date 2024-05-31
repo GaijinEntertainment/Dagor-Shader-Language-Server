@@ -109,6 +109,7 @@ export class Snapshot {
             parameters: fi.parameters.map((p) => ({
                 name: p.name,
                 type: p.type,
+                description: p.description,
             })),
             usages: [],
             isVisible: false,
