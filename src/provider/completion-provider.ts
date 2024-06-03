@@ -165,6 +165,17 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
         CompletionItemKind.Variable,
         'variable'
     );
+    const fds = snapshot.getFunctionDeclarationsInScope(position);
+    result.push(
+        ...fds.map<CompletionItem>((fd) =>
+            getCompletionItem(
+                fd,
+                CompletionItemKind.Function,
+                'function',
+                `(${toStringFunctionParameters(fd.parameters)})`
+            )
+        )
+    );
     addCompletionItems(result, hlslModifiers, CompletionItemKind.Keyword, 'modifier');
     addCompletionItems(result, hlslAttributes, CompletionItemKind.Keyword, 'attribute');
     addCompletionItems(result, hlslSemantics, CompletionItemKind.Keyword, 'semantic');

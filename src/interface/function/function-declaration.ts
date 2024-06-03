@@ -11,6 +11,7 @@ export interface FunctionDeclaration {
     usages: FunctionUsage[];
     isVisible: boolean;
     uri: DocumentUri;
+    isHlsl: boolean;
 }
 
 export function toStringFunctionDeclaration(fd: FunctionDeclaration): string {

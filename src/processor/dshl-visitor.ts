@@ -244,7 +244,7 @@ export class DshlVisitor
         if (visible) {
             const name = ctx.IDENTIFIER();
             const fd = (this.rootSnapshot ?? this.snapshot).rootScope.functionDeclarations.find(
-                (fd) => fd.name === name.text
+                (fd) => !fd.isHlsl && fd.name === name.text
             );
             if (fd) {
                 const fu: FunctionUsage = {
@@ -888,8 +888,10 @@ export class DshlVisitor
                 isVisible: visible,
                 uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
                 usages: [],
+                isHlsl: true,
             };
             this.scope.functionDeclaration = fd;
+            this.scope.parent!.functionDeclarations.push(fd);
         }
         this.visitChildren(ctx);
         this.scope = scope.parent!;

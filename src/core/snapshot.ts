@@ -114,6 +114,7 @@ export class Snapshot {
             usages: [],
             isVisible: false,
             uri: '',
+            isHlsl: false,
         }));
     }
 
@@ -1001,6 +1002,35 @@ export class Snapshot {
                 for (const vd of psb.variableDeclarations) {
                     if (isBeforeOrEqual(vd.originalRange.end, position) && result.every((r) => r.name !== vd.name)) {
                         result.push(vd);
+                    }
+                }
+            }
+            scope = scope.parent ?? null;
+        }
+        return result;
+    }
+
+    public getFunctionDeclarationsInScope(position: Position): FunctionDeclaration[] {
+        const result: FunctionDeclaration[] = [];
+        let scope: Scope | null = this.getScopeAt(position);
+        while (scope) {
+            for (const fd of scope.functionDeclarations) {
+                if (
+                    fd.isHlsl &&
+                    isBeforeOrEqual(fd.originalRange.end, position) &&
+                    result.every((r) => r.name !== fd.name)
+                ) {
+                    result.push(fd);
+                }
+            }
+            for (const hb of scope.hlslBlocks) {
+                for (const fd of hb.functionDeclarations) {
+                    if (
+                        fd.isHlsl &&
+                        isBeforeOrEqual(fd.originalRange.end, position) &&
+                        result.every((r) => r.name !== fd.name)
+                    ) {
+                        result.push(fd);
                     }
                 }
             }
