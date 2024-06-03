@@ -10,7 +10,7 @@ export async function referencesProvider(params: ReferenceParams): Promise<Locat
     const macro = snapshot.getMacro(params.position, params.textDocument.uri);
     if (macro) {
         const result: Location[] = [];
-        for (const md of macro.declarations.filter((md) => md.uri === params.textDocument.uri)) {
+        for (const md of macro.declarations) {
             result.push({
                 range: md.nameOriginalRange,
                 uri: md.uri,
