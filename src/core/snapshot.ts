@@ -19,6 +19,7 @@ import { IntervalDeclaration } from '../interface/interval-declaration';
 import { Macro } from '../interface/macro/macro';
 import { MacroContext } from '../interface/macro/macro-context';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
+import { MacroParameter } from '../interface/macro/macro-parameter';
 import { MacroUsage } from '../interface/macro/macro-usage';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { RangeWithChildren } from '../interface/range-with-children';
@@ -321,7 +322,7 @@ export class Snapshot {
         return null;
     }
 
-    public getMacro(name: string): Macro {
+    public getMacroWith(name: string): Macro {
         let macro = this.macros.find((m) => m.name === name);
         if (!macro) {
             macro = {
@@ -1107,6 +1108,141 @@ export class Snapshot {
         for (const child of scope.children) {
             this.addEnumDeclarations(result, child);
         }
+    }
+
+    public getMacro(position: Position, uri: DocumentUri): Macro | null {
+        const md = this.macroDeclarations.find((md) => md.uri === uri && rangeContains(md.nameOriginalRange, position));
+        if (md) {
+            return md.macro;
+        }
+        const mu = this.macroUsages.find((mu) => mu.isVisible && rangeContains(mu.nameOriginalRange, position));
+        if (mu) {
+            return mu.macro;
+        }
+        return null;
+    }
+
+    public getDefineStatement(position: Position, uri: DocumentUri): DefineStatement | null {
+        const macroSnapshot = this.getSnapshotForMacroDefinition(position, uri);
+        const ds = macroSnapshot.defineStatements.find(
+            (ds) => ds.isVisible && rangeContains(ds.nameOriginalRange, position)
+        );
+        if (ds) {
+            return ds.realDefine ?? ds;
+        }
+        const dc = this.defineContexts.find((dc) => dc.isVisible && rangeContains(dc.nameOriginalRange, position));
+        if (dc) {
+            return dc.define.realDefine ?? dc.define;
+        }
+        return null;
+    }
+
+    private getSnapshotForMacroDefinition(position: Position, uri: DocumentUri): Snapshot {
+        const md = this.macroDeclarations.find((md) => md.uri === uri && rangeContains(md.originalRange, position));
+        return md ? md.contentSnapshot : this;
+    }
+
+    public getMacroParameter(position: Position, uri: DocumentUri): MacroParameter | null {
+        const md =
+            this.macroDeclarations.find((md) => md.uri === uri && rangeContains(md.originalRange, position)) ?? null;
+        if (!md) {
+            return null;
+        }
+        return (
+            md.parameters.find(
+                (mp) =>
+                    rangeContains(mp.originalRange, position) ||
+                    mp.usages.some((mpu) => rangeContains(mpu.originalRange, position))
+            ) ?? null
+        );
+    }
+
+    public getTypeDeclaration(position: Position): TypeDeclaration | null {
+        const td = this.getTypeDeclarationAt(position);
+        if (td) {
+            return td;
+        }
+        const tu = this.getTypeUsageAt(position);
+        if (tu) {
+            return tu.declaration;
+        }
+        return null;
+    }
+
+    public getEnumDeclaration(position: Position): EnumDeclaration | null {
+        const ed = this.getEnumDeclarationAt(position);
+        if (ed) {
+            return ed;
+        }
+        const eu = this.getEnumUsageAt(position);
+        if (eu) {
+            return eu.declaration;
+        }
+        return null;
+    }
+
+    public getEnumMemberDeclaration(position: Position): EnumMemberDeclaration | null {
+        const emd = this.getEnumMemberDeclarationAt(position);
+        if (emd) {
+            return emd;
+        }
+        const emu = this.getEnumMemberUsageAt(position);
+        if (emu) {
+            return emu.declaration;
+        }
+        return null;
+    }
+
+    public getVariableDeclaration(position: Position): VariableDeclaration | null {
+        const vd = this.getVariableDeclarationAt(position);
+        if (vd) {
+            return vd;
+        }
+        const vu = this.getVariableUsageAt(position);
+        if (vu) {
+            return vu.declaration;
+        }
+        const id = this.getIntervalDeclarationAt(position);
+        if (id) {
+            return id.variable;
+        }
+        return null;
+    }
+
+    public getFunctionDeclaration(position: Position): FunctionDeclaration | null {
+        const fd = this.getFunctionDeclarationAt(position);
+        if (fd) {
+            return fd;
+        }
+        const fu = this.getFunctionUsageAt(position);
+        if (fu) {
+            return fu.declaration ?? null;
+        }
+        return null;
+    }
+
+    public getShaderDeclaration(position: Position): ShaderDeclaration | null {
+        const sd = this.getShaderDeclarationAt(position);
+        if (sd) {
+            return sd;
+        }
+        const su = this.getShaderUsageAt(position);
+        if (su) {
+            return su.declaration;
+        }
+        return null;
+    }
+
+    public getBlockDeclaration(position: Position): BlockDeclaration | null {
+        const bd = this.getBlockDeclarationAt(position);
+        if (bd) {
+            return bd;
+        }
+        const bu = this.getBlockUsageAt(position);
+        if (bu) {
+            return bu.declaration;
+        }
+        return null;
     }
 
     private getScopeAt(position: Position): Scope {

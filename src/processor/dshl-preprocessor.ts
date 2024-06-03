@@ -310,7 +310,7 @@ class DshlPreprocessor {
         const contentOriginalRange = this.isRoot
             ? this.snapshot.getOriginalRange(contentPosition, contentPosition + content.length)
             : defaultRange;
-        const macro = this.snapshot.getMacro(name);
+        const macro = this.snapshot.getMacroWith(name);
         const md: MacroDeclaration = {
             uri: this.snapshot.uri,
             position,
@@ -448,7 +448,7 @@ class DshlPreprocessor {
             if (Preprocessor.isInString(position, snapshot)) {
                 continue;
             }
-            const macro = this.snapshot.getMacro(match);
+            const macro = this.snapshot.getMacroWith(match);
             if (!hasMacroDeclarationBefore(macro, containerMd.position)) {
                 continue;
             }
@@ -498,7 +498,7 @@ class DshlPreprocessor {
             if (Preprocessor.isInString(position, this.snapshot)) {
                 continue;
             }
-            const macro = this.snapshot.getMacro(match);
+            const macro = this.snapshot.getMacroWith(match);
             if (!hasMacroDeclarationBefore(macro, position)) {
                 continue;
             }
