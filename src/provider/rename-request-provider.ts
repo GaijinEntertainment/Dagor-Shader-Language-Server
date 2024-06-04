@@ -10,7 +10,7 @@ export async function renameRequestProvider(params: RenameParams): Promise<Works
     const result: WorkspaceEdit = {
         changes: {},
     };
-    const macro = snapshot.getMacro(params.position, params.textDocument.uri);
+    const macro = snapshot.getMacro(params.position);
     if (macro) {
         for (const md of macro.declarations.filter((md) => md.uri === params.textDocument.uri)) {
             addTextEdit(result, params.newName, md.nameOriginalRange, md.uri);
@@ -28,7 +28,7 @@ export async function renameRequestProvider(params: RenameParams): Promise<Works
         }
         return result;
     }
-    const ds = snapshot.getDefineStatement(params.position, params.textDocument.uri);
+    const ds = snapshot.getDefineStatement(params.position);
     if (ds && !ds.isPredefined) {
         if (ds.isVisible && ds.uri === params.textDocument.uri) {
             addTextEdit(result, params.newName, ds.nameOriginalRange, ds.uri);
@@ -39,7 +39,7 @@ export async function renameRequestProvider(params: RenameParams): Promise<Works
         return result;
     }
     const td = snapshot.getTypeDeclaration(params.position);
-    if (td && td.nameOriginalRange) {
+    if (td && !td.isBuiltIn) {
         if (td.isVisible && td.uri === params.textDocument.uri) {
             addTextEdit(result, params.newName, td.nameOriginalRange, td.uri);
         }
@@ -51,7 +51,7 @@ export async function renameRequestProvider(params: RenameParams): Promise<Works
         return result;
     }
     const ed = snapshot.getEnumDeclaration(params.position);
-    if (ed && ed.nameOriginalRange) {
+    if (ed?.nameOriginalRange && !ed.isBuiltIn) {
         if (ed.isVisible && ed.uri === params.textDocument.uri) {
             addTextEdit(result, params.newName, ed.nameOriginalRange, ed.uri);
         }
@@ -63,7 +63,7 @@ export async function renameRequestProvider(params: RenameParams): Promise<Works
         return result;
     }
     const emd = snapshot.getEnumMemberDeclaration(params.position);
-    if (emd && emd.nameOriginalRange) {
+    if (emd && !emd.enumDeclaration.isBuiltIn) {
         if (emd.isVisible && emd.uri === params.textDocument.uri) {
             addTextEdit(result, params.newName, emd.nameOriginalRange, emd.uri);
         }
@@ -75,7 +75,7 @@ export async function renameRequestProvider(params: RenameParams): Promise<Works
         return result;
     }
     const vd = snapshot.getVariableDeclaration(params.position);
-    if (vd && vd.nameOriginalRange) {
+    if (vd && !vd.isBuiltIn) {
         if (vd.isVisible && vd.uri === params.textDocument.uri) {
             addTextEdit(result, params.newName, vd.nameOriginalRange, vd.uri);
         }
@@ -90,7 +90,7 @@ export async function renameRequestProvider(params: RenameParams): Promise<Works
         return result;
     }
     const fd = snapshot.getFunctionDeclaration(params.position);
-    if (fd && !fd.nameOriginalRange) {
+    if (fd && !fd.isBuiltIn) {
         if (fd.isVisible && fd.uri === params.textDocument.uri) {
             addTextEdit(result, params.newName, fd.nameOriginalRange, fd.uri);
         }

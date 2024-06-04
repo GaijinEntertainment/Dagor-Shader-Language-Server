@@ -12,6 +12,7 @@ export interface FunctionDeclaration {
     isVisible: boolean;
     uri: DocumentUri;
     isHlsl: boolean;
+    isBuiltIn: boolean;
 }
 
 export function toStringFunctionDeclaration(fd: FunctionDeclaration): string {

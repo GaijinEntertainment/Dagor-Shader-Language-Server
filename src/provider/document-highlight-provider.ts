@@ -9,7 +9,7 @@ export async function documentHighlightProvider(
     if (!snapshot) {
         return null;
     }
-    const macro = snapshot.getMacro(params.position, params.textDocument.uri);
+    const macro = snapshot.getMacro(params.position);
     if (macro) {
         const result: DocumentHighlight[] = [];
         for (const md of macro.declarations.filter((md) => md.uri === params.textDocument.uri)) {
@@ -41,7 +41,7 @@ export async function documentHighlightProvider(
         }
         return result;
     }
-    const ds = snapshot.getDefineStatement(params.position, params.textDocument.uri);
+    const ds = snapshot.getDefineStatement(params.position);
     if (ds) {
         const result: DocumentHighlight[] = [];
         if (ds.isVisible && !ds.isPredefined && ds.uri === params.textDocument.uri) {

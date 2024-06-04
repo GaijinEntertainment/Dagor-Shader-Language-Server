@@ -7,10 +7,10 @@ export async function referencesProvider(params: ReferenceParams): Promise<Locat
     if (!snapshot) {
         return null;
     }
-    const macro = snapshot.getMacro(params.position, params.textDocument.uri);
+    const macro = snapshot.getMacro(params.position);
     if (macro) {
         const result: Location[] = [];
-        for (const md of macro.declarations) {
+        for (const md of macro.declarations.filter((md) => md.uri === params.textDocument.uri)) {
             result.push({
                 range: md.nameOriginalRange,
                 uri: md.uri,
@@ -39,7 +39,7 @@ export async function referencesProvider(params: ReferenceParams): Promise<Locat
         }
         return result;
     }
-    const ds = snapshot.getDefineStatement(params.position, params.textDocument.uri);
+    const ds = snapshot.getDefineStatement(params.position);
     if (ds) {
         const result: Location[] = [];
         if (ds.isVisible && !ds.isPredefined && ds.uri === params.textDocument.uri) {

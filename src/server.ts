@@ -39,6 +39,7 @@ import {
 import { hoverProvider } from './provider/hover-provider';
 import { implementationProvider } from './provider/implementation-provider';
 import { inlayHintProvider } from './provider/inlay-hint-provider';
+import { prepareRenameProvider } from './provider/prepare-rename-provider';
 import { referencesProvider } from './provider/references-provider';
 import { renameRequestProvider } from './provider/rename-request-provider';
 import { semanticTokensProvider } from './provider/semantic-token-provider';
@@ -140,7 +141,7 @@ export abstract class Server {
             documentRangeFormattingProvider: { rangesSupport: true },
             typeHierarchyProvider: true,
             referencesProvider: true,
-            renameProvider: true,
+            renameProvider: { prepareProvider: true },
             semanticTokensProvider: {
                 full: true,
                 documentSelector: [{ language: 'dshl' }, { language: 'hlsl' }],
@@ -208,6 +209,7 @@ export abstract class Server {
         this.connection.onDocumentFormatting(documentFormattingProvider);
         this.connection.onDocumentRangeFormatting(documentRangeFormattingProvider);
         this.connection.onReferences(referencesProvider);
+        this.connection.onPrepareRename(prepareRenameProvider);
         this.connection.onRenameRequest(renameRequestProvider);
         this.connection.onRequest(DocumentRangesFormattingRequest.type, documentRangesFormattingProvider);
         this.connection.onRequest(TypeHierarchyPrepareRequest.type, typeHierarchyPrepareProvider);

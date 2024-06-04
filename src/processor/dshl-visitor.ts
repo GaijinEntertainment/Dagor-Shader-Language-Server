@@ -161,6 +161,7 @@ export class DshlVisitor
             usages: [],
             isHlsl: false,
             arraySizes: this.getDshlArraySize(ctx.dshl_array_subscript()),
+            isBuiltIn: false,
         };
         // if (visible && identifier.text.toLowerCase() !== identifier.text) {
         //     this.snapshot.diagnostics.push({
@@ -428,6 +429,7 @@ export class DshlVisitor
                 usages: [],
                 isHlsl: true,
                 arraySizes: this.getDshlArraySize(ctx.dshl_array_subscript()),
+                isBuiltIn: false,
             };
             this.scope.variableDeclarations.push(vd);
         }
@@ -677,6 +679,7 @@ export class DshlVisitor
                 isHlsl: true,
                 arraySizes: this.getArraySize(vi.array_subscript()),
                 containerType: this.type.length ? this.type[this.type.length - 1] : undefined,
+                isBuiltIn: false,
             };
             if (this.type.length) {
                 this.type[this.type.length - 1].members.push(vd);
@@ -840,6 +843,7 @@ export class DshlVisitor
                 usages: [],
                 isHlsl: true,
                 arraySizes: this.getArraySize(ctx.array_subscript()),
+                isBuiltIn: false,
             };
             this.scope.variableDeclarations.push(vd);
         }
@@ -889,6 +893,7 @@ export class DshlVisitor
                 uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
                 usages: [],
                 isHlsl: true,
+                isBuiltIn: false,
             };
             this.scope.functionDeclaration = fd;
             this.scope.parent!.functionDeclarations.push(fd);
@@ -1102,7 +1107,7 @@ export class DshlVisitor
         if (mc) {
             return mc.originalRange;
         }
-        const dc = this.snapshot.getDefineContextAt(startPosition);
+        const dc = this.snapshot.getDefineContextAtOffset(startPosition);
         if (dc) {
             return dc.originalRange;
         }

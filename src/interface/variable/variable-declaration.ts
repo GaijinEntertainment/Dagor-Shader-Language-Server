@@ -22,6 +22,7 @@ export interface VariableDeclaration {
     arraySizes: number[];
     containerType?: TypeDeclaration;
     description?: string;
+    isBuiltIn: boolean;
 }
 
 export function getVariableInfo(vd: VariableDeclaration, formats: MarkupKind[]): MarkupContent | undefined {

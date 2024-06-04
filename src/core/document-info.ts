@@ -423,6 +423,7 @@ export class DocumentInfo {
                     usages: [],
                     containerType: td,
                     description: hstm.description,
+                    isBuiltIn: true,
                 })) ?? [];
             snapshot.rootScope.typeDeclarations.push(td);
         }

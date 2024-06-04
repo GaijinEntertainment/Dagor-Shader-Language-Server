@@ -116,6 +116,7 @@ export class Snapshot {
             isVisible: false,
             uri: '',
             isHlsl: false,
+            isBuiltIn: true,
         }));
     }
 
@@ -438,7 +439,7 @@ export class Snapshot {
         return this.defineContexts.some((dc) => dc.startPosition <= position && position < dc.afterEndPosition);
     }
 
-    public getDefineContextAt(position: number): DefineContext | null {
+    public getDefineContextAtOffset(position: number): DefineContext | null {
         return (
             this.defineContexts.find((dc) => isIntervalContains(dc.startPosition, dc.afterEndPosition, position)) ??
             null
@@ -625,6 +626,30 @@ export class Snapshot {
             }
         }
         return null;
+    }
+
+    public getMacroDeclarationAt(position: Position): MacroDeclaration | null {
+        return this.macroDeclarations.find((md) => rangeContains(md.nameOriginalRange, position)) ?? null;
+    }
+
+    public getMacroUsageAt(position: Position): MacroUsage | null {
+        return this.macroUsages.find((mu) => mu.isVisible && rangeContains(mu.nameOriginalRange, position)) ?? null;
+    }
+
+    public getDefineStatementAt(position: Position): DefineStatement | null {
+        const macroSnapshot = this.getSnapshotForMacroDefinition(position);
+        const ds = macroSnapshot.defineStatements.find(
+            (ds) => ds.isVisible && rangeContains(ds.nameOriginalRange, position)
+        );
+        if (ds) {
+            return ds.realDefine ?? ds;
+        } else {
+            return null;
+        }
+    }
+
+    public getDefineContextAt(position: Position): DefineContext | null {
+        return this.defineContexts.find((dc) => dc.isVisible && rangeContains(dc.nameOriginalRange, position)) ?? null;
     }
 
     public getEnumMemberDeclarationAt(position: Position): EnumMemberDeclaration | null {
@@ -1110,35 +1135,32 @@ export class Snapshot {
         }
     }
 
-    public getMacro(position: Position, uri: DocumentUri): Macro | null {
-        const md = this.macroDeclarations.find((md) => md.uri === uri && rangeContains(md.nameOriginalRange, position));
+    public getMacro(position: Position): Macro | null {
+        const md = this.getMacroDeclarationAt(position);
         if (md) {
             return md.macro;
         }
-        const mu = this.macroUsages.find((mu) => mu.isVisible && rangeContains(mu.nameOriginalRange, position));
+        const mu = this.getMacroUsageAt(position);
         if (mu) {
             return mu.macro;
         }
         return null;
     }
 
-    public getDefineStatement(position: Position, uri: DocumentUri): DefineStatement | null {
-        const macroSnapshot = this.getSnapshotForMacroDefinition(position, uri);
-        const ds = macroSnapshot.defineStatements.find(
-            (ds) => ds.isVisible && rangeContains(ds.nameOriginalRange, position)
-        );
+    public getDefineStatement(position: Position): DefineStatement | null {
+        const ds = this.getDefineStatementAt(position);
         if (ds) {
-            return ds.realDefine ?? ds;
+            return ds;
         }
-        const dc = this.defineContexts.find((dc) => dc.isVisible && rangeContains(dc.nameOriginalRange, position));
+        const dc = this.getDefineContextAt(position);
         if (dc) {
             return dc.define.realDefine ?? dc.define;
         }
         return null;
     }
 
-    private getSnapshotForMacroDefinition(position: Position, uri: DocumentUri): Snapshot {
-        const md = this.macroDeclarations.find((md) => md.uri === uri && rangeContains(md.originalRange, position));
+    private getSnapshotForMacroDefinition(position: Position): Snapshot {
+        const md = this.macroDeclarations.find((md) => rangeContains(md.originalRange, position));
         return md ? md.contentSnapshot : this;
     }
 
