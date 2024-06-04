@@ -50,6 +50,8 @@ export const dshlKeywords: LanguageElementInfo[] = [
     { name: 'gs', description: 'Geometry Shader' },
     { name: 'ps', description: 'Pixel Shader' },
     { name: 'cs', description: 'Compute Shader' },
+    { name: 'ms', description: 'Mesh Shader' },
+    { name: 'as', description: 'Amplification Shader' },
 ];
 
 export const dshlEnumValues: LanguageElementInfo[] = [

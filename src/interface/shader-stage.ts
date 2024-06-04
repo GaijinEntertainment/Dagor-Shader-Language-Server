@@ -5,6 +5,8 @@ export enum ShaderStage {
     GEOMETRY = 'GEOMETRY',
     PIXEL = 'PIXEL',
     COMPUTE = 'COMPUTE',
+    MESH = 'MESH',
+    AMPLIFICATION = 'AMPLIFICATION',
 }
 
 export function shaderStageKeywordToEnum(stage: string): ShaderStage | null {
@@ -21,6 +23,10 @@ export function shaderStageKeywordToEnum(stage: string): ShaderStage | null {
             return ShaderStage.PIXEL;
         case 'cs':
             return ShaderStage.COMPUTE;
+        case 'ms':
+            return ShaderStage.MESH;
+        case 'as':
+            return ShaderStage.AMPLIFICATION;
         default:
             return null;
     }

@@ -31,7 +31,7 @@
                     "patterns": [
                         {
                             "name": "constant.language.dshl",
-                            "match": "\\b(vs|hs|ds|gs|ps|cs)\\b"
+                            "match": "\\b(vs|hs|ds|gs|ps|cs|ms|as)\\b"
                         },
                         { "include": "#variable" }
                     ]
@@ -192,7 +192,7 @@
         "stage": {
             "comment": "STAGE",
             "name": "constant.language.dshl",
-            "match": "(?<=\\((\\s|/\\*.*?\\*/)*)(vs|hs|ds|gs|ps|cs)(?=(\\s|/\\*.*?\\*/)*\\))"
+            "match": "(?<=\\((\\s|/\\*.*?\\*/)*)(vs|hs|ds|gs|ps|cs|ms|as)(?=(\\s|/\\*.*?\\*/)*\\))"
         },
         "operator": {
             "comment": "OPERATOR",
