@@ -4,7 +4,7 @@ import { getCapabilities } from '../core/capability-manager';
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
 import { toStringFunctionDeclaration } from '../interface/function/function-declaration';
-import { toStringFunctionParameter } from '../interface/function/function-parameter';
+import { toStringFunctionParameter, toStringFunctionParameters } from '../interface/function/function-parameter';
 import { FunctionUsage } from '../interface/function/function-usage';
 import { toStringIntrinsicFunction } from '../interface/function/intrinsic-function';
 import { toStringMacroDeclaration } from '../interface/macro/macro-declaration';
@@ -57,6 +57,22 @@ export async function signatureHelpProvider(params: SignatureHelpParams): Promis
                 })),
                 documentation: ifd.description,
             })),
+            activeSignature: 0,
+            activeParameter: getActiveParameter(fu, params.position),
+        };
+    } else if (fu?.method) {
+        const method = fu.method;
+        const parameters = toStringFunctionParameters(fu.method.parameters);
+        const label = `${method.returnType} ${method.name}(${parameters});`;
+        return {
+            signatures: [
+                {
+                    label,
+                    parameters: method.parameters.map((fp) => ({
+                        label: toStringFunctionParameter(fp),
+                    })),
+                },
+            ],
             activeSignature: 0,
             activeParameter: getActiveParameter(fu, params.position),
         };
