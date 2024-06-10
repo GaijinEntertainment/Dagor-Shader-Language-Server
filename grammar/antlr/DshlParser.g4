@@ -216,6 +216,8 @@ struct_member_declaration:
 	//interpolation_modifier* type hlsl_identifier SEMICOLON
 	variable_declaration_statement
 	| function_call
+    | function_definition
+	| function_declaration
 	| function_header
 	| expression_list
 	| type_declaration_statement
