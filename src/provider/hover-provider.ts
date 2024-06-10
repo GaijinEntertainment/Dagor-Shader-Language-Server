@@ -8,6 +8,7 @@ import { BlockUsage } from '../interface/block/block-usage';
 import { DefineContext } from '../interface/define-context';
 import { toStringDefineStatementWithContent } from '../interface/define-statement';
 import { toStringFunctionDeclaration } from '../interface/function/function-declaration';
+import { toStringFunctionParameters } from '../interface/function/function-parameter';
 import { FunctionUsage } from '../interface/function/function-usage';
 import { toStringIntrinsicFunction } from '../interface/function/intrinsic-function';
 import { toStringMacroDeclaration } from '../interface/macro/macro-declaration';
@@ -158,8 +159,7 @@ function createFunctionHoverContent(fu: FunctionUsage): MarkupContent {
 }
 
 function getFunctionValue(fu: FunctionUsage): string {
-    const fd = fu.declaration;
-    const declaration = fd ? toStringFunctionDeclaration(fd) : toStringIntrinsicFunction(fu.intrinsicFunction!);
+    const declaration = getFunctionDeclarationValue(fu);
     if (getCapabilities().hoverFormat.includes(MarkupKind.Markdown)) {
         let result = `\`\`\`hlsl\n${declaration}\n\`\`\``;
         if (fu.intrinsicFunction?.description) {
@@ -175,6 +175,18 @@ function getFunctionValue(fu: FunctionUsage): string {
     } else {
         return '';
     }
+}
+
+function getFunctionDeclarationValue(fu: FunctionUsage): string {
+    if (fu.declaration) {
+        return toStringFunctionDeclaration(fu.declaration);
+    } else if (fu.intrinsicFunction) {
+        toStringIntrinsicFunction(fu.intrinsicFunction!);
+    } else if (fu.method) {
+        const parameters = toStringFunctionParameters(fu.method.parameters);
+        return `${fu.method.returnType} ${fu.method.name}(${parameters});`;
+    }
+    return '';
 }
 
 function createBlockHoverContent(bu: BlockUsage): MarkupContent {
