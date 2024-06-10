@@ -14,12 +14,21 @@ export interface LanguageElementInfo {
     members?: LanguageElementInfo[];
     additionalInfo?: string;
     overloads?: Overload[];
+    methods?: Method[];
     available?: ShaderType[];
 }
 
 export interface Overload {
     returnType: GenericReturnType | string;
     parameters: Parameter[];
+}
+
+export interface Method {
+    name: string;
+    description: string;
+    returnType: string;
+    parameters: ConcreteParameter[];
+    available: ShaderType[];
 }
 
 export interface GenericReturnType {

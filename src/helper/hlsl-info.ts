@@ -1,4 +1,18 @@
 import { LanguageElementInfo } from '../interface/language-element-info';
+import {
+    gather,
+    gatherAlpha,
+    gatherBlue,
+    gatherCmp,
+    gatherCmpAlpha,
+    load,
+    sample,
+    sampleBias,
+    sampleCmp,
+    sampleCmpLevelZero,
+    sampleGrad,
+    sampleLevel,
+} from './hlsl-texture-member-functions';
 
 export const hlslKeywords: LanguageElementInfo[] = [
     {
@@ -1342,42 +1356,903 @@ export const hlslBufferTypes: LanguageElementInfo[] = [
         description:
             'Output buffer that appears as a stream the shader may append to. Only structured buffers can take T types that are structures.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-appendstructuredbuffer'],
+        methods: [
+            {
+                name: 'Append',
+                description: 'Appends a value to the end of the buffer.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'T', // TODO: generic
+                        name: 'value',
+                        description: 'The input value.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Gets the resource dimensions.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'numStructs',
+                        description: 'The number of structures.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'stride',
+                        description: 'The number of bytes in each element.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+        ],
     },
     {
         name: 'Buffer',
         description: 'Buffer type as it exists in Shader Model 4 plus resource variables and buffer info.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-buffer'],
+        methods: [
+            {
+                name: 'GetDimensions',
+                description: 'The length, in elements, of the Buffer as set in the Shader Resource View.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'dim',
+                        description: 'The length, in bytes, of the buffer.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads buffer data.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads buffer data and returns status of the operation.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            // TODO: operator[]
+        ],
     },
     {
         name: 'ByteAddressBuffer',
         description: 'A read-only buffer that is indexed in bytes.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-byteaddressbuffer'],
+        methods: [
+            {
+                name: 'GetDimensions',
+                description: 'Gets the length of the buffer.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'dim',
+                        description: 'The length, in bytes, of the buffer.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Gets one value.',
+                returnType: 'uint',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'address',
+                        description: 'The input address in bytes, which must be a multiple of 4.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads buffer data and returns status of the operation.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'int',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+        ],
     },
     {
         name: 'ConsumeStructuredBuffer',
         description:
             'An input buffer that appears as a stream the shader may pull values from. Only structured buffers can take T types that are structures.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-consumestructuredbuffer'],
+        methods: [
+            {
+                name: 'Consume',
+                description: 'Removes a value from the end of the buffer.',
+                returnType: 'T', // TODO: generic
+                parameters: [],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Gets the resource dimensions.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'numStructs',
+                        description: 'The number of structures.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'stride',
+                        description: 'The stride, in bytes, of each element.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+        ],
     },
     {
         name: 'RWBuffer',
         description: 'A read/write buffer.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwbuffer'],
+        methods: [
+            {
+                name: 'GetDimensions',
+                description: 'Gets the length of the buffer.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'dim',
+                        description: 'The length, in elements, of the Buffer as set in the Unordered Resource View.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads buffer data.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads buffer data and returns status of the operation.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            // TODO: operator[]
+        ],
     },
     {
         name: 'RWByteAddressBuffer',
         description: 'A read/write buffer that indexes in bytes.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwbyteaddressbuffer'],
+        methods: [
+            {
+                name: 'GetDimensions',
+                description: 'Gets the length of the buffer.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'dim',
+                        description: 'The length, in bytes, of the buffer.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'InterlockedAdd',
+                description: 'Adds the value, atomically.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'dest',
+                        description: 'The destination address.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'value',
+                        description: 'The input value.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'original_value',
+                        description: 'The original value.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'InterlockedAnd',
+                description: 'Ands the value, atomically.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'dest',
+                        description: 'The destination address.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'value',
+                        description: 'The input value.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'original_value',
+                        description: 'The original value.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'InterlockedCompareExchange',
+                description: 'Compares the input to the comparison value and exchanges the result, atomically.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'dest',
+                        description: 'The destination address.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'compare_value',
+                        description: 'The comparison value.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'value',
+                        description: 'The input value.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'original_value',
+                        description: 'The original value.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'InterlockedCompareStore',
+                description: 'Compares the input to the comparison value, atomically.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'dest',
+                        description: 'The destination address.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'compare_value',
+                        description: 'The comparison value.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'value',
+                        description: 'The input value.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'InterlockedExchange',
+                description: 'Exchanges a value, atomically.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'dest',
+                        description: 'The destination address.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'value',
+                        description: 'The input value.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'original_value',
+                        description: 'The original value.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'InterlockedMax',
+                description: 'Finds the maximum value, atomically.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'dest',
+                        description: 'The destination address.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'value',
+                        description: 'The input value.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'original_value',
+                        description: 'The original value.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'InterlockedMin',
+                description: 'Finds the minimum value, atomically.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'dest',
+                        description: 'The destination address.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'value',
+                        description: 'The input value.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'original_value',
+                        description: 'The original value.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'InterlockedOr',
+                description: 'Performs an atomic OR on the value.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'dest',
+                        description: 'The destination address.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'value',
+                        description: 'The input value.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'original_value',
+                        description: 'The original value.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'InterlockedXor',
+                description: 'Performs an atomic XOR on the value.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'dest',
+                        description: 'The destination address.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'value',
+                        description: 'The input value.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'original_value',
+                        description: 'The original value.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Gets one value.',
+                returnType: 'uint',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Gets one value and returns status of the operation.',
+                returnType: 'uint',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load2',
+                description: 'Gets two values.',
+                returnType: 'uint2',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'address',
+                        description: 'The input address in bytes, which must be a multiple of 4.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load2',
+                description: 'Gets two values and returns status of the operation.',
+                returnType: 'uint2',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load3',
+                description: 'Gets three values.',
+                returnType: 'uint3',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'address',
+                        description: 'The input address in bytes, which must be a multiple of 4.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load3',
+                description: 'Gets three values and returns status of the operation.',
+                returnType: 'uint3',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load3',
+                description: 'Gets three values.',
+                returnType: 'uint3',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'address',
+                        description: 'The input address in bytes, which must be a multiple of 4.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load3',
+                description: 'Gets three values and returns status of the operation.',
+                returnType: 'uint3',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load4',
+                description: 'Gets four values.',
+                returnType: 'uint4',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'address',
+                        description: 'The input address in bytes, which must be a multiple of 4.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load4',
+                description: 'Gets four values and returns status of the operation.',
+                returnType: 'uint4',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Store',
+                description: 'Sets one value.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'address',
+                        description: 'The input address in bytes, which must be a multiple of 4.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'value',
+                        description: 'One input value.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Store2',
+                description: 'Sets two values.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'address',
+                        description: 'The input address in bytes, which must be a multiple of 4.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint2',
+                        name: 'values',
+                        description: 'Two input values.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Store3',
+                description: 'Sets three values.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'address',
+                        description: 'The input address in bytes, which must be a multiple of 4.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint3',
+                        name: 'values',
+                        description: 'Three input values.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Store4',
+                description: 'Sets four values.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'address',
+                        description: 'The input address in bytes, which must be a multiple of 4.',
+                    },
+                    {
+                        modifiers: 'in',
+                        type: 'uint4',
+                        name: 'values',
+                        description: 'Four input values.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+        ],
     },
     {
         name: 'RWStructuredBuffer',
         description: 'A read/write buffer that can take a T type that is a structure.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwstructuredbuffer'],
+        methods: [
+            {
+                name: 'DecrementCounter',
+                description: "Decrements the object's hidden counter.",
+                returnType: 'uint',
+                parameters: [],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Gets the resource dimensions.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'numStructs',
+                        description: 'The number of structures.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'stride',
+                        description: 'The number of bytes in each element.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'IncrementCounter',
+                description: "Increments the object's hidden counter.",
+                returnType: 'uint',
+                parameters: [],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads buffer data.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads buffer data and returns status of the operation.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            // TODO: operator[]
+        ],
     },
     {
         name: 'StructuredBuffer',
         description: 'A read-only buffer, which can take a T type that is a structure.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-structuredbuffer'],
+        methods: [
+            {
+                name: 'GetDimensions',
+                description: 'Gets the resource dimensions.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'numStructs',
+                        description: 'The number of structures.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'stride',
+                        description: 'The number of bytes in each element.',
+                    },
+                ],
+                available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads buffer data.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads buffer data and returns status of the operation.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the buffer.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            // TODO: operator[]
+        ],
     },
     {
         name: 'cbuffer',
@@ -1450,46 +2325,756 @@ export const hlslTextureTypes: LanguageElementInfo[] = [
         name: 'RWTexture1D',
         description: 'A read/write resource.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture1d'],
-    },
-    {
-        name: 'RWTexture1D',
-        description: 'A read/write resource.',
-        links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture1d'],
+        methods: [
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads texture data.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the texture.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads texture data and returns status about the operation.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the texture.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            // TODO: operator[]
+        ],
     },
     {
         name: 'RWTexture1DArray',
         description: 'A read/write resource.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture1darray'],
+        methods: [
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Elements',
+                        description: 'The number of elements in the array.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Elements',
+                        description: 'The number of elements in the array.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads texture data.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the texture.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads texture data and returns status about the operation.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the texture.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            // TODO: operator[]
+        ],
     },
     {
         name: 'RWTexture2D',
         description: 'A read/write resource.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture2d'],
+        methods: [
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Height',
+                        description: 'The resource height, in texels.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Height',
+                        description: 'The resource height, in texels.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads texture data.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the texture.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads texture data and returns status about the operation.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the texture.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            // TODO: operator[]
+        ],
     },
     {
         name: 'RWTexture2DArray',
         description: 'A read/write resource.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture2darray'],
+        methods: [
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Height',
+                        description: 'The resource height, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Elements',
+                        description: 'he number of elements in the array.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Height',
+                        description: 'The resource height, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Elements',
+                        description: 'he number of elements in the array.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads texture data.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the texture.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads texture data and returns status about the operation.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the texture.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            // TODO: operator[]
+        ],
     },
     {
         name: 'RWTexture3D',
         description: 'A read/write resource.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-rwtexture3d'],
+        methods: [
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Height',
+                        description: 'The resource height, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Depth',
+                        description: 'The resource depth, in texels.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Height',
+                        description: 'The resource height, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Depth',
+                        description: 'The resource depth, in texels.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads texture data.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the texture.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'Load',
+                description: 'Reads texture data and returns status about the operation.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'int',
+                        name: 'Location',
+                        description: 'The location of the texture.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Status',
+                        description:
+                            "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            // TODO: operator[]
+        ],
     },
     {
         name: 'Texture1D',
         description: 'A 1D texture type (as it exists in Shader Model 4) plus resource variables.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture1d'],
+        methods: [
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'MipLevel',
+                        description: 'Optional. Mipmap level (must be specified if NumberOfLevels is used).',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'NumberOfLevels',
+                        description: 'The number of mipmap levels (requires MipLevel also).',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'MipLevel',
+                        description: 'Optional. Mipmap level (must be specified if NumberOfLevels is used).',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'NumberOfLevels',
+                        description: 'The number of mipmap levels (requires MipLevel also).',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            ...load,
+            ...sample,
+            ...sampleBias,
+            ...sampleCmpLevelZero,
+            ...sampleGrad,
+            ...sampleLevel,
+            // TODO: operator[]
+        ],
     },
     {
         name: 'Texture1DArray',
         description: 'Texture1DArray type (as it exists in Shader Model 4) plus resource variables.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture1darray'],
+        methods: [
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'MipLevel',
+                        description: 'Optional. Mipmap level (must be specified if NumberOfLevels is used).',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Elements',
+                        description: 'The number of elements in the array.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'NumberOfLevels',
+                        description: 'The number of mipmap levels (requires MipLevel also).',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'MipLevel',
+                        description: 'Optional. Mipmap level (must be specified if NumberOfLevels is used).',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Elements',
+                        description: 'The number of elements in the array.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'NumberOfLevels',
+                        description: 'The number of mipmap levels (requires MipLevel also).',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Elements',
+                        description: 'The number of elements in the array.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Elements',
+                        description: 'The number of elements in the array.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            ...load,
+            ...sample,
+            ...sampleBias,
+            ...sampleCmp,
+            ...sampleCmpLevelZero,
+            ...sampleGrad,
+            ...sampleLevel,
+            // TODO: operator[]
+        ],
     },
     {
         name: 'Texture2D',
         description: 'Texture2D type (as it exists in Shader Model 4) plus resource variables.',
         links: ['https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-object-texture2d'],
+        methods: [
+            ...gather,
+            ...gatherAlpha,
+            ...gatherBlue,
+            ...gatherCmp,
+            ...gatherCmpAlpha,
+            // ...gatherCmpBlue,
+            // ...gatherCmpGreen,
+            // ...gatherCompRed,
+            // ...gatherGreen,
+            // ...gatherRed,
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'MipLevel',
+                        description: 'Optional. Mipmap level (must be specified if NumberOfLevels is used).',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Elements',
+                        description: 'The number of elements in the array.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'NumberOfLevels',
+                        description: 'The number of mipmap levels (requires MipLevel also).',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'in',
+                        type: 'uint',
+                        name: 'MipLevel',
+                        description: 'Optional. Mipmap level (must be specified if NumberOfLevels is used).',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Elements',
+                        description: 'The number of elements in the array.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'NumberOfLevels',
+                        description: 'The number of mipmap levels (requires MipLevel also).',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Elements',
+                        description: 'The number of elements in the array.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            {
+                name: 'GetDimensions',
+                description: 'Returns the dimensions of the resource.',
+                returnType: 'void',
+                parameters: [
+                    {
+                        modifiers: 'out',
+                        type: 'float',
+                        name: 'Width',
+                        description: 'The resource width, in texels.',
+                    },
+                    {
+                        modifiers: 'out',
+                        type: 'uint',
+                        name: 'Elements',
+                        description: 'The number of elements in the array.',
+                    },
+                ],
+                available: ['pixel', 'compute'],
+            },
+            ...load,
+            ...sample,
+            ...sampleBias,
+            ...sampleCmp,
+            ...sampleCmpLevelZero,
+            ...sampleGrad,
+            ...sampleLevel,
+            // TODO: operator[]
+        ],
     },
     {
         name: 'Texture2DArray',
