@@ -96,19 +96,38 @@ function isCursorInCommentOrString(snapshot: Snapshot, position: Position): bool
     return snapshot.noCodeCompletionRanges.some((r) => rangeContains(r, position));
 }
 
+function addHlslMembers(result: CompletionItem[], er: ExpressionRange): void {
+    if (er.type === 'type') {
+        result.push(...getMembers(er));
+    } else if (er.type === 'enum') {
+        result.push(
+            ...er.enumDeclaration.members.map((m) => ({
+                label: m.name,
+                kind: getKind(CompletionItemKind.EnumMember),
+                detail: `${m.name} - enum value`,
+                documentation: getEnumMemberInfo(m, getCapabilities().completionDocumentationFormat),
+            }))
+        );
+    } else if (er.type === 'name') {
+        const x = hlslBufferTypes.find((b) => b.name === er.name);
+        if (x?.methods) {
+            result.push(
+                ...x.methods.map<CompletionItem>((m) => ({
+                    label: m.name,
+                    kind: getKind(CompletionItemKind.Method),
+                    detail: `${m.name} - method`,
+                    documentation: m.description,
+                    labelDetails: getLabelDetails(m.returnType, `(${toStringFunctionParameters(m.parameters)})`),
+                }))
+            );
+        }
+    }
+}
+
 function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
     const er = snapshot.expressionRanges.find((er) => rangeContains(er.originalRange, position));
     if (er) {
-        result.push(
-            ...(er.type === 'type'
-                ? getMembers(er)
-                : er.enumDeclaration.members.map((m) => ({
-                      label: m.name,
-                      kind: getKind(CompletionItemKind.EnumMember),
-                      detail: `${m.name} - enum value`,
-                      documentation: getEnumMemberInfo(m, getCapabilities().completionDocumentationFormat),
-                  })))
-        );
+        addHlslMembers(result, er);
         return;
     }
     addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
@@ -233,7 +252,7 @@ function addMembers(result: CompletionItem[], td: TypeDeclaration): void {
             label: m.name,
             kind: getKind(CompletionItemKind.Field),
             detail: `${m.name} - member variable`,
-            labelDetails: getLabelDetails(m),
+            labelDetails: getLabelDetails(m.type),
         }))
     );
     for (const superTd of td.superTypes) {
@@ -405,7 +424,7 @@ function getCompletionItem(
         detail: getDetail(item, type),
         sortText: item.sortName,
         filterText: item.filterText,
-        labelDetails: getLabelDetails(item, parameters),
+        labelDetails: getLabelDetails(item.type, parameters),
         documentation: getDocumentation(item),
         insertText: item.insertText,
         insertTextFormat: item.isSnippet ? InsertTextFormat.Snippet : undefined,
@@ -429,10 +448,10 @@ function getDetail(item: LanguageElementInfo, type: string): string {
     }
 }
 
-function getLabelDetails(item: LanguageElementInfo, parameters?: string): CompletionItemLabelDetails | undefined {
+function getLabelDetails(type?: string, parameters?: string): CompletionItemLabelDetails | undefined {
     return getCapabilities().completionLabelDetails
         ? {
-              description: item.type,
+              description: type,
               detail: parameters,
           }
         : undefined;
