@@ -14,4 +14,10 @@ interface EnumExpressionRange {
     enumDeclaration: EnumDeclaration;
 }
 
-export type ExpressionRange = TypeExpressionRange | EnumExpressionRange;
+interface NameExpressionRange {
+    type: 'name';
+    originalRange: Range;
+    name: string;
+}
+
+export type ExpressionRange = TypeExpressionRange | EnumExpressionRange | NameExpressionRange;

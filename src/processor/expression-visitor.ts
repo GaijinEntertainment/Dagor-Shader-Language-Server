@@ -1,11 +1,14 @@
 import { Token } from 'antlr4ts';
 import { Position } from 'vscode-languageserver';
-import { ExpressionContext } from '../_generated/DshlParser';
+import { ExpressionContext, Function_callContext } from '../_generated/DshlParser';
 import { Snapshot } from '../core/snapshot';
-import { hlslPrimitiveTypes } from '../helper/hlsl-info';
+import { hlslBufferTypes, hlslPrimitiveTypes } from '../helper/hlsl-info';
 import { Scope } from '../helper/scope';
 import { ExpressionRange } from '../interface/expression-range';
 import { ExpressionResult } from '../interface/expression-result';
+import { FunctionArgument } from '../interface/function/function-argument';
+import { FunctionUsage } from '../interface/function/function-usage';
+import { Method } from '../interface/language-element-info';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
 import { EnumMemberUsage } from '../interface/type/enum-member-usage';
 import { EnumUsage } from '../interface/type/enum-usage';
@@ -43,6 +46,7 @@ export class ExpressionVisitor {
         const dot = this.ctx.DOT();
         const doubleColon = this.ctx.DOUBLE_COLON();
         const identifier = this.ctx.hlsl_identifier();
+        const functionCall = this.ctx.function_call();
 
         const expResults: (ExpressionResult | null)[] = [];
         for (const exp of this.ctx.expression()) {
@@ -207,21 +211,54 @@ export class ExpressionVisitor {
                             }
                         }
                     }
-                } else if (expResult?.type === 'name' && identifier) {
-                    const xyzw = ['x', 'y', 'z', 'w'];
-                    const rgba = ['r', 'g', 'b', 'a'];
-                    if (identifier.text.split('').every((c) => xyzw.includes(c) || rgba.includes(c))) {
-                        const pt = hlslPrimitiveTypes.find(
-                            (pt) =>
-                                pt.name === expResult.name ||
-                                pt.name + '1' === expResult.name ||
-                                pt.name + '2' === expResult.name ||
-                                pt.name + '3' === expResult.name ||
-                                pt.name + '4' === expResult.name
-                        );
-                        if (pt) {
-                            const size = identifier.text.length === 1 ? '' : identifier.text.length;
-                            result = { type: 'name', name: pt.name + size, arraySizes: [] };
+                } else if (expResult?.type === 'name') {
+                    const range = this.snapshot.getOriginalRange(dot.symbol.startIndex, ctx.stop!.stopIndex + 1);
+                    const er: ExpressionRange = {
+                        type: 'name',
+                        originalRange: range,
+                        name: expResult.name,
+                    };
+                    this.snapshot.expressionRanges.push(er);
+                    if (identifier) {
+                        const xyzw = ['x', 'y', 'z', 'w'];
+                        const rgba = ['r', 'g', 'b', 'a'];
+                        if (identifier.text.split('').every((c) => xyzw.includes(c) || rgba.includes(c))) {
+                            const pt = hlslPrimitiveTypes.find(
+                                (pt) =>
+                                    pt.name === expResult.name ||
+                                    pt.name + '1' === expResult.name ||
+                                    pt.name + '2' === expResult.name ||
+                                    pt.name + '3' === expResult.name ||
+                                    pt.name + '4' === expResult.name
+                            );
+                            if (pt) {
+                                const size = identifier.text.length === 1 ? '' : identifier.text.length;
+                                result = { type: 'name', name: pt.name + size, arraySizes: [] };
+                            }
+                        }
+                    } else if (functionCall) {
+                        const method = hlslBufferTypes
+                            .flatMap((b) => b.methods)
+                            .find((m) => (m && m.name === functionCall.hlsl_identifier()?.text) ?? '');
+                        if (method) {
+                            const fu: FunctionUsage = {
+                                method,
+                                arguments: this.getHlslFunctionArguments(functionCall, method),
+                                originalRange: this.snapshot.getOriginalRange(
+                                    ctx.start.startIndex,
+                                    ctx.stop!.stopIndex + 1
+                                ),
+                                nameOriginalRange: this.snapshot.getOriginalRange(
+                                    functionCall.hlsl_identifier()!.start.startIndex,
+                                    functionCall.hlsl_identifier()!.stop!.stopIndex + 1
+                                ),
+                                parameterListOriginalRange: this.snapshot.getOriginalRange(
+                                    functionCall.LRB().symbol.startIndex + 1,
+                                    functionCall.RRB().symbol.stopIndex
+                                ),
+                                isVisible: visible,
+                            };
+                            this.scope.functionUsages.push(fu);
                         }
                     }
                 }
@@ -401,6 +438,29 @@ export class ExpressionVisitor {
             }
         }
         return result;
+    }
+
+    private getHlslFunctionArguments(ctx: Function_callContext, method: Method): FunctionArgument[] {
+        const el = ctx.function_arguments().expression_list();
+        if (!el) {
+            return [];
+        }
+        const expressions = el.expression() ?? [];
+        const fas: FunctionArgument[] = [];
+        for (let i = 0; i < expressions.length && i < method.parameters.length; i++) {
+            const expression = expressions[i];
+            const start = i === 0 ? ctx.LRB().symbol.startIndex : el.COMMA()[i - 1].symbol.stopIndex;
+            const end =
+                i === method.parameters.length - 1 || el.COMMA().length === i
+                    ? ctx.RRB().symbol.stopIndex
+                    : el.COMMA()[i].symbol.startIndex - 1;
+            const fa: FunctionArgument = {
+                originalRange: this.snapshot.getOriginalRange(start, end + 1),
+                trimmedOriginalStartPosition: this.snapshot.getOriginalPosition(expression.start.startIndex, true),
+            };
+            fas.push(fa);
+        }
+        return fas;
     }
 
     private findMember(td: TypeDeclaration, name: string): VariableDeclaration | null {

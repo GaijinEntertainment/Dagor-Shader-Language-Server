@@ -9,7 +9,7 @@ export interface IntrinsicFunction {
     description?: string;
 }
 
-export function toStringIntrinsicFunction(fd: IntrinsicFunction): string {
-    const parameters = toStringFunctionParameters(fd.parameters);
-    return `${fd.type} ${fd.name}(${parameters});`;
+export function toStringIntrinsicFunction(ifd: IntrinsicFunction): string {
+    const parameters = toStringFunctionParameters(ifd.parameters);
+    return `${ifd.type} ${ifd.name}(${parameters});`;
 }
