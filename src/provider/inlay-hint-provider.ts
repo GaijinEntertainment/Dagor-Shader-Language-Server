@@ -3,6 +3,7 @@ import { DocumentUri, InlayHint, InlayHintKind, InlayHintParams, Position, Range
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
 import { DefineContext } from '../interface/define-context';
+import { FunctionParameter } from '../interface/function/function-parameter';
 import { FunctionUsage } from '../interface/function/function-usage';
 import { MacroUsage, getBestMacroDeclaration } from '../interface/macro/macro-usage';
 
@@ -61,7 +62,7 @@ function addDefineArguments(result: InlayHint[], dcs: DefineContext[]): void {
 
 function addFunctionArguments(result: InlayHint[], fus: FunctionUsage[]): void {
     for (const fu of fus) {
-        const parameters = fu.declaration ? fu.declaration.parameters : fu.intrinsicFunction!.parameters;
+        const parameters = getParameters(fu);
         if (fu.arguments.length) {
             for (let i = 0; i < fu.arguments.length && i < parameters.length; i++) {
                 const fa = fu.arguments[i];
@@ -71,6 +72,17 @@ function addFunctionArguments(result: InlayHint[], fus: FunctionUsage[]): void {
             }
         }
     }
+}
+
+function getParameters(fu: FunctionUsage): FunctionParameter[] {
+    if (fu.declaration) {
+        return fu.declaration.parameters;
+    } else if (fu.intrinsicFunction) {
+        return fu.intrinsicFunction.parameters;
+    } else if (fu.method) {
+        return fu.method.parameters;
+    }
+    return [];
 }
 
 function createInlayHint(name: string, position: Position, originalRange?: Range, uri?: DocumentUri): InlayHint {
