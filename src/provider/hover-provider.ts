@@ -181,7 +181,7 @@ function getFunctionDeclarationValue(fu: FunctionUsage): string {
     if (fu.declaration) {
         return toStringFunctionDeclaration(fu.declaration);
     } else if (fu.intrinsicFunction) {
-        toStringIntrinsicFunction(fu.intrinsicFunction!);
+        return toStringIntrinsicFunction(fu.intrinsicFunction!);
     } else if (fu.method) {
         const parameters = toStringFunctionParameters(fu.method.parameters);
         return `${fu.method.returnType} ${fu.method.name}(${parameters});`;
