@@ -46,7 +46,7 @@ import {
 } from '../helper/hlsl-info';
 import { toStringBlockType } from '../interface/block/block-declaration';
 import { DefineStatement, toStringDefineStatementParameterList } from '../interface/define-statement';
-import { ExpressionRange } from '../interface/expression-range';
+import { ExpressionRange, NameExpressionRange } from '../interface/expression-range';
 import { toStringFunctionParameters } from '../interface/function/function-parameter';
 import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
@@ -109,18 +109,23 @@ function addHlslMembers(result: CompletionItem[], er: ExpressionRange): void {
             }))
         );
     } else if (er.type === 'name') {
-        const x = hlslBufferTypes.find((b) => b.name === er.name);
-        if (x?.methods) {
-            result.push(
-                ...x.methods.map<CompletionItem>((m) => ({
-                    label: m.name,
-                    kind: getKind(CompletionItemKind.Method),
-                    detail: `${m.name} - method`,
-                    documentation: m.description,
-                    labelDetails: getLabelDetails(m.returnType, `(${toStringFunctionParameters(m.parameters)})`),
-                }))
-            );
-        }
+        addMethods(result, er, hlslBufferTypes);
+        addMethods(result, er, hlslTextureTypes);
+    }
+}
+
+function addMethods(result: CompletionItem[], er: NameExpressionRange, leis: LanguageElementInfo[]): void {
+    const type = leis.find((b) => b.name === er.name);
+    if (type?.methods) {
+        result.push(
+            ...type.methods.map<CompletionItem>((m) => ({
+                label: m.name,
+                kind: getKind(CompletionItemKind.Method),
+                detail: `${m.name} - method`,
+                documentation: m.description,
+                labelDetails: getLabelDetails(m.returnType, `(${toStringFunctionParameters(m.parameters)})`),
+            }))
+        );
     }
 }
 

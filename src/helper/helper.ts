@@ -2,7 +2,9 @@ import { ANTLRInputStream } from 'antlr4ts';
 import { MarkupContent, MarkupKind, Position, Range, SymbolKind } from 'vscode-languageserver';
 import { DshlLexer } from '../_generated/DshlLexer';
 import { getCapabilities } from '../core/capability-manager';
+import { Method } from '../interface/language-element-info';
 import { TypeKeyword } from '../interface/type/type-declaration';
+import { hlslBufferTypes, hlslTextureTypes } from './hlsl-info';
 
 export const defaultPosition: Position = { line: 0, character: 0 };
 export const defaultRange: Range = { start: defaultPosition, end: defaultPosition };
@@ -129,4 +131,16 @@ export function getInfo(
     } else {
         return undefined;
     }
+}
+
+export function getMethod(name: string): Method | null {
+    let method = hlslBufferTypes.flatMap((b) => b.methods).find((m) => m && m.name === name);
+    if (method) {
+        return method;
+    }
+    method = hlslTextureTypes.flatMap((t) => t.methods).find((m) => m && m.name === name);
+    if (method) {
+        return method;
+    }
+    return null;
 }

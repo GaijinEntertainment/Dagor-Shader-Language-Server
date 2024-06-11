@@ -2,7 +2,8 @@ import { Token } from 'antlr4ts';
 import { Position } from 'vscode-languageserver';
 import { ExpressionContext, Function_callContext } from '../_generated/DshlParser';
 import { Snapshot } from '../core/snapshot';
-import { hlslBufferTypes, hlslPrimitiveTypes } from '../helper/hlsl-info';
+import { getMethod } from '../helper/helper';
+import { hlslPrimitiveTypes } from '../helper/hlsl-info';
 import { Scope } from '../helper/scope';
 import { ExpressionRange } from '../interface/expression-range';
 import { ExpressionResult } from '../interface/expression-result';
@@ -237,9 +238,7 @@ export class ExpressionVisitor {
                             }
                         }
                     } else if (functionCall) {
-                        const method = hlslBufferTypes
-                            .flatMap((b) => b.methods)
-                            .find((m) => (m && m.name === functionCall.hlsl_identifier()?.text) ?? '');
+                        const method = getMethod(functionCall.hlsl_identifier()?.text ?? '');
                         if (method) {
                             const fu: FunctionUsage = {
                                 method,
