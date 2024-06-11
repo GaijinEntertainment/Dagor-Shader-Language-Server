@@ -1376,3 +1376,897 @@ export const gatherCmpAlpha: Method[] = [
         available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
     },
 ];
+
+export const gatherCmpBlue: Method[] = [
+    {
+        name: 'GatherCmpBlue',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their blue component against a compare value.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerComparisonState',
+                name: 's',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'compare_value',
+                description: 'A value to compare each against each sampled value.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'offset',
+                description: 'An offset that is applied to the texture coordinate before sampling.',
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherCmpBlue',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their blue component against a compare value.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'CompareValue',
+                description: 'A value to compare each against each sampled value.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int',
+                name: 'Offset',
+                description: 'The offset applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'out',
+                type: 'uint',
+                name: 'Status',
+                description:
+                    "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherCmpBlue',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their blue component against a compare value.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'CompareValue',
+                description: 'A value to compare each against each sampled value.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset1',
+                description: 'The first offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset2',
+                description: 'The second offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset3',
+                description: 'The third offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset4',
+                description: 'The fourth offset component applied to the texture coordinates before sampling.',
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherCmpBlue',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their blue component against a compare value along with tile-mapping status.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'CompareValue',
+                description: 'A value to compare each against each sampled value.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset1',
+                description: 'The first offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset2',
+                description: 'The second offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset3',
+                description: 'The third offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset4',
+                description: 'The fourth offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'out',
+                type: 'uint',
+                name: 'Status',
+                description:
+                    "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+];
+
+export const gatherCmpGreen: Method[] = [
+    {
+        name: 'GatherCmpGreen',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their green component against a compare value.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerComparisonState',
+                name: 's',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'compare_value',
+                description: 'A value to compare each against each sampled value.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'offset',
+                description: 'An offset that is applied to the texture coordinate before sampling.',
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherCmpGreen',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their green component against a compare value.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'CompareValue',
+                description: 'A value to compare each against each sampled value.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int',
+                name: 'Offset',
+                description: 'The offset applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'out',
+                type: 'uint',
+                name: 'Status',
+                description:
+                    "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherCmpGreen',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their green component against a compare value along with tile-mapping status.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'CompareValue',
+                description: 'A value to compare each against each sampled value.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset1',
+                description: 'The first offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset2',
+                description: 'The second offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset3',
+                description: 'The third offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset4',
+                description: 'The fourth offset component applied to the texture coordinates before sampling.',
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherCmpGreen',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their green component against a compare value along with tile-mapping status.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'CompareValue',
+                description: 'A value to compare each against each sampled value.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset1',
+                description: 'The first offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset2',
+                description: 'The second offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset3',
+                description: 'The third offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset4',
+                description: 'The fourth offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'out',
+                type: 'uint',
+                name: 'Status',
+                description:
+                    "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+];
+
+export const gatherCmpRed: Method[] = [
+    {
+        name: 'GatherCmpRed',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their red component against a compare value.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerComparisonState',
+                name: 's',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'compare_value',
+                description: 'A value to compare each against each sampled value.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'offset',
+                description: 'An offset that is applied to the texture coordinate before sampling.',
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherCmpRed',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their red component against a compare value along with tile-mapping status.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'CompareValue',
+                description: 'A value to compare each against each sampled value.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int',
+                name: 'Offset',
+                description: 'The offset applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'out',
+                type: 'uint',
+                name: 'Status',
+                description:
+                    "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherCmpRed',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their red component against a compare value.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'CompareValue',
+                description: 'A value to compare each against each sampled value.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset1',
+                description: 'The first offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset2',
+                description: 'The second offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset3',
+                description: 'The third offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset4',
+                description: 'The fourth offset component applied to the texture coordinates before sampling.',
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherCmpRed',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their red component against a compare value along with tile-mapping status.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'CompareValue',
+                description: 'A value to compare each against each sampled value.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset1',
+                description: 'The first offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset2',
+                description: 'The second offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset3',
+                description: 'The third offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset4',
+                description: 'The fourth offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'out',
+                type: 'uint',
+                name: 'Status',
+                description:
+                    "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+];
+
+export const gatherGreen: Method[] = [
+    {
+        name: 'GatherGreen',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their green component against a compare value.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'sampler',
+                name: 's',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'offset',
+                description: 'An offset that is applied to the texture coordinate before sampling.',
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherGreen',
+        description:
+            'Returns the green components of the four texel values that would be used in a bi-linear filtering operation, along with tile-mapping status.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'int',
+                name: 'Offset',
+                description: 'The offset applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'out',
+                type: 'uint',
+                name: 'Status',
+                description:
+                    "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherGreen',
+        description:
+            'Returns the green components of the four texel values that would be used in a bi-linear filtering operation.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset1',
+                description: 'The first offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset2',
+                description: 'The second offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset3',
+                description: 'The third offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset4',
+                description: 'The fourth offset component applied to the texture coordinates before sampling.',
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherGreen',
+        description:
+            'Returns the green components of the four texel values that would be used in a bi-linear filtering operation, along with tile-mapping status.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset1',
+                description: 'The first offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset2',
+                description: 'The second offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset3',
+                description: 'The third offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset4',
+                description: 'The fourth offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'out',
+                type: 'uint',
+                name: 'Status',
+                description:
+                    "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+];
+
+export const gatherRed: Method[] = [
+    {
+        name: 'GatherRed',
+        description:
+            'For four texel values that would be used in a bi-linear filtering operation, returns a comparison of their red component against a compare value.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'sampler',
+                name: 's',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'offset',
+                description: 'An offset that is applied to the texture coordinate before sampling.',
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherRed',
+        description:
+            'Returns the red components of the four texel values that would be used in a bi-linear filtering operation, along with tile-mapping status.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'int',
+                name: 'Offset',
+                description: 'The offset applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'out',
+                type: 'uint',
+                name: 'Status',
+                description:
+                    "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherRed',
+        description:
+            'Returns the red components of the four texel values that would be used in a bi-linear filtering operation.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float2',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset1',
+                description: 'The first offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset2',
+                description: 'The second offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset3',
+                description: 'The third offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset4',
+                description: 'The fourth offset component applied to the texture coordinates before sampling.',
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+    {
+        name: 'GatherRed',
+        description:
+            'Returns the red components of the four texel values that would be used in a bi-linear filtering operation, along with tile-mapping status.',
+        returnType: 'TemplateType',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'SamplerState',
+                name: 'S',
+                description: 'The zero-based sampler index.',
+            },
+            {
+                modifiers: 'in',
+                type: 'float',
+                name: 'Location',
+                description: 'The sample coordinates (u,v).',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset1',
+                description: 'The first offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset2',
+                description: 'The second offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset3',
+                description: 'The third offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'in',
+                type: 'int2',
+                name: 'Offset4',
+                description: 'The fourth offset component applied to the texture coordinates before sampling.',
+            },
+            {
+                modifiers: 'out',
+                type: 'uint',
+                name: 'Status',
+                description:
+                    "The status of the operation. You can't access the status directly; instead, pass the status to the CheckAccessFullyMapped intrinsic function. CheckAccessFullyMapped returns TRUE if all values from the corresponding Sample, Gather, or Load operation accessed mapped tiles in a tiled resource. If any values were taken from an unmapped tile, CheckAccessFullyMapped returns FALSE.",
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+];
+
+export const getSamplePosition: Method[] = [
+    {
+        name: 'GetSamplePosition',
+        description: 'Returns the sample position for the sample index provided.',
+        returnType: 'float2',
+        parameters: [
+            {
+                modifiers: 'in',
+                type: 'int',
+                name: 'sampleindex',
+                description: 'The zero-based index of a sample location.',
+            },
+        ],
+        available: ['vertex', 'hull', 'domain', 'geometry', 'pixel', 'compute'],
+    },
+];
