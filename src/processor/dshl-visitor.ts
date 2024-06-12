@@ -261,6 +261,7 @@ export class DshlVisitor
                         ctx.RRB().symbol.stopIndex
                     ),
                     isVisible: visible,
+                    methods: [],
                 };
                 fd.usages.push(fu);
                 this.scope.functionUsages.push(fu);
@@ -284,6 +285,7 @@ export class DshlVisitor
             const fa: FunctionArgument = {
                 originalRange: this.snapshot.getOriginalRange(start, end + 1),
                 trimmedOriginalStartPosition: this.snapshot.getOriginalPosition(expression.start.startIndex, true),
+                expressionResult: null,
             };
             fas.push(fa);
         }
@@ -928,6 +930,7 @@ export class DshlVisitor
                         ctx.RRB().symbol.stopIndex
                     ),
                     isVisible: visible,
+                    methods: [],
                 };
                 fd.usages.push(fu);
                 this.scope.functionUsages.push(fu);
@@ -948,6 +951,7 @@ export class DshlVisitor
                             ctx.RRB().symbol.stopIndex
                         ),
                         isVisible: visible,
+                        methods: [],
                     };
                     ifd.usages.push(fu);
                     this.scope.functionUsages.push(fu);
@@ -975,6 +979,7 @@ export class DshlVisitor
             const fa: FunctionArgument = {
                 originalRange: this.snapshot.getOriginalRange(start, end + 1),
                 trimmedOriginalStartPosition: this.snapshot.getOriginalPosition(expression.start.startIndex, true),
+                expressionResult: this.visit(expression),
             };
             fas.push(fa);
         }

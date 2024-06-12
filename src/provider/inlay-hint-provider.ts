@@ -79,8 +79,8 @@ function getParameters(fu: FunctionUsage): FunctionParameter[] {
         return fu.declaration.parameters;
     } else if (fu.intrinsicFunction) {
         return fu.intrinsicFunction.parameters;
-    } else if (fu.method) {
-        return fu.method.parameters;
+    } else if (fu.methods.length) {
+        return fu.methods[0].parameters;
     }
     return [];
 }

@@ -60,19 +60,16 @@ export async function signatureHelpProvider(params: SignatureHelpParams): Promis
             activeSignature: 0,
             activeParameter: getActiveParameter(fu, params.position),
         };
-    } else if (fu?.method) {
-        const method = fu.method;
-        const parameters = toStringFunctionParameters(fu.method.parameters);
-        const label = `${method.returnType} ${method.name}(${parameters});`;
+    } else if (fu?.methods.length) {
         return {
-            signatures: [
-                {
-                    label,
-                    parameters: method.parameters.map((fp) => ({
-                        label: toStringFunctionParameter(fp),
-                    })),
-                },
-            ],
+            signatures: fu.methods.map((m) => ({
+                label: `${m.returnType} ${m.name}(${toStringFunctionParameters(m.parameters)});`,
+                parameters: m.parameters.map((fp) => ({
+                    label: toStringFunctionParameter(fp),
+                    documentation: fp.description,
+                })),
+                documentation: m.description,
+            })),
             activeSignature: 0,
             activeParameter: getActiveParameter(fu, params.position),
         };

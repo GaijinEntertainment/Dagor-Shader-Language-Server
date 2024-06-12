@@ -2,14 +2,13 @@ import { Token } from 'antlr4ts';
 import { Position } from 'vscode-languageserver';
 import { ExpressionContext, Function_callContext } from '../_generated/DshlParser';
 import { Snapshot } from '../core/snapshot';
-import { getMethod } from '../helper/helper';
+import { getMethods } from '../helper/helper';
 import { hlslPrimitiveTypes } from '../helper/hlsl-info';
 import { Scope } from '../helper/scope';
 import { ExpressionRange } from '../interface/expression-range';
 import { ExpressionResult } from '../interface/expression-result';
 import { FunctionArgument } from '../interface/function/function-argument';
 import { FunctionUsage } from '../interface/function/function-usage';
-import { Method } from '../interface/language-element-info';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
 import { EnumMemberUsage } from '../interface/type/enum-member-usage';
 import { EnumUsage } from '../interface/type/enum-usage';
@@ -238,11 +237,16 @@ export class ExpressionVisitor {
                             }
                         }
                     } else if (functionCall) {
-                        const method = getMethod(functionCall.hlsl_identifier()?.text ?? '');
-                        if (method) {
+                        const functionArguments = this.getHlslFunctionArguments(functionCall);
+                        const methods = getMethods(
+                            expResult.name,
+                            functionCall.hlsl_identifier()?.text ?? '',
+                            functionArguments
+                        );
+                        if (methods.length) {
                             const fu: FunctionUsage = {
-                                method,
-                                arguments: this.getHlslFunctionArguments(functionCall, method),
+                                methods,
+                                arguments: functionArguments,
                                 originalRange: this.snapshot.getOriginalRange(
                                     ctx.start.startIndex,
                                     ctx.stop!.stopIndex + 1
@@ -439,23 +443,24 @@ export class ExpressionVisitor {
         return result;
     }
 
-    private getHlslFunctionArguments(ctx: Function_callContext, method: Method): FunctionArgument[] {
+    private getHlslFunctionArguments(ctx: Function_callContext): FunctionArgument[] {
         const el = ctx.function_arguments().expression_list();
         if (!el) {
             return [];
         }
         const expressions = el.expression() ?? [];
         const fas: FunctionArgument[] = [];
-        for (let i = 0; i < expressions.length && i < method.parameters.length; i++) {
+        for (let i = 0; i < expressions.length && i < expressions.length; i++) {
             const expression = expressions[i];
             const start = i === 0 ? ctx.LRB().symbol.startIndex : el.COMMA()[i - 1].symbol.stopIndex;
             const end =
-                i === method.parameters.length - 1 || el.COMMA().length === i
+                i === expressions.length - 1 || el.COMMA().length === i
                     ? ctx.RRB().symbol.stopIndex
                     : el.COMMA()[i].symbol.startIndex - 1;
             const fa: FunctionArgument = {
                 originalRange: this.snapshot.getOriginalRange(start, end + 1),
                 trimmedOriginalStartPosition: this.snapshot.getOriginalPosition(expression.start.startIndex, true),
+                expressionResult: this.visitExpression(expression),
             };
             fas.push(fa);
         }

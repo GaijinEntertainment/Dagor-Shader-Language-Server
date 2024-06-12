@@ -7,7 +7,7 @@ import { IntrinsicFunction } from './intrinsic-function';
 export interface FunctionUsage {
     declaration?: FunctionDeclaration;
     intrinsicFunction?: IntrinsicFunction;
-    method?: Method;
+    methods: Method[];
     originalRange: Range;
     nameOriginalRange: Range;
     parameterListOriginalRange: Range;

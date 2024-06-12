@@ -2,9 +2,19 @@ import { ANTLRInputStream } from 'antlr4ts';
 import { MarkupContent, MarkupKind, Position, Range, SymbolKind } from 'vscode-languageserver';
 import { DshlLexer } from '../_generated/DshlLexer';
 import { getCapabilities } from '../core/capability-manager';
+import { FunctionArgument } from '../interface/function/function-argument';
 import { Method } from '../interface/language-element-info';
 import { TypeKeyword } from '../interface/type/type-declaration';
 import { hlslBufferTypes, hlslTextureTypes } from './hlsl-info';
+
+enum FunctionMatch {
+    MATCH = 0,
+    MATCH_MORE_PARAMETERS = 1,
+    MATCH_LESS_PARAMETERS = 2,
+    SAME_PARAMETERS = 3,
+    MORE_PARAMETERS = 4,
+    LESS_PARAMETERS = 5,
+}
 
 export const defaultPosition: Position = { line: 0, character: 0 };
 export const defaultRange: Range = { start: defaultPosition, end: defaultPosition };
@@ -133,14 +143,49 @@ export function getInfo(
     }
 }
 
-export function getMethod(name: string): Method | null {
-    let method = hlslBufferTypes.flatMap((b) => b.methods).find((m) => m && m.name === name);
-    if (method) {
-        return method;
+export function getMethods(typeName: string, functionName: string, functionArguments: FunctionArgument[]): Method[] {
+    let methods = hlslBufferTypes
+        .filter((bt) => bt.name === typeName)
+        .flatMap((bt) => bt.methods)
+        .filter((m) => m && m.name === functionName) as Method[];
+    if (methods) {
+        return methods.sort((a, b) => getFunctionMatch(functionArguments, a) - getFunctionMatch(functionArguments, b));
     }
-    method = hlslTextureTypes.flatMap((t) => t.methods).find((m) => m && m.name === name);
-    if (method) {
-        return method;
+    methods = hlslTextureTypes
+        .filter((tt) => tt.name === typeName)
+        .flatMap((tt) => tt.methods)
+        .filter((m) => m && m.name === functionName) as Method[];
+    if (methods) {
+        return methods.sort((a, b) => getFunctionMatch(functionArguments, a) - getFunctionMatch(functionArguments, b));
     }
-    return null;
+    return [];
+}
+
+function getFunctionMatch(functionArguments: FunctionArgument[], method: Method): FunctionMatch {
+    let match = true;
+    for (let i = 0; i < Math.min(functionArguments.length, method.parameters.length); i++) {
+        const parameter = method.parameters[i];
+        const argument = functionArguments[i];
+        if (parameter.type !== argument.expressionResult?.type) {
+            match = false;
+            break;
+        }
+    }
+    if (match) {
+        if (functionArguments.length < method.parameters.length) {
+            return FunctionMatch.MATCH_MORE_PARAMETERS;
+        } else if (functionArguments.length > method.parameters.length) {
+            return FunctionMatch.MATCH_LESS_PARAMETERS;
+        } else {
+            return FunctionMatch.MATCH;
+        }
+    } else {
+        if (functionArguments.length < method.parameters.length) {
+            return FunctionMatch.MORE_PARAMETERS;
+        } else if (functionArguments.length > method.parameters.length) {
+            return FunctionMatch.LESS_PARAMETERS;
+        } else {
+            return FunctionMatch.SAME_PARAMETERS;
+        }
+    }
 }
