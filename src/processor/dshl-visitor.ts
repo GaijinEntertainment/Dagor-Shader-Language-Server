@@ -694,7 +694,7 @@ export class DshlVisitor
             if (visible) {
                 const colorPickerInfo = this.createColorPickerInfo(typeName, identifier.text, vi);
                 if (colorPickerInfo) {
-                    this.snapshot.colorPickerInfos.push(colorPickerInfo);
+                    this.scope.colorPickerInfos.push(colorPickerInfo);
                 }
             }
         }
@@ -1152,6 +1152,7 @@ export class DshlVisitor
             isVisible: visible,
             hlslBlocks: [],
             preshaders: [],
+            colorPickerInfos: [],
         };
     }
 

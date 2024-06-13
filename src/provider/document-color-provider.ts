@@ -10,7 +10,7 @@ export async function documentColorProvider(
         return null;
     }
     const result: ColorInformation[] = [];
-    for (const cpi of snapshot.colorPickerInfos) {
+    for (const cpi of snapshot.getAllColorPickerInfos()) {
         result.push({
             range: cpi.originalRange,
             color: {

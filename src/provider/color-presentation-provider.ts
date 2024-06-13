@@ -1,7 +1,6 @@
 import { Color, ColorPresentation, ColorPresentationParams } from 'vscode-languageserver';
 
 import { getSnapshot } from '../core/document-manager';
-import { rangesEqual } from '../helper/helper';
 import { ColorPickerInfo } from '../interface/color-picker-info';
 
 export async function colorPresentationProvider(
@@ -11,7 +10,7 @@ export async function colorPresentationProvider(
     if (!snapshot) {
         return null;
     }
-    const cpi = snapshot.colorPickerInfos.find((cpi) => rangesEqual(params.range, cpi.originalRange));
+    const cpi = snapshot.getColorPickerInfoAt(params.range);
     if (!cpi) {
         return null;
     }

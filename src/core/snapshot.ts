@@ -1,7 +1,15 @@
 import { Diagnostic, DocumentUri, Position, Range } from 'vscode-languageserver';
 
 import { dshlFunctions } from '../helper/dshl-info';
-import { defaultPosition, defaultRange, isBeforeOrEqual, isIntervalContains, rangeContains } from '../helper/helper';
+import {
+    containsRange,
+    defaultPosition,
+    defaultRange,
+    isBeforeOrEqual,
+    isIntervalContains,
+    rangeContains,
+    rangesEqual,
+} from '../helper/helper';
 import { Scope } from '../helper/scope';
 import { BlockDeclaration } from '../interface/block/block-declaration';
 import { BlockUsage } from '../interface/block/block-usage';
@@ -69,7 +77,6 @@ export class Snapshot {
     public diagnostics: Diagnostic[] = [];
     public expressionRanges: ExpressionRange[] = [];
     public intrinsicFunctions: IntrinsicFunction[] = [];
-    public colorPickerInfos: ColorPickerInfo[] = [];
 
     public constructor(version: SnapshotVersion, uri: DocumentUri, text: string, isPredefined = false) {
         this.version = version;
@@ -92,6 +99,7 @@ export class Snapshot {
             functionDeclarations: [],
             functionUsages: [],
             blockUsages: [],
+            colorPickerInfos: [],
             originalRange: {
                 start: { line: 0, character: 0 },
                 end: {
@@ -699,6 +707,18 @@ export class Snapshot {
         return null;
     }
 
+    public getColorPickerInfoAt(range: Range): ColorPickerInfo | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const cpi = scope.colorPickerInfos.find((cpi) => rangesEqual(cpi.originalRange, range)) ?? null;
+            if (cpi) {
+                return cpi;
+            }
+            scope = scope.children.find((c) => c.isVisible && containsRange(c.originalRange, range)) ?? null;
+        }
+        return null;
+    }
+
     public getVariableDeclarationAt(position: Position): VariableDeclaration | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
@@ -1134,6 +1154,19 @@ export class Snapshot {
         result.push(...scope.enumDeclarations.filter((ed) => ed.isVisible));
         for (const child of scope.children) {
             this.addEnumDeclarations(result, child);
+        }
+    }
+
+    public getAllColorPickerInfos(): ColorPickerInfo[] {
+        const result: ColorPickerInfo[] = [];
+        this.addColorPickerInfos(result, this.rootScope);
+        return result;
+    }
+
+    private addColorPickerInfos(result: ColorPickerInfo[], scope: Scope): void {
+        result.push(...scope.colorPickerInfos);
+        for (const child of scope.children) {
+            this.addColorPickerInfos(result, child);
         }
     }
 

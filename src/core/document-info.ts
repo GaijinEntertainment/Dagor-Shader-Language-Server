@@ -498,6 +498,7 @@ export class DocumentInfo {
                         blockUsages: [],
                         macroDeclaration: md,
                         functionDeclarations: [],
+                        colorPickerInfos: [],
                         parent: snapshot.rootScope,
                         isVisible: contentSnapshot.rootScope.isVisible,
                         hlslBlocks: [],
@@ -584,6 +585,10 @@ export class DocumentInfo {
         for (const bu of scope.blockUsages) {
             offsetPosition(bu.originalRange.start, offset);
             offsetPosition(bu.originalRange.end, offset);
+        }
+        for (const cpi of scope.colorPickerInfos) {
+            offsetPosition(cpi.originalRange.start, offset);
+            offsetPosition(cpi.originalRange.end, offset);
         }
         for (const child of scope.children) {
             this.addElementsFromMacro(child, md, false);
