@@ -316,18 +316,26 @@ export const hlslDshlPreprocessorDirectives: LanguageElementInfo[] = [
     {
         name: '##if',
         sortName: 'if',
+        description:
+            'if, else, else if directives are used to perform conditional compilation of different shader variants in DSHL. For each branch of the conditional statement, there will be created a shader variant. These variants are to be switched in runtime, based on the values in the conditionals.',
     },
     {
         name: '##elif',
         sortName: 'elif',
+        description:
+            'if, else, else if directives are used to perform conditional compilation of different shader variants in DSHL. For each branch of the conditional statement, there will be created a shader variant. These variants are to be switched in runtime, based on the values in the conditionals.',
     },
     {
         name: '##else',
         sortName: 'else',
+        description:
+            'if, else, else if directives are used to perform conditional compilation of different shader variants in DSHL. For each branch of the conditional statement, there will be created a shader variant. These variants are to be switched in runtime, based on the values in the conditionals.',
     },
     {
         name: '##endif',
         sortName: 'endif',
+        description:
+            'if, else, else if directives are used to perform conditional compilation of different shader variants in DSHL. For each branch of the conditional statement, there will be created a shader variant. These variants are to be switched in runtime, based on the values in the conditionals.',
     },
     {
         name: '##assert',

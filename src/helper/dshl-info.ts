@@ -6,8 +6,16 @@ export const dshlKeywords: LanguageElementInfo[] = [
     { name: 'false' },
     { name: 'NULL' },
     { name: 'hlsl' },
-    { name: 'if' },
-    { name: 'else' },
+    {
+        name: 'if',
+        description:
+            'if, else, else if directives are used to perform conditional compilation of different shader variants in DSHL. For each branch of the conditional statement, there will be created a shader variant. These variants are to be switched in runtime, based on the values in the conditionals.',
+    },
+    {
+        name: 'else',
+        description:
+            'if, else, else if directives are used to perform conditional compilation of different shader variants in DSHL. For each branch of the conditional statement, there will be created a shader variant. These variants are to be switched in runtime, based on the values in the conditionals.',
+    },
     { name: 'compile' },
     {
         name: 'include',
@@ -24,15 +32,23 @@ export const dshlKeywords: LanguageElementInfo[] = [
         description:
             'Shader variables can be assigned a fixed value when the shader is compiled via assume. Such shader vars may not be changed at runtime, their values will be constant in the binary. This allows to reduce number of shader variants or disable specific features for specific platforms.',
     },
-    { name: 'dont_render' },
-    { name: 'no_dynstcode' },
+    {
+        name: 'dont_render',
+        description:
+            'dont_render is used to disable a shader, meaning that the shader containing dont_render will not be created at all. Most common use-case is to disable redundant variants of a shader, which is using some shared interval.',
+    },
+    {
+        name: 'no_dynstcode',
+        description:
+            'no_dynstcode disallows the shader to use any kind of dynamic stcode in its body. This means that the shader can only access material variables, or variables defined in a shader block :ref:`shader-blocks`, which is supported by the shader.',
+    },
     { name: 'render_trans' },
     { name: 'no_ablend' },
     { name: 'render_stage' },
     {
         name: 'interval',
         description:
-            'Intervals are a way to generate multiple variants of a single shader, based on whether the value of a special variable falls into specific range.',
+            'Intervals are a way to generate multiple variants of a single shader, based on whether the value of a special variable falls into specific range. They can be created from an int or float shader variable using the interval keyword.',
     },
     { name: 'macro' },
     { name: 'define_macro_if_not_defined' },
@@ -133,7 +149,11 @@ export const dshlModifiers: LanguageElementInfo[] = [
         description: 'Rescales data from [min..max] to [0..1] if usage_dst is unsigned or [-1..1] if it is signed',
     },
     { name: 'register' },
-    { name: 'optional' },
+    {
+        name: 'optional',
+        description:
+            'If the interval is used in HLSL code blocks, you can make this interval optional. All conditions in HLSL code which use optional intervals will be replaced with HLSL branches, thus reducing the number of shader variants.',
+    },
     { name: 'global' },
 ];
 
@@ -155,19 +175,23 @@ export const dshlProperties: LanguageElementInfo[] = [
         name: 'extra',
         description: 'Extra, can be used only as usage_src (used for providing additional info for vertices)',
     },
-    { name: 'globtm' },
-    { name: 'projtm' },
-    { name: 'viewprojtm' },
+    { name: 'globtm', description: 'float4x4 world-view-projection matrix', type: 'float4x4' },
+    { name: 'projtm', description: 'float4x4 projection matrix', type: 'float4x4' },
+    { name: 'viewprojtm', description: 'float4x4 view-projection matrix', type: 'float4x4' },
     { name: 'hardware' },
-    { name: 'local_view_x' },
-    { name: 'local_view_y' },
-    { name: 'local_view_z' },
+    { name: 'local_view_x', description: 'column of inverse view matrix, in float3 format', type: 'float3' },
+    { name: 'local_view_y', description: 'column of inverse view matrix, in float3 format', type: 'float3' },
+    { name: 'local_view_z', description: 'column of inverse view matrix, in float3 format', type: 'float3' },
     { name: 'local_view_pos' },
-    { name: 'world_local_x' },
-    { name: 'world_local_y' },
-    { name: 'world_local_z' },
+    { name: 'world_local_x', description: 'column of world transform matrix, in float3 format', type: 'float3' },
+    { name: 'world_local_y', description: 'column of world transform matrix, in float3 format', type: 'float3' },
+    { name: 'world_local_z', description: 'column of world transform matrix, in float3 format', type: 'float3' },
     { name: 'world_local_pos' },
-    { name: 'material' },
+    {
+        name: 'material',
+        description:
+            'Textures can be referenced by using material keyword. You, as a shader creator, specify how many material.texture[..] channels a shader must have just by referencing these channels in code.',
+    },
     { name: 'norm', description: 'Normal' },
     { name: 'pos', description: 'Position' },
     { name: 'slope_z_bias' },
