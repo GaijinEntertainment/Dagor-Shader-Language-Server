@@ -5,6 +5,7 @@ import { defaultPosition, defaultRange, isBeforeOrEqual, isIntervalContains, ran
 import { Scope } from '../helper/scope';
 import { BlockDeclaration } from '../interface/block/block-declaration';
 import { BlockUsage } from '../interface/block/block-usage';
+import { ColorPickerInfo } from '../interface/color-picker-info';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
@@ -68,6 +69,7 @@ export class Snapshot {
     public diagnostics: Diagnostic[] = [];
     public expressionRanges: ExpressionRange[] = [];
     public intrinsicFunctions: IntrinsicFunction[] = [];
+    public colorPickerInfos: ColorPickerInfo[] = [];
 
     public constructor(version: SnapshotVersion, uri: DocumentUri, text: string, isPredefined = false) {
         this.version = version;

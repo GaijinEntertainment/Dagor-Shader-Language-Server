@@ -44,6 +44,7 @@ Language Server for the Dagor Shader Language. At the moment it's work in progre
 | Type hierarchy        | ✓     |           |           |         |          |                                                                     |
 | Semantic highlight    | ✓     | ✓         |           |         |          |                                                                     |
 | Rename                | ✓     | ✓         | ✓         | ✓       |          |                                                                     |
+| Color picker          |       |           | ✓         |         |          |                                                                     |
 
 ### Features that are part of the repository, but not part of the actual language server
 

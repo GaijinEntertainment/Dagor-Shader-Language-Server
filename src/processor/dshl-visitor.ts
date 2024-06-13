@@ -31,6 +31,7 @@ import {
     TypeContext,
     Type_declarationContext,
     Variable_declarationContext,
+    Variable_initializationContext,
     While_statementContext,
 } from '../_generated/DshlParser';
 import { DshlParserVisitor } from '../_generated/DshlParserVisitor';
@@ -38,6 +39,7 @@ import { Snapshot } from '../core/snapshot';
 import { Scope } from '../helper/scope';
 import { BlockDeclaration } from '../interface/block/block-declaration';
 import { BlockUsage } from '../interface/block/block-usage';
+import { ColorPickerInfo } from '../interface/color-picker-info';
 import { ExpressionResult } from '../interface/expression-result';
 import { FunctionArgument } from '../interface/function/function-argument';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
@@ -661,6 +663,7 @@ export class DshlVisitor
         const type = ctx.type();
         const tdCtx = ctx.type_declaration();
         const expResult = type ? this.getType(type, visible) : this.visit(tdCtx!);
+        const typeName = type?.text ?? this.getTypeName(expResult) ?? '';
         for (const vi of ctx.variable_initialization()) {
             const identifier = vi.hlsl_identifier();
             const nameOriginalRange = this.snapshot.getOriginalRange(
@@ -668,7 +671,7 @@ export class DshlVisitor
                 identifier.stop!.stopIndex + 1
             );
             const vd: VariableDeclaration = {
-                type: type?.text ?? this.getTypeName(expResult) ?? '',
+                type: typeName,
                 typeDeclaration: expResult?.type === 'type' ? expResult.typeDeclaration : undefined,
                 enumDeclaration: expResult?.type === 'enum' ? expResult.enumDeclaration : undefined,
                 name: identifier.text,
@@ -688,9 +691,58 @@ export class DshlVisitor
             } else {
                 this.scope.variableDeclarations.push(vd);
             }
+            if (visible) {
+                const colorPickerInfo = this.createColorPickerInfo(typeName, identifier.text, vi);
+                if (colorPickerInfo) {
+                    this.snapshot.colorPickerInfos.push(colorPickerInfo);
+                }
+            }
         }
 
         this.visitChildren(ctx);
+        return null;
+    }
+
+    private createColorPickerInfo(
+        typeName: string,
+        variableName: string,
+        vi: Variable_initializationContext
+    ): ColorPickerInfo | null {
+        if (typeName !== 'float3' && typeName !== 'float4') {
+            return null;
+        }
+        if (!variableName.toLowerCase().includes('color') && !variableName.toLowerCase().includes('colour')) {
+            return null;
+        }
+        const expression = vi.expression();
+        if (expression && !expression.DOT()) {
+            const functionCall = expression.function_call();
+            const functionName = functionCall?.hlsl_identifier()?.text;
+            if (functionCall && (functionName === 'float3' || functionName === 'float4')) {
+                const el = functionCall.function_arguments().expression_list();
+                if (el && (el.expression().length === 3 || el.expression().length === 4)) {
+                    const color: number[] = [];
+                    for (const exp of el.expression()) {
+                        const floatLiteral = exp.literal()?.FLOAT_LITERAL();
+                        const intLiteral = exp.literal()?.INT_LITERAL();
+                        if (floatLiteral) {
+                            color.push(Number.parseFloat(floatLiteral.text));
+                        } else if (intLiteral) {
+                            color.push(Number.parseInt(intLiteral.text));
+                        } else {
+                            return null;
+                        }
+                    }
+                    return {
+                        originalRange: this.snapshot.getOriginalRange(
+                            functionCall.LRB().symbol.startIndex + 1,
+                            functionCall.RRB().symbol.stopIndex
+                        ),
+                        color,
+                    };
+                }
+            }
+        }
         return null;
     }
 

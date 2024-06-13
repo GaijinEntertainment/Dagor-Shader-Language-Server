@@ -25,9 +25,11 @@ import { initializeDebug } from './core/debug';
 import { getDocumentInfo } from './core/document-manager';
 import { Configuration } from './interface/configuration';
 import { HostDependent } from './interface/host-dependent';
+import { colorPresentationProvider } from './provider/color-presentation-provider';
 import { completionProvider } from './provider/completion-provider';
 import { declarationProvider } from './provider/declaration-provider';
 import { definitionProvider } from './provider/definition-provider';
+import { documentColorProvider } from './provider/document-color-provider';
 import { documentHighlightProvider } from './provider/document-highlight-provider';
 import { documentSymbolProvider } from './provider/document-symbol-provider';
 import { foldingRangesProvider } from './provider/folding-ranges-provider';
@@ -142,6 +144,7 @@ export abstract class Server {
             typeHierarchyProvider: true,
             referencesProvider: true,
             renameProvider: { prepareProvider: true },
+            colorProvider: true,
             semanticTokensProvider: {
                 full: true,
                 documentSelector: [{ language: 'dshl' }, { language: 'hlsl' }],
@@ -211,6 +214,8 @@ export abstract class Server {
         this.connection.onReferences(referencesProvider);
         this.connection.onPrepareRename(prepareRenameProvider);
         this.connection.onRenameRequest(renameRequestProvider);
+        this.connection.onDocumentColor(documentColorProvider);
+        this.connection.onColorPresentation(colorPresentationProvider);
         this.connection.onRequest(DocumentRangesFormattingRequest.type, documentRangesFormattingProvider);
         this.connection.onRequest(TypeHierarchyPrepareRequest.type, typeHierarchyPrepareProvider);
         this.connection.onRequest(TypeHierarchySupertypesRequest.type, typeHierarchySupertypesProvider);
