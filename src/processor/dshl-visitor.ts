@@ -934,7 +934,7 @@ export class DshlVisitor
                     header.hlsl_identifier().start.startIndex,
                     header.hlsl_identifier().stop!.stopIndex + 1
                 ),
-                originalRange: this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+                originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
                 parameters:
                     header
                         .parameter_list()
