@@ -1,6 +1,7 @@
 import { DocumentUri, Range, RenameParams, WorkspaceEdit } from 'vscode-languageserver';
 
 import { getSnapshot } from '../core/document-manager';
+import { rangesEqual } from '../helper/helper';
 
 export async function renameRequestProvider(params: RenameParams): Promise<WorkspaceEdit | undefined | null> {
     const snapshot = await getSnapshot(params.textDocument.uri);
@@ -134,5 +135,7 @@ function addTextEdit(result: WorkspaceEdit, text: string, range: Range, uri: Doc
         textEdits = [];
         result.changes![uri] = textEdits;
     }
-    textEdits.push({ range, newText: text });
+    if (!textEdits.find((te) => rangesEqual(range, te.range) && text === te.newText)) {
+        textEdits.push({ range, newText: text });
+    }
 }
