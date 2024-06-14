@@ -4,7 +4,11 @@ import { LanguageElementInfo } from '../interface/language-element-info';
 export const dshlKeywords: LanguageElementInfo[] = [
     { name: 'true' },
     { name: 'false' },
-    { name: 'NULL' },
+    {
+        name: 'NULL',
+        description:
+            'A special value of NULL will be assigned to the shader variant that has dont_render. When NULL dynamic variant is selected during runtime, no rendering happens. If a ShaderElement is being created from a NULL static shader variant, it will just return NULL.',
+    },
     { name: 'hlsl' },
     {
         name: 'if',
