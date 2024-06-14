@@ -1,6 +1,11 @@
 import { DocumentHighlight, DocumentHighlightKind, DocumentHighlightParams } from 'vscode-languageserver';
 
 import { getSnapshot } from '../core/document-manager';
+import { Snapshot } from '../core/snapshot';
+import { rangeContains } from '../helper/helper';
+import { DefineStatement } from '../interface/define-statement';
+import { Macro } from '../interface/macro/macro';
+import { MacroParameter } from '../interface/macro/macro-parameter';
 
 export async function documentHighlightProvider(
     params: DocumentHighlightParams
@@ -9,7 +14,7 @@ export async function documentHighlightProvider(
     if (!snapshot) {
         return null;
     }
-    const macro = snapshot.getMacro(params.position);
+    const macro = getMacro(snapshot, params);
     if (macro) {
         const result: DocumentHighlight[] = [];
         for (const md of macro.declarations.filter((md) => md.uri === params.textDocument.uri)) {
@@ -26,7 +31,7 @@ export async function documentHighlightProvider(
         }
         return result;
     }
-    const mp = snapshot.getMacroParameter(params.position, params.textDocument.uri);
+    const mp = getMacroParameter(snapshot, params);
     if (mp) {
         const result: DocumentHighlight[] = [];
         result.push({
@@ -41,7 +46,7 @@ export async function documentHighlightProvider(
         }
         return result;
     }
-    const ds = snapshot.getDefineStatement(params.position);
+    const ds = getDefineStatement(snapshot, params);
     if (ds) {
         const result: DocumentHighlight[] = [];
         if (ds.isVisible && !ds.isPredefined && ds.uri === params.textDocument.uri) {
@@ -212,4 +217,59 @@ export async function documentHighlightProvider(
         return result;
     }
     return null;
+}
+
+function getMacro(snapshot: Snapshot, params: DocumentHighlightParams): Macro | null {
+    const md = snapshot.macroDeclarations.find(
+        (md) => md.uri === params.textDocument.uri && rangeContains(md.nameOriginalRange, params.position)
+    );
+    if (md) {
+        return md.macro;
+    }
+    const mu = snapshot.macroUsages.find((mu) => mu.isVisible && rangeContains(mu.nameOriginalRange, params.position));
+    if (mu) {
+        return mu.macro;
+    }
+    return null;
+}
+
+function getDefineStatement(snapshot: Snapshot, params: DocumentHighlightParams): DefineStatement | null {
+    const macroSnapshot = getSnapshotForMacroDefinition(snapshot, params);
+    const ds = macroSnapshot.defineStatements.find(
+        (ds) => ds.isVisible && rangeContains(ds.nameOriginalRange, params.position)
+    );
+    if (ds) {
+        return ds.realDefine ?? ds;
+    }
+    const dc = snapshot.defineContexts.find(
+        (dc) => dc.isVisible && rangeContains(dc.nameOriginalRange, params.position)
+    );
+    if (dc) {
+        return dc.define.realDefine ?? dc.define;
+    }
+    return null;
+}
+
+function getSnapshotForMacroDefinition(snapshot: Snapshot, params: DocumentHighlightParams): Snapshot {
+    const md = snapshot.macroDeclarations.find(
+        (md) => md.uri === params.textDocument.uri && rangeContains(md.originalRange, params.position)
+    );
+    return md ? md.contentSnapshot : snapshot;
+}
+
+function getMacroParameter(snapshot: Snapshot, params: DocumentHighlightParams): MacroParameter | null {
+    const md =
+        snapshot.macroDeclarations.find(
+            (md) => md.uri === params.textDocument.uri && rangeContains(md.originalRange, params.position)
+        ) ?? null;
+    if (!md) {
+        return null;
+    }
+    return (
+        md.parameters.find(
+            (mp) =>
+                rangeContains(mp.originalRange, params.position) ||
+                mp.usages.some((mpu) => rangeContains(mpu.originalRange, params.position))
+        ) ?? null
+    );
 }
