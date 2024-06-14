@@ -13,4 +13,56 @@ export interface LanguageElementInfo {
     keyword?: TypeKeyword | 'enum';
     members?: LanguageElementInfo[];
     additionalInfo?: string;
+    overloads?: Overload[];
+    methods?: Method[];
+    available?: ShaderType[];
 }
+
+export interface Overload {
+    returnType: GenericReturnType | string;
+    parameters: Parameter[];
+}
+
+export interface Method {
+    name: string;
+    description: string;
+    returnType: string;
+    parameters: ConcreteParameter[];
+    available: ShaderType[];
+}
+
+export interface GenericReturnType {
+    templateType: TemplateType;
+    componentType: ComponentType;
+    size: Size;
+}
+
+export interface GenericParameter {
+    modifiers: string;
+    name: string;
+    description?: string;
+    templateType: TemplateType[];
+    componentType: ComponentType[];
+    size: Size;
+}
+
+export interface ConcreteParameter {
+    modifiers: string;
+    name: string;
+    type: string;
+    description?: string;
+}
+
+export type Parameter = GenericParameter | ConcreteParameter;
+export type TemplateType = 'scalar' | 'vector' | 'matrix' | 'object' | 'same';
+export type ComponentType =
+    | 'float'
+    | 'double'
+    | 'int'
+    | 'uint'
+    | 'bool'
+    | `sampler${1 | 2 | 3}D`
+    | 'samplerCUBE'
+    | 'same';
+export type Size = 'any' | 'same' | number;
+export type ShaderType = 'vertex' | 'hull' | 'domain' | 'geometry' | 'pixel' | 'compute';

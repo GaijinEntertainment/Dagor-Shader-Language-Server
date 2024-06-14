@@ -2,16 +2,22 @@ import { Range } from 'vscode-languageserver';
 import { EnumDeclaration } from './type/enum-declaration';
 import { TypeDeclaration } from './type/type-declaration';
 
-interface TypeExpressionRange {
+export interface TypeExpressionRange {
     type: 'type';
     originalRange: Range;
     typeDeclaration: TypeDeclaration;
 }
 
-interface EnumExpressionRange {
+export interface EnumExpressionRange {
     type: 'enum';
     originalRange: Range;
     enumDeclaration: EnumDeclaration;
 }
 
-export type ExpressionRange = TypeExpressionRange | EnumExpressionRange;
+export interface NameExpressionRange {
+    type: 'name';
+    originalRange: Range;
+    name: string;
+}
+
+export type ExpressionRange = TypeExpressionRange | EnumExpressionRange | NameExpressionRange;

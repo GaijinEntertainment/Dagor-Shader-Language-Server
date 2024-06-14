@@ -17,13 +17,10 @@ import {
     toStringDefineStatementHeader,
     toStringDefineStatementParameterList,
 } from '../interface/define-statement';
-import {
-    toStringMacroDeclarationHeader,
-    toStringMacroDeclarationParameterList,
-} from '../interface/macro/macro-declaration';
+import { toStringMacroDeclarationParameterList } from '../interface/macro/macro-declaration';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
 import { TypeDeclaration } from '../interface/type/type-declaration';
-import { toStringVariableType } from '../interface/variable/variable-declaration';
+import { VariableDeclaration, toStringVariableType } from '../interface/variable/variable-declaration';
 
 export async function documentSymbolProvider(
     params: DocumentSymbolParams
@@ -46,24 +43,14 @@ function createDocumentSymbols(snapshot: Snapshot, uri: DocumentUri): DocumentSy
     for (const ds of dss) {
         result.push(defineToDocumentSymbol(ds));
     }
-    addScopedElements(result, snapshot.rootScope, uri);
+    addHierarchicalElements(result, snapshot.rootScope, uri);
     return result;
 }
 
-function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri): void {
-    addTypes(scope.typeDeclarations, dss);
-    addEnums(scope.enumDeclarations, dss);
-    for (const vd of scope.variableDeclarations) {
-        if (vd.isVisible) {
-            dss.push({
-                name: vd.name,
-                kind: getKind(SymbolKind.Variable),
-                range: vd.originalRange,
-                selectionRange: vd.nameOriginalRange,
-                detail: toStringVariableType(vd),
-            });
-        }
-    }
+function addHierarchicalElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri): void {
+    addHierarchicalTypes(scope.typeDeclarations, dss);
+    addHierarchicalEnums(scope.enumDeclarations, dss);
+    addHierarchicalVariables(scope.variableDeclarations, dss);
     for (const childScope of scope.children) {
         if (childScope.shaderDeclarations.length && childScope.shaderDeclarations[0].isVisible) {
             const sdss: DocumentSymbol[] = [];
@@ -76,7 +63,7 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
                 children: sdss,
             });
             for (const shaderChildScope of childScope.children) {
-                addScopedElements(sdss, shaderChildScope, uri);
+                addHierarchicalElements(sdss, shaderChildScope, uri);
             }
         } else if (childScope.blockDeclaration) {
             if (childScope.blockDeclaration.isVisible) {
@@ -90,7 +77,7 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
                     children: sdss,
                 });
                 for (const shaderChildScope of childScope.children) {
-                    addScopedElements(sdss, shaderChildScope, uri);
+                    addHierarchicalElements(sdss, shaderChildScope, uri);
                 }
             }
         } else if (childScope.macroDeclaration) {
@@ -107,16 +94,33 @@ function addScopedElements(dss: DocumentSymbol[], scope: Scope, uri: DocumentUri
                     children: sdss,
                 });
                 for (const shaderChildScope of childScope.children) {
-                    addScopedElements(sdss, shaderChildScope, uri);
+                    addHierarchicalElements(sdss, shaderChildScope, uri);
+                }
+            }
+        } else if (childScope.functionDeclaration) {
+            const fd = childScope.functionDeclaration;
+            if (fd.isVisible) {
+                const sdss: DocumentSymbol[] = [];
+                dss.push({
+                    name: fd.name,
+                    kind: getKind(SymbolKind.Function),
+                    range: fd.originalRange,
+                    selectionRange: fd.nameOriginalRange,
+                    detail: fd.type,
+                    children: sdss,
+                });
+                addHierarchicalVariables(childScope.variableDeclarations, sdss);
+                for (const shaderChildScope of childScope.children) {
+                    addHierarchicalElements(sdss, shaderChildScope, uri);
                 }
             }
         } else {
-            addScopedElements(dss, childScope, uri);
+            addHierarchicalElements(dss, childScope, uri);
         }
     }
 }
 
-function addEnums(eds: EnumDeclaration[], dss: DocumentSymbol[]): void {
+function addHierarchicalEnums(eds: EnumDeclaration[], dss: DocumentSymbol[]): void {
     for (const ed of eds) {
         if (ed.isVisible) {
             dss.push({
@@ -136,7 +140,7 @@ function addEnums(eds: EnumDeclaration[], dss: DocumentSymbol[]): void {
     }
 }
 
-function addTypes(tds: TypeDeclaration[], dss: DocumentSymbol[]): void {
+function addHierarchicalTypes(tds: TypeDeclaration[], dss: DocumentSymbol[]): void {
     for (const td of tds) {
         if (td.isVisible) {
             const children: DocumentSymbol[] = td.members.map((m) => ({
@@ -146,8 +150,8 @@ function addTypes(tds: TypeDeclaration[], dss: DocumentSymbol[]): void {
                 selectionRange: m.nameOriginalRange,
                 detail: m.type,
             }));
-            addTypes(td.embeddedTypes, children);
-            addEnums(td.embeddedEnums, children);
+            addHierarchicalTypes(td.embeddedTypes, children);
+            addHierarchicalEnums(td.embeddedEnums, children);
             dss.push({
                 name: td.name ?? '<anonymous>',
                 kind: getTypeSymbolKind(td.type),
@@ -155,6 +159,20 @@ function addTypes(tds: TypeDeclaration[], dss: DocumentSymbol[]): void {
                 selectionRange: td.nameOriginalRange,
                 detail: td.type,
                 children,
+            });
+        }
+    }
+}
+
+function addHierarchicalVariables(vds: VariableDeclaration[], dss: DocumentSymbol[]): void {
+    for (const vd of vds) {
+        if (vd.isVisible) {
+            dss.push({
+                name: vd.name,
+                kind: getKind(SymbolKind.Variable),
+                range: vd.originalRange,
+                selectionRange: vd.nameOriginalRange,
+                detail: toStringVariableType(vd),
             });
         }
     }
@@ -172,86 +190,181 @@ function defineToDocumentSymbol(ds: DefineStatement): DocumentSymbol {
 
 function createSymbolInformations(snapshot: Snapshot, uri: DocumentUri): SymbolInformation[] {
     const result: SymbolInformation[] = [];
-    const mds = snapshot.macroDeclarations.filter((md) => md.uri === uri);
-    for (const md of mds) {
-        const macroHeader = toStringMacroDeclarationHeader(md);
-        result.push({
-            name: macroHeader,
-            kind: getKind(SymbolKind.Constant),
-            containerName: macroHeader,
-            location: {
-                range: md.originalRange,
-                uri: md.uri,
-            },
-        });
-        addDefines(result, md.contentSnapshot.defineStatements, uri);
-    }
-    const dss = snapshot.defineStatements.filter((ds) => ds.isVisible);
-    addDefines(result, dss, uri);
-    const eds = snapshot.getAllEnumDeclarations();
-    for (const ed of eds) {
-        result.push({
-            name: ed.name ?? '<anonymous>',
-            kind: getKind(SymbolKind.Enum),
-            containerName: ed.name ?? '<anonymous>',
-            location: {
-                range: ed.originalRange,
-                uri: ed.uri,
-            },
-        });
-    }
-    const tds = snapshot.getAllTypeDeclarations();
-    for (const td of tds) {
-        result.push({
-            name: td.name ?? '<anonymous>',
-            kind: getTypeSymbolKind(td.type),
-            containerName: td.name ?? '<anonymous>',
-            location: {
-                range: td.originalRange,
-                uri: td.uri,
-            },
-        });
-    }
-    const vds = snapshot.getAllVariableDeclarations();
-    for (const vd of vds) {
-        result.push({
-            name: vd.name,
-            kind: getKind(SymbolKind.Variable),
-            containerName: vd.name,
-            location: {
-                range: vd.originalRange,
-                uri: vd.uri,
-            },
-        });
-    }
-    for (const scope of snapshot.rootScope.children) {
-        if (scope.shaderDeclarations.length) {
-            const name = scope.shaderDeclarations.map((sd) => sd.name).join(', ');
-            result.push({
-                name,
-                kind: getKind(SymbolKind.Module),
-                containerName: name,
-                location: {
-                    uri: scope.shaderDeclarations[0].uri,
-                    range: scope.shaderDeclarations[0].originalRange,
-                },
-            });
-        }
-    }
+    addScopedElements(result, snapshot.rootScope, uri, '');
+    const dss = snapshot.defineStatements.filter((ds) => ds.isVisible && !ds.realDefine);
+    addDefines(dss, result, uri, '');
     return result;
 }
 
-function addDefines(result: SymbolInformation[], dss: DefineStatement[], uri: DocumentUri): void {
+function addScopedElements(result: SymbolInformation[], scope: Scope, uri: DocumentUri, containerName: string): void {
+    addTypes(scope.typeDeclarations, result, uri, containerName);
+    addEnums(scope.enumDeclarations, result, uri, containerName);
+    addVariables(scope.variableDeclarations, result, uri, containerName);
+    for (const childScope of scope.children) {
+        if (childScope.shaderDeclarations.length && childScope.shaderDeclarations[0].isVisible) {
+            const name = childScope.shaderDeclarations.map((sd) => sd.name).join(', ');
+            result.push({
+                name,
+                kind: getKind(SymbolKind.Module),
+                location: {
+                    range: childScope.shaderDeclarations[0].originalRange,
+                    uri,
+                },
+                containerName,
+            });
+            for (const shaderChildScope of childScope.children) {
+                addScopedElements(result, shaderChildScope, uri, name);
+            }
+        } else if (childScope.blockDeclaration) {
+            if (childScope.blockDeclaration.isVisible) {
+                result.push({
+                    name: childScope.blockDeclaration.name,
+                    kind: getKind(SymbolKind.Module),
+                    location: {
+                        range: childScope.blockDeclaration.originalRange,
+                        uri,
+                    },
+                    containerName,
+                });
+                for (const shaderChildScope of childScope.children) {
+                    addScopedElements(result, shaderChildScope, uri, childScope.blockDeclaration.name);
+                }
+            }
+        } else if (childScope.macroDeclaration) {
+            const md = childScope.macroDeclaration;
+            if (md.uri === uri) {
+                result.push({
+                    name: md.name,
+                    kind: getKind(SymbolKind.Constant),
+                    location: {
+                        range: md.originalRange,
+                        uri,
+                    },
+                    containerName,
+                });
+                addDefines(md.contentSnapshot.defineStatements, result, uri, md.name);
+                for (const shaderChildScope of childScope.children) {
+                    addScopedElements(result, shaderChildScope, uri, md.name);
+                }
+            }
+        } else if (childScope.functionDeclaration) {
+            const fd = childScope.functionDeclaration;
+            if (fd.isVisible) {
+                result.push({
+                    name: fd.name,
+                    kind: getKind(SymbolKind.Function),
+                    location: {
+                        range: fd.originalRange,
+                        uri,
+                    },
+                    containerName,
+                });
+                addVariables(childScope.variableDeclarations, result, uri, fd.name);
+                for (const shaderChildScope of childScope.children) {
+                    addScopedElements(result, shaderChildScope, uri, fd.name);
+                }
+            }
+        } else {
+            addScopedElements(result, childScope, uri, containerName);
+        }
+    }
+}
+
+function addEnums(eds: EnumDeclaration[], result: SymbolInformation[], uri: DocumentUri, containerName: string): void {
+    for (const ed of eds) {
+        if (ed.isVisible) {
+            const name = ed.name ?? '<anonymous>';
+            result.push({
+                name,
+                kind: getKind(SymbolKind.Enum),
+                location: {
+                    range: ed.originalRange,
+                    uri,
+                },
+                containerName,
+            });
+            result.push(
+                ...ed.members.map((m) => ({
+                    name: m.name,
+                    kind: getKind(SymbolKind.EnumMember),
+                    location: {
+                        range: m.originalRange,
+                        uri,
+                    },
+                    containerName: name,
+                }))
+            );
+        }
+    }
+}
+
+function addTypes(tds: TypeDeclaration[], result: SymbolInformation[], uri: DocumentUri, containerName: string): void {
+    for (const td of tds) {
+        if (td.isVisible) {
+            const name = td.name ?? '<anonymous>';
+            result.push({
+                name,
+                kind: getTypeSymbolKind(td.type),
+                location: {
+                    range: td.originalRange,
+                    uri,
+                },
+                containerName,
+            });
+            result.push(
+                ...td.members.map((m) => ({
+                    name: m.name,
+                    kind: getKind(SymbolKind.Field),
+                    location: {
+                        range: m.originalRange,
+                        uri,
+                    },
+                    containerName: name,
+                }))
+            );
+            addTypes(td.embeddedTypes, result, uri, name);
+            addEnums(td.embeddedEnums, result, uri, name);
+        }
+    }
+}
+
+function addVariables(
+    vds: VariableDeclaration[],
+    result: SymbolInformation[],
+    uri: DocumentUri,
+    containerName: string
+): void {
+    for (const vd of vds) {
+        if (vd.isVisible) {
+            result.push({
+                name: vd.name,
+                kind: getKind(SymbolKind.Variable),
+                location: {
+                    range: vd.originalRange,
+                    uri,
+                },
+                containerName,
+            });
+        }
+    }
+}
+
+function addDefines(
+    dss: DefineStatement[],
+    result: SymbolInformation[],
+    uri: DocumentUri,
+    containerName: string
+): void {
     for (const ds of dss) {
         const defineHeader = toStringDefineStatementHeader(ds);
         result.push({
             name: defineHeader,
             kind: getKind(SymbolKind.Constant),
-            containerName: defineHeader,
             location: {
                 range: ds.originalRange,
                 uri,
             },
+            containerName,
         });
     }
 }

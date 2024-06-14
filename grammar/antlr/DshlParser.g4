@@ -216,6 +216,8 @@ struct_member_declaration:
 	//interpolation_modifier* type hlsl_identifier SEMICOLON
 	variable_declaration_statement
 	| function_call
+    | function_definition
+	| function_declaration
 	| function_header
 	| expression_list
 	| type_declaration_statement
@@ -317,7 +319,9 @@ while_statement:
 	loop_attribute* WHILE LRB expression RRB statement;
 
 function_call:
-	(hlsl_identifier | ASSERT) (LAB expression_list? RAB)* LRB expression_list? RRB;
+	(hlsl_identifier | ASSERT) (LAB expression_list? RAB)* LRB function_arguments RRB;
+
+function_arguments: expression_list?;
 
 expression_list: expression (COMMA expression)* COMMA?;
 

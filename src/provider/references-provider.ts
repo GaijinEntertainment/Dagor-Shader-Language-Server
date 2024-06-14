@@ -1,77 +1,75 @@
-import { DocumentHighlight, DocumentHighlightKind, DocumentHighlightParams } from 'vscode-languageserver';
+import { Location, ReferenceParams } from 'vscode-languageserver';
 
 import { getSnapshot } from '../core/document-manager';
 
-export async function documentHighlightProvider(
-    params: DocumentHighlightParams
-): Promise<DocumentHighlight[] | undefined | null> {
+export async function referencesProvider(params: ReferenceParams): Promise<Location[] | undefined | null> {
     const snapshot = await getSnapshot(params.textDocument.uri);
     if (!snapshot) {
         return null;
     }
     const macro = snapshot.getMacro(params.position);
     if (macro) {
-        const result: DocumentHighlight[] = [];
+        const result: Location[] = [];
         for (const md of macro.declarations.filter((md) => md.uri === params.textDocument.uri)) {
             result.push({
                 range: md.nameOriginalRange,
-                kind: DocumentHighlightKind.Text,
+                uri: md.uri,
             });
         }
         for (const mu of macro.usages.filter((mu) => mu.isVisible)) {
             result.push({
                 range: mu.nameOriginalRange,
-                kind: DocumentHighlightKind.Text,
+                uri: params.textDocument.uri,
             });
         }
         return result;
     }
     const mp = snapshot.getMacroParameter(params.position, params.textDocument.uri);
     if (mp) {
-        const result: DocumentHighlight[] = [];
+        const result: Location[] = [];
         result.push({
             range: mp.originalRange,
-            kind: DocumentHighlightKind.Text,
+            uri: params.textDocument.uri,
         });
         for (const mpu of mp.usages) {
             result.push({
                 range: mpu.originalRange,
-                kind: DocumentHighlightKind.Text,
+                uri: params.textDocument.uri,
             });
         }
         return result;
     }
     const ds = snapshot.getDefineStatement(params.position);
     if (ds) {
-        const result: DocumentHighlight[] = [];
+        const result: Location[] = [];
         if (ds.isVisible && !ds.isPredefined && ds.uri === params.textDocument.uri) {
             result.push({
                 range: ds.nameOriginalRange,
-                kind: DocumentHighlightKind.Text,
+                uri: ds.uri,
             });
         }
         for (const dc of ds.usages.filter((dc) => dc.isVisible)) {
             result.push({
                 range: dc.nameOriginalRange,
-                kind: DocumentHighlightKind.Text,
+                uri: params.textDocument.uri,
             });
         }
         return result;
     }
     const td = snapshot.getTypeDeclaration(params.position);
     if (td) {
-        const result: DocumentHighlight[] = [];
+        const result: Location[] = [];
         if (td.isVisible && td.uri === params.textDocument.uri) {
             result.push({
                 range: td.nameOriginalRange,
-                kind: DocumentHighlightKind.Text,
+                uri: td.uri,
             });
         }
         for (const tu of td.usages) {
             if (tu.isVisible) {
                 result.push({
                     range: tu.originalRange,
-                    kind: DocumentHighlightKind.Text,
+                    uri: params.textDocument.uri,
                 });
             }
         }
@@ -79,18 +77,18 @@ export async function documentHighlightProvider(
     }
     const ed = snapshot.getEnumDeclaration(params.position);
     if (ed && ed.nameOriginalRange) {
-        const result: DocumentHighlight[] = [];
+        const result: Location[] = [];
         if (ed.isVisible && ed.uri === params.textDocument.uri) {
             result.push({
                 range: ed.nameOriginalRange,
-                kind: DocumentHighlightKind.Text,
+                uri: ed.uri,
             });
         }
         for (const eu of ed.usages) {
             if (eu.isVisible) {
                 result.push({
                     range: eu.originalRange,
-                    kind: DocumentHighlightKind.Text,
+                    uri: params.textDocument.uri,
                 });
             }
         }
@@ -98,18 +96,18 @@ export async function documentHighlightProvider(
     }
     const emd = snapshot.getEnumMemberDeclaration(params.position);
     if (emd && emd.nameOriginalRange) {
-        const result: DocumentHighlight[] = [];
+        const result: Location[] = [];
         if (emd.isVisible && emd.uri === params.textDocument.uri) {
             result.push({
                 range: emd.nameOriginalRange,
-                kind: DocumentHighlightKind.Text,
+                uri: emd.uri,
             });
         }
         for (const eu of emd.usages) {
             if (eu.isVisible) {
                 result.push({
                     range: eu.originalRange,
-                    kind: DocumentHighlightKind.Text,
+                    uri: params.textDocument.uri,
                 });
             }
         }
@@ -117,24 +115,24 @@ export async function documentHighlightProvider(
     }
     const vd = snapshot.getVariableDeclaration(params.position);
     if (vd) {
-        const result: DocumentHighlight[] = [];
+        const result: Location[] = [];
         if (vd.isVisible && vd.uri === params.textDocument.uri) {
             result.push({
                 range: vd.nameOriginalRange,
-                kind: DocumentHighlightKind.Text,
+                uri: vd.uri,
             });
         }
         if (vd.interval && vd.interval.isVisible && vd.interval.uri === params.textDocument.uri) {
             result.push({
                 range: vd.interval.nameOriginalRange,
-                kind: DocumentHighlightKind.Text,
+                uri: vd.interval.uri,
             });
         }
         for (const vu of vd.usages) {
             if (vu.isVisible) {
                 result.push({
                     range: vu.originalRange,
-                    kind: DocumentHighlightKind.Text,
+                    uri: params.textDocument.uri,
                 });
             }
         }
@@ -142,18 +140,18 @@ export async function documentHighlightProvider(
     }
     const fd = snapshot.getFunctionDeclaration(params.position);
     if (fd) {
-        const result: DocumentHighlight[] = [];
+        const result: Location[] = [];
         if (fd.isVisible && fd.uri === params.textDocument.uri) {
             result.push({
                 range: fd.nameOriginalRange,
-                kind: DocumentHighlightKind.Text,
+                uri: fd.uri,
             });
         }
         for (const fu of fd.usages) {
             if (fu.isVisible) {
                 result.push({
                     range: fu.nameOriginalRange,
-                    kind: DocumentHighlightKind.Text,
+                    uri: params.textDocument.uri,
                 });
             }
         }
@@ -161,13 +159,13 @@ export async function documentHighlightProvider(
     }
     const fu = snapshot.getFunctionUsageAt(params.position);
     if (fu && fu.intrinsicFunction) {
-        const result: DocumentHighlight[] = [];
+        const result: Location[] = [];
         const ifd = fu.intrinsicFunction;
         for (const fu of ifd.usages) {
             if (fu.isVisible) {
                 result.push({
                     range: fu.nameOriginalRange,
-                    kind: DocumentHighlightKind.Text,
+                    uri: params.textDocument.uri,
                 });
             }
         }
@@ -175,18 +173,18 @@ export async function documentHighlightProvider(
     }
     const sd = snapshot.getShaderDeclaration(params.position);
     if (sd) {
-        const result: DocumentHighlight[] = [];
+        const result: Location[] = [];
         if (sd.isVisible && sd.uri === params.textDocument.uri) {
             result.push({
                 range: sd.nameOriginalRange,
-                kind: DocumentHighlightKind.Text,
+                uri: sd.uri,
             });
         }
         for (const su of sd.usages) {
             if (su.isVisible) {
                 result.push({
                     range: su.originalRange,
-                    kind: DocumentHighlightKind.Text,
+                    uri: params.textDocument.uri,
                 });
             }
         }
@@ -194,18 +192,18 @@ export async function documentHighlightProvider(
     }
     const bd = snapshot.getBlockDeclaration(params.position);
     if (bd) {
-        const result: DocumentHighlight[] = [];
+        const result: Location[] = [];
         if (bd.isVisible && bd.uri === params.textDocument.uri) {
             result.push({
                 range: bd.nameOriginalRange,
-                kind: DocumentHighlightKind.Text,
+                uri: bd.uri,
             });
         }
-        for (const su of bd.usages) {
-            if (su.isVisible) {
+        for (const bu of bd.usages) {
+            if (bu.isVisible) {
                 result.push({
-                    range: su.originalRange,
-                    kind: DocumentHighlightKind.Text,
+                    range: bu.originalRange,
+                    uri: params.textDocument.uri,
                 });
             }
         }

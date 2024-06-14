@@ -26,11 +26,11 @@ import {
     dshlProperties,
 } from '../helper/dshl-info';
 import { createDocumentationLinks, isBeforeOrEqual, rangeContains } from '../helper/helper';
+import { hlslFunctions } from '../helper/hlsl-function';
 import {
     hlslAttributes,
     hlslBufferTypes,
     hlslDshlPreprocessorDirectives,
-    hlslFunctions,
     hlslKeywords,
     hlslModifiers,
     hlslNonPrimitiveTypes,
@@ -46,8 +46,8 @@ import {
 } from '../helper/hlsl-info';
 import { toStringBlockType } from '../interface/block/block-declaration';
 import { DefineStatement, toStringDefineStatementParameterList } from '../interface/define-statement';
-import { ExpressionRange } from '../interface/expression-range';
-import { toStringFunctionParameters } from '../interface/function/function-declaration';
+import { ExpressionRange, NameExpressionRange } from '../interface/expression-range';
+import { toStringFunctionParameters } from '../interface/function/function-parameter';
 import { HlslBlock } from '../interface/hlsl-block';
 import { LanguageElementInfo } from '../interface/language-element-info';
 import { toStringMacroParameterList } from '../interface/macro/macro';
@@ -96,19 +96,43 @@ function isCursorInCommentOrString(snapshot: Snapshot, position: Position): bool
     return snapshot.noCodeCompletionRanges.some((r) => rangeContains(r, position));
 }
 
+function addHlslMembers(result: CompletionItem[], er: ExpressionRange): void {
+    if (er.type === 'type') {
+        result.push(...getMembers(er));
+    } else if (er.type === 'enum') {
+        result.push(
+            ...er.enumDeclaration.members.map((m) => ({
+                label: m.name,
+                kind: getKind(CompletionItemKind.EnumMember),
+                detail: `${m.name} - enum value`,
+                documentation: getEnumMemberInfo(m, getCapabilities().completionDocumentationFormat),
+            }))
+        );
+    } else if (er.type === 'name') {
+        addMethods(result, er, hlslBufferTypes);
+        addMethods(result, er, hlslTextureTypes);
+    }
+}
+
+function addMethods(result: CompletionItem[], er: NameExpressionRange, leis: LanguageElementInfo[]): void {
+    const type = leis.find((b) => b.name === er.name);
+    if (type?.methods) {
+        result.push(
+            ...type.methods.map<CompletionItem>((m) => ({
+                label: m.name,
+                kind: getKind(CompletionItemKind.Method),
+                detail: `${m.name} - method`,
+                documentation: m.description,
+                labelDetails: getLabelDetails(m.returnType, `(${toStringFunctionParameters(m.parameters)})`),
+            }))
+        );
+    }
+}
+
 function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Position): void {
     const er = snapshot.expressionRanges.find((er) => rangeContains(er.originalRange, position));
     if (er) {
-        result.push(
-            ...(er.type === 'type'
-                ? getMembers(er)
-                : er.enumDeclaration.members.map((m) => ({
-                      label: m.name,
-                      kind: getKind(CompletionItemKind.EnumMember),
-                      detail: `${m.name} - enum value`,
-                      documentation: getEnumMemberInfo(m, getCapabilities().completionDocumentationFormat),
-                  })))
-        );
+        addHlslMembers(result, er);
         return;
     }
     addCompletionItems(result, getMacroParameters(snapshot, position), CompletionItemKind.Constant, 'macro parameter');
@@ -164,6 +188,17 @@ function addHlslItems(result: CompletionItem[], snapshot: Snapshot, position: Po
         vds.map((vd) => ({ name: vd.name, type: toStringVariableType(vd) })),
         CompletionItemKind.Variable,
         'variable'
+    );
+    const fds = snapshot.getFunctionDeclarationsInScope(position);
+    result.push(
+        ...fds.map<CompletionItem>((fd) =>
+            getCompletionItem(
+                fd,
+                CompletionItemKind.Function,
+                'function',
+                `(${toStringFunctionParameters(fd.parameters)})`
+            )
+        )
     );
     addCompletionItems(result, hlslModifiers, CompletionItemKind.Keyword, 'modifier');
     addCompletionItems(result, hlslAttributes, CompletionItemKind.Keyword, 'attribute');
@@ -222,7 +257,7 @@ function addMembers(result: CompletionItem[], td: TypeDeclaration): void {
             label: m.name,
             kind: getKind(CompletionItemKind.Field),
             detail: `${m.name} - member variable`,
-            labelDetails: getLabelDetails(m),
+            labelDetails: getLabelDetails(m.type),
         }))
     );
     for (const superTd of td.superTypes) {
@@ -394,7 +429,7 @@ function getCompletionItem(
         detail: getDetail(item, type),
         sortText: item.sortName,
         filterText: item.filterText,
-        labelDetails: getLabelDetails(item, parameters),
+        labelDetails: getLabelDetails(item.type, parameters),
         documentation: getDocumentation(item),
         insertText: item.insertText,
         insertTextFormat: item.isSnippet ? InsertTextFormat.Snippet : undefined,
@@ -418,10 +453,10 @@ function getDetail(item: LanguageElementInfo, type: string): string {
     }
 }
 
-function getLabelDetails(item: LanguageElementInfo, parameters?: string): CompletionItemLabelDetails | undefined {
+function getLabelDetails(type?: string, parameters?: string): CompletionItemLabelDetails | undefined {
     return getCapabilities().completionLabelDetails
         ? {
-              description: item.type,
+              description: type,
               detail: parameters,
           }
         : undefined;

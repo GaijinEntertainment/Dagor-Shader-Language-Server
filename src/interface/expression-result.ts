@@ -13,4 +13,10 @@ interface EnumExpressionResult {
     arraySizes: number[];
 }
 
-export type ExpressionResult = TypeExpressionResult | EnumExpressionResult;
+interface NameExpressionResult {
+    type: 'name';
+    name: string;
+    arraySizes: number[];
+}
+
+export type ExpressionResult = TypeExpressionResult | EnumExpressionResult | NameExpressionResult;

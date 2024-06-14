@@ -7,10 +7,22 @@ import { URI } from 'vscode-uri';
 import { DshlLexer } from '../_generated/DshlLexer';
 import { DshlParser } from '../_generated/DshlParser';
 import { createLexer, defaultRange, offsetPosition } from '../helper/helper';
+import { hlslFunctions } from '../helper/hlsl-function';
 import { hlslEnumTypes, hlslStructTypes } from '../helper/hlsl-info';
 import { Scope } from '../helper/scope';
 import { getDocuments, syncInitialization } from '../helper/server-helper';
 import { DocumentVersion } from '../interface/document-version';
+import { IntrinsicFunction } from '../interface/function/intrinsic-function';
+import {
+    ComponentType,
+    ConcreteParameter,
+    GenericParameter,
+    GenericReturnType,
+    Overload,
+    Parameter,
+    Size,
+    TemplateType,
+} from '../interface/language-element-info';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
 import { SnapshotVersion, invalidVersion } from '../interface/snapshot-version';
 import { EnumDeclaration } from '../interface/type/enum-declaration';
@@ -21,6 +33,14 @@ import { preprocess } from '../processor/preprocessor';
 import { HLSLI_EXTENSION, HLSL_EXTENSION } from './constant';
 import { getFileVersion } from './file-cache-manager';
 import { Snapshot } from './snapshot';
+
+interface IntrinsicType {
+    modifiers: string;
+    name: string;
+    description?: string;
+    base: string;
+    size?: string;
+}
 
 export class DocumentInfo {
     private analyzedVersion = invalidVersion;
@@ -120,6 +140,7 @@ export class DocumentInfo {
     private analyzeSnapshot(snapshot: Snapshot): void {
         this.addBuiltInStructs(snapshot);
         this.addBuiltInEnums(snapshot);
+        this.addIntrinsicFunctions(snapshot);
         const lexer = createLexer(snapshot.text);
         const parser = this.createParser(lexer);
         let tree: ParseTree;
@@ -135,6 +156,238 @@ export class DocumentInfo {
             // catching any error during the parsing to prevent the server from crashing
         }
         this.addMacroDefinitions(snapshot);
+    }
+
+    private addIntrinsicFunctions(snapshot: Snapshot): void {
+        for (const hlslFunction of hlslFunctions) {
+            if (hlslFunction?.overloads?.length) {
+                for (const overload of hlslFunction.overloads) {
+                    this.generateOverload(snapshot, hlslFunction.name, [], overload, 0, hlslFunction.description);
+                }
+            }
+        }
+    }
+
+    private generateOverload(
+        snapshot: Snapshot,
+        name: string,
+        concreteParams: IntrinsicType[],
+        overload: Overload,
+        index: number,
+        description?: string,
+        previous?: IntrinsicType
+    ): void {
+        const parameters = overload.parameters;
+        if (!parameters.length) {
+            this.addOverload(snapshot, overload, name, concreteParams, description);
+            return;
+        }
+        const types = this.getTypes(parameters[index], previous);
+        for (const type of types) {
+            if (index === 0) {
+                previous = type;
+            }
+            concreteParams.push(type);
+            if (index + 1 < parameters.length) {
+                this.generateOverload(snapshot, name, concreteParams, overload, index + 1, description, previous);
+            } else {
+                this.addOverload(snapshot, overload, name, concreteParams, description);
+            }
+            concreteParams.pop();
+        }
+    }
+
+    private addOverload(
+        snapshot: Snapshot,
+        overload: Overload,
+        name: string,
+        concreteParams: IntrinsicType[],
+        description?: string
+    ): void {
+        const ifd: IntrinsicFunction = {
+            name,
+            type: this.getReturnType(overload, concreteParams.length ? concreteParams[0] : undefined),
+            parameters: concreteParams.map((cp) => ({
+                name: cp.name,
+                modifiers: cp.modifiers,
+                type: cp.base + (cp.size ?? ''),
+                description: cp.description,
+            })),
+            description,
+            usages: [],
+        };
+        snapshot.intrinsicFunctions.push(ifd);
+    }
+
+    private getReturnType(overload: Overload, previous?: IntrinsicType): string {
+        const returnType = overload.returnType;
+        if (this.isGenericReturnType(returnType)) {
+            const base = returnType.componentType === 'same' && previous ? previous.base : returnType.componentType;
+            let size: string = returnType.size + '' ?? '';
+            if (size === 'same') {
+                size = previous?.size ?? '';
+            }
+            if (size === '1') {
+                size = '';
+            }
+            return base + size;
+        } else {
+            return returnType;
+        }
+    }
+
+    private getTypes(paramType: Parameter, previous?: IntrinsicType): IntrinsicType[] {
+        if (this.isGenericParameter(paramType)) {
+            const tt = this.normalizeTemplateType(paramType.templateType, previous);
+            const ct = this.normalizeComponentType(paramType.componentType, previous);
+            const size = this.normalizeSize(paramType.size, previous);
+            return this.generateParameterTypes(paramType, tt, ct, size);
+        } else {
+            if (paramType.type.length > 3) {
+                const width = Number.parseInt(paramType.type[paramType.type.length - 3]);
+                const x = paramType.type[paramType.type.length - 2];
+                const height = Number.parseInt(paramType.type[paramType.type.length - 1]);
+                if (
+                    x === 'x' &&
+                    !isNaN(width) &&
+                    !isNaN(height) &&
+                    width >= 1 &&
+                    width <= 4 &&
+                    height >= 1 &&
+                    height <= 4
+                ) {
+                    return [
+                        {
+                            base: paramType.type.substring(0, paramType.type.length - 3),
+                            name: paramType.name,
+                            description: paramType.description,
+                            modifiers: paramType.modifiers,
+                            size: paramType.type.substring(paramType.type.length - 3),
+                        },
+                    ];
+                }
+            }
+            if (paramType.type.length > 1) {
+                const width = Number.parseInt(paramType.type[paramType.type.length - 1]);
+                if (!isNaN(width) && width >= 1 && width <= 4) {
+                    [
+                        {
+                            base: paramType.type.substring(0, paramType.type.length - 3),
+                            name: paramType.name,
+                            description: paramType.description,
+                            modifiers: paramType.modifiers,
+                            size: paramType.type.substring(paramType.type.length - 3),
+                        },
+                    ];
+                }
+            }
+            return [
+                {
+                    base: paramType.type,
+                    name: paramType.name,
+                    description: paramType.description,
+                    modifiers: paramType.modifiers,
+                },
+            ];
+        }
+    }
+
+    private normalizeTemplateType(tt: TemplateType[], previous?: IntrinsicType): TemplateType[] {
+        if (tt.length === 1 && tt[0] === 'same') {
+            if (previous) {
+                if (previous.size?.length === 3) {
+                    return ['matrix'];
+                } else if (previous.size?.length === 1) {
+                    return ['vector'];
+                } else {
+                    return ['scalar'];
+                }
+            } else {
+                throw new Error();
+            }
+        } else {
+            return tt;
+        }
+    }
+
+    private normalizeComponentType(ct: ComponentType[], previous?: IntrinsicType): ComponentType[] {
+        if (ct.length === 1 && ct[0] === 'same') {
+            if (previous) {
+                return [previous.base] as ComponentType[];
+            } else {
+                throw new Error();
+            }
+        } else {
+            return ct;
+        }
+    }
+
+    private normalizeSize(size: Size, previous?: IntrinsicType): string | undefined {
+        if (typeof size === 'number') {
+            return size + '';
+        } else if (size === 'same') {
+            if (previous) {
+                return previous.size;
+            } else {
+                throw new Error();
+            }
+        }
+        return undefined;
+    }
+
+    private generateParameterTypes(
+        paramType: Parameter,
+        templateType: TemplateType[],
+        componentType: ComponentType[],
+        size?: string
+    ): IntrinsicType[] {
+        const result: IntrinsicType[] = [];
+        for (const tt of templateType) {
+            for (const ct of componentType) {
+                if (tt === 'scalar' || tt === 'object') {
+                    result.push(this.createType(paramType, ct));
+                } else if (tt === 'vector') {
+                    if (size) {
+                        result.push(this.createType(paramType, ct, size));
+                    } else {
+                        for (let i = 1; i <= 4; i++) {
+                            result.push(this.createType(paramType, ct, i + ''));
+                        }
+                    }
+                } else if (tt === 'matrix') {
+                    if (size) {
+                        result.push(this.createType(paramType, ct, size));
+                    } else {
+                        for (let i = 1; i <= 4; i++) {
+                            for (let j = 1; j <= 4; j++) {
+                                if (i !== 1 || j !== 1) {
+                                    result.push(this.createType(paramType, ct, i + 'x' + j));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    private createType(paramType: Parameter, ct: ComponentType, size?: string): IntrinsicType {
+        return {
+            base: ct,
+            size,
+            modifiers: paramType.modifiers,
+            description: paramType.description,
+            name: paramType.name,
+        };
+    }
+
+    private isGenericParameter(paramType: Parameter): paramType is GenericParameter {
+        return !(paramType as ConcreteParameter).type;
+    }
+
+    private isGenericReturnType(returnType: GenericReturnType | string): returnType is GenericReturnType {
+        return !!(returnType as GenericReturnType).templateType;
     }
 
     private addBuiltInStructs(snapshot: Snapshot): void {
@@ -170,6 +423,7 @@ export class DocumentInfo {
                     usages: [],
                     containerType: td,
                     description: hstm.description,
+                    isBuiltIn: true,
                 })) ?? [];
             snapshot.rootScope.typeDeclarations.push(td);
         }
@@ -244,6 +498,7 @@ export class DocumentInfo {
                         blockUsages: [],
                         macroDeclaration: md,
                         functionDeclarations: [],
+                        colorPickerInfos: [],
                         parent: snapshot.rootScope,
                         isVisible: contentSnapshot.rootScope.isVisible,
                         hlslBlocks: [],
@@ -321,9 +576,19 @@ export class DocumentInfo {
             offsetPosition(scope.blockDeclaration.originalRange.start, offset);
             offsetPosition(scope.blockDeclaration.originalRange.end, offset);
         }
+        if (scope.functionDeclaration) {
+            offsetPosition(scope.functionDeclaration.originalRange.start, offset);
+            offsetPosition(scope.functionDeclaration.originalRange.end, offset);
+            offsetPosition(scope.functionDeclaration.nameOriginalRange.start, offset);
+            offsetPosition(scope.functionDeclaration.nameOriginalRange.end, offset);
+        }
         for (const bu of scope.blockUsages) {
             offsetPosition(bu.originalRange.start, offset);
             offsetPosition(bu.originalRange.end, offset);
+        }
+        for (const cpi of scope.colorPickerInfos) {
+            offsetPosition(cpi.originalRange.start, offset);
+            offsetPosition(cpi.originalRange.end, offset);
         }
         for (const child of scope.children) {
             this.addElementsFromMacro(child, md, false);

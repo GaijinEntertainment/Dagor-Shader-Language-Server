@@ -12,35 +12,39 @@ Language Server for the Dagor Shader Language. At the moment it's work in progre
 
 ### DSHL
 
-|                      | types | variables | functions | keywords, modifiers | shaders | block statements | macros | includes |
-| -------------------- | ----- | --------- | --------- | ------------------- | ------- | ---------------- | ------ | -------- |
-| Code completion      | ✓     | ✓         | ✓         | ✓                   | ✓       | ✓                | ✓      | ✓        |
-| Go to definition     |       | ✓         |           |                     | ✓       | ✓                | ✓      | ✓        |
-| Go to declaration    |       | ✓         |           |                     | ✓       | ✓                | ✓      | ✓        |
-| Go to implementation |       |           |           |                     | ✓       | ✓                | ✓      | ✓        |
-| Hover                |       | ✓         | ✓         |                     | ✓       | ✓                | ✓      |          |
-| Document highlights  |       | ✓         | ✓         |                     | ✓       | ✓                | ✓      |          |
-| Signature help       |       |           | ✓         |                     |         |                  | ✓      |          |
-| Inlay hints          |       |           | ✓         |                     |         |                  | ✓      |          |
-| Document symbols     |       | ✓         |           |                     | ✓       | ✓                | ✓      |          |
-| Semantic highlight   |       | ✓         |           |                     |         |                  |        |          |
+|                      | types | variables | functions | shaders | block statements | macros | includes | keywords, modifiers |
+| -------------------- | ----- | --------- | --------- | ------- | ---------------- | ------ | -------- | ------------------- |
+| Code completion      | ✓     | ✓         | ✓         | ✓       | ✓                | ✓      | ✓        | ✓                   |
+| Go to definition     |       | ✓         |           | ✓       | ✓                | ✓      | ✓        |                     |
+| Go to declaration    |       | ✓         |           | ✓       | ✓                | ✓      | ✓        |                     |
+| Go to implementation |       |           |           | ✓       | ✓                | ✓      | ✓        |                     |
+| Hover                |       | ✓         | ✓         | ✓       | ✓                | ✓      |          |                     |
+| Document highlights  |       | ✓         | ✓         | ✓       | ✓                | ✓      |          |                     |
+| Signature help       |       |           | ✓         |         |                  | ✓      |          |                     |
+| Inlay hints          |       |           | ✓         |         |                  | ✓      |          |                     |
+| Document symbols     |       | ✓         |           | ✓       | ✓                | ✓      |          |                     |
+| Semantic highlight   |       | ✓         |           |         |                  |        |          |                     |
+| References           |       | ✓         | ✓         | ✓       | ✓                | ✓      |          |                     |
+| Rename               |       | ✓         | ✓         | ✓       | ✓                | ✓      |          |                     |
 
 ### HLSL
 
-|                       | types | variables | functions    | keywords | modifiers | semantics | attributes | defines | includes | preprocessor directives |
-| --------------------- | ----- | --------- | ------------ | -------- | --------- | --------- | ---------- | ------- | -------- | ----------------------- |
-| Code completion       | ✓     | ✓         | only builtin | ✓        | ✓         | ✓         | ✓          | ✓       | ✓        | ✓                       |
-| Go to definition      | ✓     | ✓         |              |          |           |           |            | ✓       | ✓        |                         |
-| Go to declaration     | ✓     | ✓         |              |          |           |           |            | ✓       | ✓        |                         |
-| Go to implementation  | ✓     |           |              |          |           |           |            | ✓       | ✓        |                         |
-| Go to type definition |       | ✓         |              |          |           |           |            |         |          |                         |
-| Hover                 | ✓     | ✓         |              |          |           |           |            | ✓       |          |                         |
-| Document highlights   | ✓     | ✓         |              |          |           |           |            | ✓       |          |                         |
-| Signature help        |       |           |              |          |           |           |            |         |          |                         |
-| Inlay hints           |       |           |              |          |           |           |            | ✓       |          |                         |
-| Document symbols      | ✓     | ✓         |              |          |           |           |            | ✓       |          |                         |
-| Type hierarchy        | ✓     |           |              |          |           |           |            |         |          |                         |
-| Semantic highlight    | ✓     | ✓         |              |          |           |           |            |         |          |                         |
+|                       | types | variables | functions | defines | includes | keywords, modifiers, semantics, attributes, preprocessor directives |
+| --------------------- | ----- | --------- | --------- | ------- | -------- | ------------------------------------------------------------------- |
+| Code completion       | ✓     | ✓         | ✓         | ✓       | ✓        | ✓                                                                   |
+| Go to definition      | ✓     | ✓         | ✓         | ✓       | ✓        |                                                                     |
+| Go to declaration     | ✓     | ✓         | ✓         | ✓       | ✓        |                                                                     |
+| Go to implementation  | ✓     |           | ✓         | ✓       | ✓        |                                                                     |
+| Go to type definition |       | ✓         |           |         |          |                                                                     |
+| Hover                 | ✓     | ✓         | ✓         | ✓       |          |                                                                     |
+| Document highlights   | ✓     | ✓         | ✓         | ✓       |          |                                                                     |
+| Signature help        |       |           | ✓         |         |          |                                                                     |
+| Inlay hints           |       |           | ✓         | ✓       |          |                                                                     |
+| Document symbols      | ✓     | ✓         | ✓         | ✓       |          |                                                                     |
+| Type hierarchy        | ✓     |           |           |         |          |                                                                     |
+| Semantic highlight    | ✓     | ✓         |           |         |          |                                                                     |
+| Rename                | ✓     | ✓         | ✓         | ✓       |          |                                                                     |
+| Color picker          |       |           | ✓         |         |          |                                                                     |
 
 ### Features that are part of the repository, but not part of the actual language server
 

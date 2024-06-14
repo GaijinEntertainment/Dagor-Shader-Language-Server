@@ -137,7 +137,7 @@ export const dshlSnippets: LanguageElementInfo[] = [
     },
     {
         name: 'hlsl block for a shader stage',
-        insertText: 'hlsl(${1|cs,vs,hs,ds,gs,ps|}) {\n\t$0\n}',
+        insertText: 'hlsl(${1|cs,vs,hs,ds,gs,ps,ms,as|}) {\n\t$0\n}',
         isSnippet: true,
     },
     {
@@ -155,7 +155,7 @@ export const dshlSnippets: LanguageElementInfo[] = [
     {
         name: 'preshader',
         insertText:
-            '(${1|cs,vs,ps|}) {\n\t${2:variable_name}@${3|f1,f2,f3,f4,f44,i1,i2,i3,i4,tex,tex2d,tex3d,texArray,texCube,texCubeArray,smp2d,smp3d,smpArray,smpCube,smpCubeArray,static,staticCube,staticTexArray,shd,buf,cbuf,uav|} = ${4:other_variable_name};$0\n}',
+            '(${1|cs,vs,ps,ds,hs,gs,ms,as|}) {\n\t${2:variable_name}@${3|f1,f2,f3,f4,f44,i1,i2,i3,i4,tex,tex2d,tex3d,texArray,texCube,texCubeArray,smp2d,smp3d,smpArray,smpCube,smpCubeArray,static,staticCube,staticTexArray,shd,buf,cbuf,uav|} = ${4:other_variable_name};$0\n}',
         isSnippet: true,
         description:
             'In addition to declaring just the shader code itself, DSHL allows you to declare a pre-shader, which is a simple script that allows you to easily pipe data from C++ to the shader.',
@@ -192,7 +192,7 @@ export const dshlSnippets: LanguageElementInfo[] = [
     {
         name: 'compile',
         insertText:
-            'compile("${1|target_cs,target_vs,target_vs_half,target_vs_for_tess,target_vs_for_gs,target_hs,target_ds,target_gs,target_ps,target_ps_half,target_ms|}", "${2:main}");',
+            'compile("${1|target_cs,target_cs_half,cs_5_0,cs_6_5,target_vs,target_vs_half,vs_5_0,target_vs_for_tess,target_vs_for_gs,target_hs,hs_5_0,target_ds,ds_5_0,target_gs,target_ps,target_ps_half,ps_null,ps_4_1,ps_5_0,ps_6_1,ps_6_5,target_ms,target_as|}", "${2:main}");',
         isSnippet: true,
     },
     {

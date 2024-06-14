@@ -1,15 +1,26 @@
 import { Diagnostic, DocumentUri, Position, Range } from 'vscode-languageserver';
 
 import { dshlFunctions } from '../helper/dshl-info';
-import { defaultPosition, isBeforeOrEqual, isIntervalContains, rangeContains } from '../helper/helper';
+import {
+    containsRange,
+    defaultPosition,
+    defaultRange,
+    isBeforeOrEqual,
+    isIntervalContains,
+    rangeContains,
+    rangesEqual,
+} from '../helper/helper';
 import { Scope } from '../helper/scope';
 import { BlockDeclaration } from '../interface/block/block-declaration';
 import { BlockUsage } from '../interface/block/block-usage';
+import { ColorPickerInfo } from '../interface/color-picker-info';
 import { DefineContext } from '../interface/define-context';
 import { DefineStatement } from '../interface/define-statement';
 import { ElementRange } from '../interface/element-range';
 import { ExpressionRange } from '../interface/expression-range';
+import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
+import { IntrinsicFunction } from '../interface/function/intrinsic-function';
 import { HlslBlock } from '../interface/hlsl-block';
 import { IncludeContext } from '../interface/include/include-context';
 import { IncludeStatement } from '../interface/include/include-statement';
@@ -17,6 +28,7 @@ import { IntervalDeclaration } from '../interface/interval-declaration';
 import { Macro } from '../interface/macro/macro';
 import { MacroContext } from '../interface/macro/macro-context';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
+import { MacroParameter } from '../interface/macro/macro-parameter';
 import { MacroUsage } from '../interface/macro/macro-usage';
 import { PreprocessingOffset } from '../interface/preprocessing-offset';
 import { RangeWithChildren } from '../interface/range-with-children';
@@ -64,6 +76,7 @@ export class Snapshot {
     public preprocessingOffsets: PreprocessingOffset[] = [];
     public diagnostics: Diagnostic[] = [];
     public expressionRanges: ExpressionRange[] = [];
+    public intrinsicFunctions: IntrinsicFunction[] = [];
 
     public constructor(version: SnapshotVersion, uri: DocumentUri, text: string, isPredefined = false) {
         this.version = version;
@@ -86,6 +99,7 @@ export class Snapshot {
             functionDeclarations: [],
             functionUsages: [],
             blockUsages: [],
+            colorPickerInfos: [],
             originalRange: {
                 start: { line: 0, character: 0 },
                 end: {
@@ -101,11 +115,18 @@ export class Snapshot {
         this.rootScope.functionDeclarations = dshlFunctions.map((fi) => ({
             name: fi.name,
             type: fi.type,
+            originalRange: defaultRange,
+            nameOriginalRange: defaultRange,
             parameters: fi.parameters.map((p) => ({
                 name: p.name,
                 type: p.type,
+                description: p.description,
             })),
             usages: [],
+            isVisible: false,
+            uri: '',
+            isHlsl: false,
+            isBuiltIn: true,
         }));
     }
 
@@ -312,7 +333,7 @@ export class Snapshot {
         return null;
     }
 
-    public getMacro(name: string): Macro {
+    public getMacroWith(name: string): Macro {
         let macro = this.macros.find((m) => m.name === name);
         if (!macro) {
             macro = {
@@ -428,7 +449,7 @@ export class Snapshot {
         return this.defineContexts.some((dc) => dc.startPosition <= position && position < dc.afterEndPosition);
     }
 
-    public getDefineContextAt(position: number): DefineContext | null {
+    public getDefineContextAtOffset(position: number): DefineContext | null {
         return (
             this.defineContexts.find((dc) => isIntervalContains(dc.startPosition, dc.afterEndPosition, position)) ??
             null
@@ -490,7 +511,7 @@ export class Snapshot {
     public getFunctionUsageAt(position: Position): FunctionUsage | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
-            const fu = scope.functionUsages.find((fu) => fu.isVisible && rangeContains(fu.originalRange, position));
+            const fu = scope.functionUsages.find((fu) => fu.isVisible && rangeContains(fu.nameOriginalRange, position));
             if (fu) {
                 return fu;
             }
@@ -511,7 +532,7 @@ export class Snapshot {
         return null;
     }
 
-    public getFunctioneUsagesIn(range: Range): FunctionUsage[] {
+    public getFunctionUsagesIn(range: Range): FunctionUsage[] {
         const result: FunctionUsage[] = [];
         this.addFunctionUsage(result, this.rootScope, range);
         return result;
@@ -532,7 +553,7 @@ export class Snapshot {
         }
     }
 
-    public getFunctioneUsageParameterListAt(position: Position): FunctionUsage | null {
+    public getFunctionUsageParameterListAt(position: Position): FunctionUsage | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
             const fu = scope.functionUsages.find(
@@ -617,6 +638,30 @@ export class Snapshot {
         return null;
     }
 
+    public getMacroDeclarationAt(position: Position): MacroDeclaration | null {
+        return this.macroDeclarations.find((md) => rangeContains(md.nameOriginalRange, position)) ?? null;
+    }
+
+    public getMacroUsageAt(position: Position): MacroUsage | null {
+        return this.macroUsages.find((mu) => mu.isVisible && rangeContains(mu.nameOriginalRange, position)) ?? null;
+    }
+
+    public getDefineStatementAt(position: Position): DefineStatement | null {
+        const macroSnapshot = this.getSnapshotForMacroDefinition(position);
+        const ds = macroSnapshot.defineStatements.find(
+            (ds) => ds.isVisible && rangeContains(ds.nameOriginalRange, position)
+        );
+        if (ds) {
+            return ds.realDefine ?? ds;
+        } else {
+            return null;
+        }
+    }
+
+    public getDefineContextAt(position: Position): DefineContext | null {
+        return this.defineContexts.find((dc) => dc.isVisible && rangeContains(dc.nameOriginalRange, position)) ?? null;
+    }
+
     public getEnumMemberDeclarationAt(position: Position): EnumMemberDeclaration | null {
         let scope: Scope | null = this.rootScope;
         while (scope) {
@@ -641,6 +686,35 @@ export class Snapshot {
                 return emu;
             }
             scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getFunctionDeclarationAt(position: Position): FunctionDeclaration | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const fd =
+                scope.children
+                    .map((sc) => sc.functionDeclaration)
+                    .find(
+                        (fd) => fd && fd.isVisible && rangeContains(fd.nameOriginalRange ?? fd.originalRange, position)
+                    ) ?? null;
+            if (fd) {
+                return fd;
+            }
+            scope = scope.children.find((c) => c.isVisible && rangeContains(c.originalRange, position)) ?? null;
+        }
+        return null;
+    }
+
+    public getColorPickerInfoAt(range: Range): ColorPickerInfo | null {
+        let scope: Scope | null = this.rootScope;
+        while (scope) {
+            const cpi = scope.colorPickerInfos.find((cpi) => rangesEqual(cpi.originalRange, range)) ?? null;
+            if (cpi) {
+                return cpi;
+            }
+            scope = scope.children.find((c) => c.isVisible && containsRange(c.originalRange, range)) ?? null;
         }
         return null;
     }
@@ -884,6 +958,32 @@ export class Snapshot {
         return null;
     }
 
+    public getFunctionDeclarationFor(name: string, position: Position, onlyRoot = false): FunctionDeclaration | null {
+        let scope: Scope | null = onlyRoot ? this.rootScope : this.getScopeAt(position);
+        while (scope) {
+            const fd = scope.children
+                .map((sc) => sc.functionDeclaration)
+                .find((fd) => fd && fd.name === name && isBeforeOrEqual(fd.nameOriginalRange.end, position));
+            if (fd) {
+                return fd;
+            }
+            for (const hb of scope.hlslBlocks) {
+                if (
+                    hb.functionDeclaration &&
+                    hb.functionDeclaration.name === name &&
+                    isBeforeOrEqual(hb.functionDeclaration.nameOriginalRange.end, position)
+                ) {
+                    return hb.functionDeclaration;
+                }
+            }
+            if (onlyRoot) {
+                return null;
+            }
+            scope = scope.parent ?? null;
+        }
+        return null;
+    }
+
     public getTypeDeclarationsInScope(position: Position): TypeDeclaration[] {
         const result: TypeDeclaration[] = [];
         let scope: Scope | null = this.getScopeAt(position);
@@ -950,6 +1050,35 @@ export class Snapshot {
                 for (const vd of psb.variableDeclarations) {
                     if (isBeforeOrEqual(vd.originalRange.end, position) && result.every((r) => r.name !== vd.name)) {
                         result.push(vd);
+                    }
+                }
+            }
+            scope = scope.parent ?? null;
+        }
+        return result;
+    }
+
+    public getFunctionDeclarationsInScope(position: Position): FunctionDeclaration[] {
+        const result: FunctionDeclaration[] = [];
+        let scope: Scope | null = this.getScopeAt(position);
+        while (scope) {
+            for (const fd of scope.functionDeclarations) {
+                if (
+                    fd.isHlsl &&
+                    isBeforeOrEqual(fd.originalRange.end, position) &&
+                    result.every((r) => r.name !== fd.name)
+                ) {
+                    result.push(fd);
+                }
+            }
+            for (const hb of scope.hlslBlocks) {
+                for (const fd of hb.functionDeclarations) {
+                    if (
+                        fd.isHlsl &&
+                        isBeforeOrEqual(fd.originalRange.end, position) &&
+                        result.every((r) => r.name !== fd.name)
+                    ) {
+                        result.push(fd);
                     }
                 }
             }
@@ -1026,6 +1155,151 @@ export class Snapshot {
         for (const child of scope.children) {
             this.addEnumDeclarations(result, child);
         }
+    }
+
+    public getAllColorPickerInfos(): ColorPickerInfo[] {
+        const result: ColorPickerInfo[] = [];
+        this.addColorPickerInfos(result, this.rootScope);
+        return result;
+    }
+
+    private addColorPickerInfos(result: ColorPickerInfo[], scope: Scope): void {
+        result.push(...scope.colorPickerInfos);
+        for (const child of scope.children) {
+            this.addColorPickerInfos(result, child);
+        }
+    }
+
+    public getMacro(position: Position): Macro | null {
+        const md = this.getMacroDeclarationAt(position);
+        if (md) {
+            return md.macro;
+        }
+        const mu = this.getMacroUsageAt(position);
+        if (mu) {
+            return mu.macro;
+        }
+        return null;
+    }
+
+    public getDefineStatement(position: Position): DefineStatement | null {
+        const ds = this.getDefineStatementAt(position);
+        if (ds) {
+            return ds;
+        }
+        const dc = this.getDefineContextAt(position);
+        if (dc) {
+            return dc.define.realDefine ?? dc.define;
+        }
+        return null;
+    }
+
+    private getSnapshotForMacroDefinition(position: Position): Snapshot {
+        const md = this.macroDeclarations.find((md) => rangeContains(md.originalRange, position));
+        return md ? md.contentSnapshot : this;
+    }
+
+    public getMacroParameter(position: Position, uri: DocumentUri): MacroParameter | null {
+        const md =
+            this.macroDeclarations.find((md) => md.uri === uri && rangeContains(md.originalRange, position)) ?? null;
+        if (!md) {
+            return null;
+        }
+        return (
+            md.parameters.find(
+                (mp) =>
+                    rangeContains(mp.originalRange, position) ||
+                    mp.usages.some((mpu) => rangeContains(mpu.originalRange, position))
+            ) ?? null
+        );
+    }
+
+    public getTypeDeclaration(position: Position): TypeDeclaration | null {
+        const td = this.getTypeDeclarationAt(position);
+        if (td) {
+            return td;
+        }
+        const tu = this.getTypeUsageAt(position);
+        if (tu) {
+            return tu.declaration;
+        }
+        return null;
+    }
+
+    public getEnumDeclaration(position: Position): EnumDeclaration | null {
+        const ed = this.getEnumDeclarationAt(position);
+        if (ed) {
+            return ed;
+        }
+        const eu = this.getEnumUsageAt(position);
+        if (eu) {
+            return eu.declaration;
+        }
+        return null;
+    }
+
+    public getEnumMemberDeclaration(position: Position): EnumMemberDeclaration | null {
+        const emd = this.getEnumMemberDeclarationAt(position);
+        if (emd) {
+            return emd;
+        }
+        const emu = this.getEnumMemberUsageAt(position);
+        if (emu) {
+            return emu.declaration;
+        }
+        return null;
+    }
+
+    public getVariableDeclaration(position: Position): VariableDeclaration | null {
+        const vd = this.getVariableDeclarationAt(position);
+        if (vd) {
+            return vd;
+        }
+        const vu = this.getVariableUsageAt(position);
+        if (vu) {
+            return vu.declaration;
+        }
+        const id = this.getIntervalDeclarationAt(position);
+        if (id) {
+            return id.variable;
+        }
+        return null;
+    }
+
+    public getFunctionDeclaration(position: Position): FunctionDeclaration | null {
+        const fd = this.getFunctionDeclarationAt(position);
+        if (fd) {
+            return fd;
+        }
+        const fu = this.getFunctionUsageAt(position);
+        if (fu) {
+            return fu.declaration ?? null;
+        }
+        return null;
+    }
+
+    public getShaderDeclaration(position: Position): ShaderDeclaration | null {
+        const sd = this.getShaderDeclarationAt(position);
+        if (sd) {
+            return sd;
+        }
+        const su = this.getShaderUsageAt(position);
+        if (su) {
+            return su.declaration;
+        }
+        return null;
+    }
+
+    public getBlockDeclaration(position: Position): BlockDeclaration | null {
+        const bd = this.getBlockDeclarationAt(position);
+        if (bd) {
+            return bd;
+        }
+        const bu = this.getBlockUsageAt(position);
+        if (bu) {
+            return bu.declaration;
+        }
+        return null;
     }
 
     private getScopeAt(position: Position): Scope {

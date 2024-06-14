@@ -21,8 +21,8 @@ import {
     Enum_declarationContext,
     ExpressionContext,
     For_statementContext,
+    Function_callContext,
     Function_definitionContext,
-    Function_headerContext,
     If_statementContext,
     ParameterContext,
     State_objectContext,
@@ -31,6 +31,7 @@ import {
     TypeContext,
     Type_declarationContext,
     Variable_declarationContext,
+    Variable_initializationContext,
     While_statementContext,
 } from '../_generated/DshlParser';
 import { DshlParserVisitor } from '../_generated/DshlParserVisitor';
@@ -38,10 +39,12 @@ import { Snapshot } from '../core/snapshot';
 import { Scope } from '../helper/scope';
 import { BlockDeclaration } from '../interface/block/block-declaration';
 import { BlockUsage } from '../interface/block/block-usage';
+import { ColorPickerInfo } from '../interface/color-picker-info';
 import { ExpressionResult } from '../interface/expression-result';
 import { FunctionArgument } from '../interface/function/function-argument';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
+import { IntrinsicFunction } from '../interface/function/intrinsic-function';
 import { IntervalDeclaration } from '../interface/interval-declaration';
 import { shaderStageKeywordToEnum } from '../interface/shader-stage';
 import { ShaderDeclaration } from '../interface/shader/shader-declaration';
@@ -160,6 +163,7 @@ export class DshlVisitor
             usages: [],
             isHlsl: false,
             arraySizes: this.getDshlArraySize(ctx.dshl_array_subscript()),
+            isBuiltIn: false,
         };
         // if (visible && identifier.text.toLowerCase() !== identifier.text) {
         //     this.snapshot.diagnostics.push({
@@ -243,7 +247,7 @@ export class DshlVisitor
         if (visible) {
             const name = ctx.IDENTIFIER();
             const fd = (this.rootSnapshot ?? this.snapshot).rootScope.functionDeclarations.find(
-                (fd) => fd.name === name.text
+                (fd) => !fd.isHlsl && fd.name === name.text
             );
             if (fd) {
                 const fu: FunctionUsage = {
@@ -259,6 +263,7 @@ export class DshlVisitor
                         ctx.RRB().symbol.stopIndex
                     ),
                     isVisible: visible,
+                    methods: [],
                 };
                 fd.usages.push(fu);
                 this.scope.functionUsages.push(fu);
@@ -282,6 +287,7 @@ export class DshlVisitor
             const fa: FunctionArgument = {
                 originalRange: this.snapshot.getOriginalRange(start, end + 1),
                 trimmedOriginalStartPosition: this.snapshot.getOriginalPosition(expression.start.startIndex, true),
+                expressionResult: null,
             };
             fas.push(fa);
         }
@@ -427,6 +433,7 @@ export class DshlVisitor
                 usages: [],
                 isHlsl: true,
                 arraySizes: this.getDshlArraySize(ctx.dshl_array_subscript()),
+                isBuiltIn: false,
             };
             this.scope.variableDeclarations.push(vd);
         }
@@ -656,6 +663,7 @@ export class DshlVisitor
         const type = ctx.type();
         const tdCtx = ctx.type_declaration();
         const expResult = type ? this.getType(type, visible) : this.visit(tdCtx!);
+        const typeName = type?.text ?? this.getTypeName(expResult) ?? '';
         for (const vi of ctx.variable_initialization()) {
             const identifier = vi.hlsl_identifier();
             const nameOriginalRange = this.snapshot.getOriginalRange(
@@ -663,10 +671,7 @@ export class DshlVisitor
                 identifier.stop!.stopIndex + 1
             );
             const vd: VariableDeclaration = {
-                type:
-                    type?.text ??
-                    (expResult?.type === 'type' ? expResult.typeDeclaration.name : expResult?.enumDeclaration.name) ??
-                    '',
+                type: typeName,
                 typeDeclaration: expResult?.type === 'type' ? expResult.typeDeclaration : undefined,
                 enumDeclaration: expResult?.type === 'enum' ? expResult.enumDeclaration : undefined,
                 name: identifier.text,
@@ -679,16 +684,79 @@ export class DshlVisitor
                 isHlsl: true,
                 arraySizes: this.getArraySize(vi.array_subscript()),
                 containerType: this.type.length ? this.type[this.type.length - 1] : undefined,
+                isBuiltIn: false,
             };
             if (this.type.length) {
                 this.type[this.type.length - 1].members.push(vd);
             } else {
                 this.scope.variableDeclarations.push(vd);
             }
+            if (visible) {
+                const colorPickerInfo = this.createColorPickerInfo(typeName, identifier.text, vi);
+                if (colorPickerInfo) {
+                    this.scope.colorPickerInfos.push(colorPickerInfo);
+                }
+            }
         }
 
         this.visitChildren(ctx);
         return null;
+    }
+
+    private createColorPickerInfo(
+        typeName: string,
+        variableName: string,
+        vi: Variable_initializationContext
+    ): ColorPickerInfo | null {
+        if (typeName !== 'float3' && typeName !== 'float4') {
+            return null;
+        }
+        if (!variableName.toLowerCase().includes('color') && !variableName.toLowerCase().includes('colour')) {
+            return null;
+        }
+        const expression = vi.expression();
+        if (expression && !expression.DOT()) {
+            const functionCall = expression.function_call();
+            const functionName = functionCall?.hlsl_identifier()?.text;
+            if (functionCall && (functionName === 'float3' || functionName === 'float4')) {
+                const el = functionCall.function_arguments().expression_list();
+                if (el && (el.expression().length === 3 || el.expression().length === 4)) {
+                    const color: number[] = [];
+                    for (const exp of el.expression()) {
+                        const floatLiteral = exp.literal()?.FLOAT_LITERAL();
+                        const intLiteral = exp.literal()?.INT_LITERAL();
+                        if (floatLiteral) {
+                            color.push(Number.parseFloat(floatLiteral.text));
+                        } else if (intLiteral) {
+                            color.push(Number.parseInt(intLiteral.text));
+                        } else {
+                            return null;
+                        }
+                    }
+                    return {
+                        originalRange: this.snapshot.getOriginalRange(
+                            functionCall.LRB().symbol.startIndex + 1,
+                            functionCall.RRB().symbol.stopIndex
+                        ),
+                        color,
+                    };
+                }
+            }
+        }
+        return null;
+    }
+
+    private getTypeName(er: ExpressionResult | null): string | null {
+        if (!er) {
+            return null;
+        }
+        if (er.type === 'type') {
+            return er.typeDeclaration.name ?? null;
+        } else if (er.type === 'enum') {
+            return er.enumDeclaration.name ?? null;
+        } else {
+            return er.name;
+        }
     }
 
     private getArraySize(ctx: Array_subscriptContext[]): number[] {
@@ -829,6 +897,7 @@ export class DshlVisitor
                 usages: [],
                 isHlsl: true,
                 arraySizes: this.getArraySize(ctx.array_subscript()),
+                isBuiltIn: false,
             };
             this.scope.variableDeclarations.push(vd);
         }
@@ -848,34 +917,172 @@ export class DshlVisitor
         return result;
     }
 
-    public visitFunction_header(ctx: Function_headerContext): ExpressionResult | null {
-        const visible = this.isVisible(ctx.start.startIndex);
+    public visitFunction_definition(ctx: Function_definitionContext): ExpressionResult | null {
+        const header = ctx.function_header();
+        const LRB = header.LRB();
+        const visible = this.isVisible(LRB.symbol.startIndex);
+        const range = this.getRange(LRB.symbol.startIndex, ctx.stop!.stopIndex + 1);
+        const scope = this.createScope(visible, range);
+        this.getType(header.type(), visible);
+        this.scope.children.push(scope);
+        this.scope = scope;
         if (visible) {
-            this.getType(ctx.type(), visible);
+            const fd: FunctionDeclaration = {
+                name: header.hlsl_identifier().text,
+                type: header.type().text,
+                nameOriginalRange: this.getRange(
+                    header.hlsl_identifier().start.startIndex,
+                    header.hlsl_identifier().stop!.stopIndex + 1
+                ),
+                originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+                parameters:
+                    header
+                        .parameter_list()
+                        ?.parameter()
+                        .map((p) => ({
+                            type: p.type()?.text ?? '',
+                            name: p.hlsl_identifier(0).text,
+                        })) ?? [],
+                isVisible: visible,
+                uri: this.snapshot.getIncludeContextDeepAt(ctx.start.startIndex)?.uri ?? this.snapshot.uri,
+                usages: [],
+                isHlsl: true,
+                isBuiltIn: false,
+            };
+            this.scope.functionDeclaration = fd;
+            this.scope.parent!.functionDeclarations.push(fd);
         }
         this.visitChildren(ctx);
+        this.scope = scope.parent!;
         return null;
     }
 
-    public visitFunction_definition(ctx: Function_definitionContext): ExpressionResult | null {
-        return this.createScopeAndVisit(ctx);
+    public visitFunction_call(ctx: Function_callContext): ExpressionResult | null {
+        const visible = this.isVisible(ctx.start.startIndex);
+        const name = ctx.hlsl_identifier();
+        let result: ExpressionResult | null = null;
+        const functionArguments: (ExpressionResult | null)[] = [];
+        if (visible && name) {
+            const el = ctx.function_arguments().expression_list();
+            if (el) {
+                for (const exp of el.expression()) {
+                    functionArguments.push(this.visit(exp));
+                }
+            }
+            const position = this.snapshot.getOriginalPosition(name.start.startIndex, true);
+            const fd = this.snapshot.getFunctionDeclarationFor(name.text, position);
+            if (fd) {
+                const fu: FunctionUsage = {
+                    declaration: fd,
+                    arguments: [],
+                    originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+                    nameOriginalRange: this.snapshot.getOriginalRange(name.start.startIndex, name.stop!.stopIndex + 1),
+                    parameterListOriginalRange: this.snapshot.getOriginalRange(
+                        ctx.LRB().symbol.startIndex + 1,
+                        ctx.RRB().symbol.stopIndex
+                    ),
+                    isVisible: visible,
+                    methods: [],
+                };
+                fd.usages.push(fu);
+                this.scope.functionUsages.push(fu);
+                result = { type: 'name', name: fd.type, arraySizes: [] };
+            } else {
+                const ifd = this.getIntrinsicFunction(name.text, functionArguments);
+                if (ifd) {
+                    const fu: FunctionUsage = {
+                        intrinsicFunction: ifd,
+                        arguments: this.getHlslFunctionArguments(ctx, ifd),
+                        originalRange: this.snapshot.getOriginalRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1),
+                        nameOriginalRange: this.snapshot.getOriginalRange(
+                            name.start.startIndex,
+                            name.stop!.stopIndex + 1
+                        ),
+                        parameterListOriginalRange: this.snapshot.getOriginalRange(
+                            ctx.LRB().symbol.startIndex + 1,
+                            ctx.RRB().symbol.stopIndex
+                        ),
+                        isVisible: visible,
+                        methods: [],
+                    };
+                    ifd.usages.push(fu);
+                    this.scope.functionUsages.push(fu);
+                    result = { type: 'name', name: ifd.type, arraySizes: [] };
+                }
+            }
+        }
+        return result;
+    }
+
+    private getHlslFunctionArguments(ctx: Function_callContext, ifd: IntrinsicFunction): FunctionArgument[] {
+        const el = ctx.function_arguments().expression_list();
+        if (!el) {
+            return [];
+        }
+        const expressions = el.expression() ?? [];
+        const fas: FunctionArgument[] = [];
+        for (let i = 0; i < expressions.length && i < ifd.parameters.length; i++) {
+            const expression = expressions[i];
+            const start = i === 0 ? ctx.LRB().symbol.startIndex : el.COMMA()[i - 1].symbol.stopIndex;
+            const end =
+                i === ifd.parameters.length - 1 || el.COMMA().length === i
+                    ? ctx.RRB().symbol.stopIndex
+                    : el.COMMA()[i].symbol.startIndex - 1;
+            const fa: FunctionArgument = {
+                originalRange: this.snapshot.getOriginalRange(start, end + 1),
+                trimmedOriginalStartPosition: this.snapshot.getOriginalPosition(expression.start.startIndex, true),
+                expressionResult: this.visit(expression),
+            };
+            fas.push(fa);
+        }
+        return fas;
+    }
+
+    private getIntrinsicFunction(
+        name: string,
+        functionArguments: (ExpressionResult | null)[]
+    ): IntrinsicFunction | null {
+        const snapshot = this.rootSnapshot ?? this.snapshot;
+        const candidates = snapshot.intrinsicFunctions.filter((ifd) => ifd.name === name);
+        for (const candidate of candidates) {
+            if (candidate.parameters.length === functionArguments.length) {
+                let valid = true;
+                for (let i = 0; i < functionArguments.length; i++) {
+                    const arg = functionArguments[i];
+                    const parm = candidate.parameters[i];
+                    if (
+                        !arg ||
+                        (arg.type === 'type' && arg.typeDeclaration.name !== parm.type) ||
+                        (arg.type === 'name' && arg.name !== parm.type)
+                    ) {
+                        valid = false;
+                        break;
+                    }
+                }
+                if (valid) {
+                    return candidate;
+                }
+            }
+        }
+        return candidates.length ? candidates[0] : null;
     }
 
     public visitFor_statement(ctx: For_statementContext): ExpressionResult | null {
-        return this.createScopeAndVisit(ctx);
+        return this.createScopeAndVisit(ctx, ctx.LRB().symbol);
     }
 
     public visitWhile_statement(ctx: While_statementContext): ExpressionResult | null {
-        return this.createScopeAndVisit(ctx);
+        return this.createScopeAndVisit(ctx, ctx.LRB().symbol);
     }
 
     public visitDo_statement(ctx: Do_statementContext): ExpressionResult | null {
-        return this.createScopeAndVisit(ctx);
+        return this.createScopeAndVisit(ctx, ctx.LRB().symbol);
     }
 
     public visitIf_statement(ctx: If_statementContext): ExpressionResult | null {
-        let visible = this.isVisible(ctx.start.startIndex);
-        let range = this.getRange(ctx.start.startIndex, ctx.statement(0).stop!.stopIndex + 1);
+        const LRB = ctx.LRB();
+        let visible = this.isVisible(LRB.symbol.startIndex);
+        let range = this.getRange(LRB.symbol.startIndex, ctx.statement(0).stop!.stopIndex + 1);
         let scope = this.createScope(visible, range);
         this.scope.children.push(scope);
         this.scope = scope;
@@ -897,7 +1104,7 @@ export class DshlVisitor
     }
 
     public visitSwitch_statement(ctx: Switch_statementContext): ExpressionResult | null {
-        return this.createScopeAndVisit(ctx);
+        return this.createScopeAndVisit(ctx, ctx.LRB().symbol);
     }
 
     // region shared
@@ -913,9 +1120,9 @@ export class DshlVisitor
         return vu;
     }
 
-    private createScopeAndVisit(ctx: ParserRuleContext): null {
-        const visible = this.isVisible(ctx.start.startIndex);
-        const range = this.getRange(ctx.start.startIndex, ctx.stop!.stopIndex + 1);
+    private createScopeAndVisit(ctx: ParserRuleContext, start = ctx.start, stop = ctx.stop!): null {
+        const visible = this.isVisible(start.startIndex);
+        const range = this.getRange(start.startIndex, stop.stopIndex + 1);
         const scope = this.createScope(visible, range);
         this.scope.children.push(scope);
         this.scope = scope;
@@ -945,6 +1152,7 @@ export class DshlVisitor
             isVisible: visible,
             hlslBlocks: [],
             preshaders: [],
+            colorPickerInfos: [],
         };
     }
 
@@ -957,7 +1165,7 @@ export class DshlVisitor
         if (mc) {
             return mc.originalRange;
         }
-        const dc = this.snapshot.getDefineContextAt(startPosition);
+        const dc = this.snapshot.getDefineContextAtOffset(startPosition);
         if (dc) {
             return dc.originalRange;
         }

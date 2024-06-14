@@ -3,6 +3,7 @@ import { DocumentUri, InlayHint, InlayHintKind, InlayHintParams, Position, Range
 import { getSnapshot } from '../core/document-manager';
 import { rangeContains } from '../helper/helper';
 import { DefineContext } from '../interface/define-context';
+import { FunctionParameter } from '../interface/function/function-parameter';
 import { FunctionUsage } from '../interface/function/function-usage';
 import { MacroUsage, getBestMacroDeclaration } from '../interface/macro/macro-usage';
 
@@ -27,7 +28,7 @@ export async function inlayHintProvider(params: InlayHintParams): Promise<InlayH
                 rangeContains(params.range, dc.nameOriginalRange.end))
     );
     addDefineArguments(result, dcs);
-    const fus = snapshot.getFunctioneUsagesIn(params.range);
+    const fus = snapshot.getFunctionUsagesIn(params.range);
     addFunctionArguments(result, fus);
     return result;
 }
@@ -61,15 +62,27 @@ function addDefineArguments(result: InlayHint[], dcs: DefineContext[]): void {
 
 function addFunctionArguments(result: InlayHint[], fus: FunctionUsage[]): void {
     for (const fu of fus) {
+        const parameters = getParameters(fu);
         if (fu.arguments.length) {
-            for (let i = 0; i < fu.arguments.length && i < fu.declaration.parameters.length; i++) {
+            for (let i = 0; i < fu.arguments.length && i < parameters.length; i++) {
                 const fa = fu.arguments[i];
-                const fp = fu.declaration.parameters[i];
+                const fp = parameters[i];
                 const ih = createInlayHint(fp.name, fa.trimmedOriginalStartPosition);
                 result.push(ih);
             }
         }
     }
+}
+
+function getParameters(fu: FunctionUsage): FunctionParameter[] {
+    if (fu.declaration) {
+        return fu.declaration.parameters;
+    } else if (fu.intrinsicFunction) {
+        return fu.intrinsicFunction.parameters;
+    } else if (fu.methods.length) {
+        return fu.methods[0].parameters;
+    }
+    return [];
 }
 
 function createInlayHint(name: string, position: Position, originalRange?: Range, uri?: DocumentUri): InlayHint {

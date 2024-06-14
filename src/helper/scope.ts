@@ -1,6 +1,7 @@
 import { Range } from 'vscode-languageserver';
 import { BlockDeclaration } from '../interface/block/block-declaration';
 import { BlockUsage } from '../interface/block/block-usage';
+import { ColorPickerInfo } from '../interface/color-picker-info';
 import { FunctionDeclaration } from '../interface/function/function-declaration';
 import { FunctionUsage } from '../interface/function/function-usage';
 import { MacroDeclaration } from '../interface/macro/macro-declaration';
@@ -32,6 +33,7 @@ export interface Scope {
     blockDeclaration?: BlockDeclaration;
     blockUsages: BlockUsage[];
     macroDeclaration?: MacroDeclaration;
+    colorPickerInfos: ColorPickerInfo[];
     originalRange: Range;
     parent?: Scope;
     children: Scope[];
@@ -41,4 +43,5 @@ export interface Scope {
     hlslStage?: ShaderStage | null;
     preshaders: Scope[];
     preshaderStage?: ShaderStage | null;
+    functionDeclaration?: FunctionDeclaration;
 }
