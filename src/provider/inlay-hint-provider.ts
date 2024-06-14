@@ -1,7 +1,7 @@
 import { DocumentUri, InlayHint, InlayHintKind, InlayHintParams, Position, Range } from 'vscode-languageserver';
 
 import { getSnapshot } from '../core/document-manager';
-import { rangeContains } from '../helper/helper';
+import { positionsEqual, rangeContains } from '../helper/helper';
 import { DefineContext } from '../interface/define-context';
 import { FunctionParameter } from '../interface/function/function-parameter';
 import { FunctionUsage } from '../interface/function/function-usage';
@@ -68,7 +68,9 @@ function addFunctionArguments(result: InlayHint[], fus: FunctionUsage[]): void {
                 const fa = fu.arguments[i];
                 const fp = parameters[i];
                 const ih = createInlayHint(fp.name, fa.trimmedOriginalStartPosition);
-                result.push(ih);
+                if (!result.find((r) => positionsEqual(r.position, ih.position))) {
+                    result.push(ih);
+                }
             }
         }
     }
